@@ -1,0 +1,24 @@
+# 汐月 Xiyue —— LICENSE
+
+本软件是 **eIsland**（https://github.com/JNTMTMTM/eIsland，作者 JNTMTMTM / pyisland.com）的衍生作品，按上游许可发布：
+
+## GNU General Public License v3.0 or later (GPL-3.0-or-later)
+
+本项目以 **GNU 通用公共许可证 v3.0 或更高版本（GPL-3.0-or-later）** 授权。
+完整许可证文本见 https://www.gnu.org/licenses/gpl-3.0.txt
+
+依据 GPLv3 第 7(b) 条，以下有限附加条款适用于本项目的所有副本、修改版本及程序显示的任何适当法律声明，必须予以保留：
+
+- Copyright (C) 2026-present JNTMTMTM (https://github.com/JNTMTMTM)
+- Copyright (C) 2026-present pyisland.com (https://pyisland.com)
+
+## 平台限制（上游附加条款，必须原样保留）
+
+**本软件专为 Windows 开发。严禁任何针对 Apple macOS 或任何 Apple 操作系统的移植、改编或再分发。**
+
+此限制适用于所有 fork、衍生作品和再分发。任何此类作品必须完整保留本限制声明。违者将追究法律责任。
+
+## 衍生说明
+
+- 上游：eIsland —— Dynamic Island 风格 Windows 桌面应用（Electron + React + TypeScript）
+- 本衍生版：汐月 Xiyue —— 本地常驻 AI 管家，保留 eIsland 全部功能，叠加本地 LLM（Ollama）、语音输入/输出等 AI 能力。
