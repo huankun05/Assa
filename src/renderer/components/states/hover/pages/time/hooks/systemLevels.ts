@@ -62,6 +62,10 @@ let warmed = false;
 /** 用户正在本地拖动调节（引用计数）：期间外部推送只更新缓存、不 notify，避免滑条回跳 */
 let localAdjustActive = 0;
 
+/** 停止拖动后延迟多久校准到系统真值（ms）：等 helper 写入真正生效 */
+const CALIBRATE_DELAY_MS = 180;
+let calibrateTimer: ReturnType<typeof setTimeout> | null = null;
+
 /** 通知所有订阅者 */
 function notify(): void {
   for (const cb of listeners) cb(state);
@@ -178,11 +182,23 @@ export function beginLocalAdjust(): void {
 }
 
 /**
- * 本地拖动结束：恢复推送应用，并用缓存中的最新系统值校准 UI。
+ * 本地拖动结束：恢复推送应用，并校准到系统真值。
+ *
+ * 校准的必要性：拖动期间 UI 显示的是乐观值（本地 set 的目标值），
+ * 若某次写入失败（helper 未构建、设备不支持、外接显示器 DDC 不响应），
+ * 光靠推送可能拿不到新值 → UI 会停在"假值"。停止拖动后拉一次真值兜底。
  */
 export function endLocalAdjust(): void {
   if (localAdjustActive > 0) localAdjustActive -= 1;
-  if (localAdjustActive === 0) notify();
+  if (localAdjustActive > 0) return;
+  notify();
+  if (calibrateTimer !== null) clearTimeout(calibrateTimer);
+  calibrateTimer = setTimeout(() => {
+    calibrateTimer = null;
+    if (localAdjustActive > 0) return;
+    void refreshBrightness();
+    void refreshVolume();
+  }, CALIBRATE_DELAY_MS);
 }
 
 /**

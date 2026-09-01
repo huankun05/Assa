@@ -32,6 +32,8 @@ const helperCandidates = [
   ...(typeof process.resourcesPath === 'string'
     ? [path.join(process.resourcesPath, 'helpers', 'brightness', helperFileName)]
     : []),
+  path.join(__dirname, 'src', 'bin', 'Release', 'net10.0', 'win-x64', helperFileName),
+  path.join(__dirname, 'src', 'bin', 'Debug', 'net10.0', 'win-x64', helperFileName),
   path.join(__dirname, 'src', 'bin', 'Release', 'net10.0', helperFileName),
   path.join(__dirname, 'src', 'bin', 'Debug', 'net10.0', helperFileName),
 ];
@@ -67,6 +69,16 @@ function callHelper(args, timeout = 5000) {
   } catch {
     return null;
   }
+}
+
+/**
+ * 暴露 helper EXE 的解析结果
+ * @description 供调用方（Electron 主进程）自行 spawn 避免阻塞主线程；
+ * 路径解析保持单一真源，避免调用方各拼一份导致找不到 EXE。
+ * @returns {string | null} helper EXE 绝对路径，未构建时返回 null
+ */
+function getHelperPath() {
+  return findHelper();
 }
 
 /**
@@ -178,5 +190,6 @@ class BrightnessMonitor extends EventEmitter {
 module.exports = {
   getBrightness,
   setBrightness,
+  getHelperPath,
   BrightnessMonitor,
 };

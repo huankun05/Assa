@@ -32,6 +32,9 @@ export function getVolume(): number | null;
 /** 设置当前默认播放设备的主音量（0-100） */
 export function setVolume(level: number): boolean;
 
+/** 获取 helper EXE 绝对路径（未构建时返回 null），供调用方自行 spawn */
+export function getHelperPath(): string | null;
+
 /** 当前默认播放设备的主音量监控器 */
 export class VolumeMonitor extends EventEmitter {
   constructor();

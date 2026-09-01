@@ -38,6 +38,9 @@ export interface BrightnessInfo {
 /** 获取当前屏幕亮度 */
 export function getBrightness(): BrightnessInfo | null;
 
+/** 获取 helper EXE 绝对路径（未构建时返回 null），供调用方自行 spawn */
+export function getHelperPath(): string | null;
+
 // ── 设置函数 ──────────────────────────────────────────────────
 
 /** 设置屏幕亮度 (0-100)，返回是否成功 */

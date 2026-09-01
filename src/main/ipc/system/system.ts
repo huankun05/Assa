@@ -27,12 +27,10 @@
 
 import { ipcMain } from 'electron';
 import { exec, spawn } from 'child_process';
-import { existsSync } from 'fs';
-import { join } from 'path';
 import os from 'os';
 import * as si from 'systeminformation';
-import { getBrightness, BrightnessMonitor } from '@eisland/windows-brightness-helper';
-import { getVolume, VolumeMonitor } from '@eisland/windows-volume-helper';
+import { getBrightness, setBrightness, BrightnessMonitor, getHelperPath as getBrightnessHelperPath } from '@eisland/windows-brightness-helper';
+import { getVolume, setVolume, VolumeMonitor, getHelperPath as getVolumeHelperPath } from '@eisland/windows-volume-helper';
 
 interface PerformanceSnapshot {
   timestamp: number;
@@ -448,30 +446,29 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
  *  3. monitor 启动时立即推送一次当前值，渲染端据此确认推送链路可用并校准缓存。
  */
 
-/** 查找亮度 helper EXE 路径（与 @eisland/windows-brightness-helper 内部候选一致） */
+/**
+ * 查找亮度 helper EXE 路径
+ * @description 路径解析权归 helper 包（单一真源）。早期版本在这里按 `__dirname`
+ * 硬拼 `../../../node_modules/...`，dev 下 `__dirname` 是构建产物目录（out/main），
+ * 拼出来的路径指向工作区之外 → 永远找不到 EXE → set 静默失败（亮度拖不动）。
+ */
 function findBrightnessHelper(): string | null {
-  const exeName = 'eIslandBrightnessReader.exe';
-  const candidates = [
-    ...(typeof process.resourcesPath === 'string'
-      ? [join(process.resourcesPath, 'helpers', 'brightness', exeName)]
-      : []),
-    join(__dirname, '../../../node_modules/@eisland/windows-brightness-helper/src/bin/Release/net10.0/win-x64', exeName),
-    join(__dirname, '../../../node_modules/@eisland/windows-brightness-helper/src/bin/Debug/net10.0/win-x64', exeName),
-  ];
-  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+  try {
+    return typeof getBrightnessHelperPath === 'function' ? getBrightnessHelperPath() : null;
+  } catch (err) {
+    console.error('[System] resolve brightness helper path failed:', err);
+    return null;
+  }
 }
 
-/** 查找音量 helper EXE 路径 */
+/** 查找音量 helper EXE 路径（同上，路径解析权归 helper 包） */
 function findVolumeHelper(): string | null {
-  const exeName = 'eIslandVolumeHelper.exe';
-  const candidates = [
-    ...(typeof process.resourcesPath === 'string'
-      ? [join(process.resourcesPath, 'helpers', 'volume', exeName)]
-      : []),
-    join(__dirname, '../../../node_modules/@eisland/windows-volume-helper/src/bin/Release/net10.0/win-x64', exeName),
-    join(__dirname, '../../../node_modules/@eisland/windows-volume-helper/src/bin/Debug/net10.0/win-x64', exeName),
-  ];
-  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+  try {
+    return typeof getVolumeHelperPath === 'function' ? getVolumeHelperPath() : null;
+  } catch (err) {
+    console.error('[System] resolve volume helper path failed:', err);
+    return null;
+  }
 }
 
 /** 异步调用 helper EXE（不阻塞主线程），解析 stdout 首行 JSON */
@@ -481,9 +478,11 @@ function spawnHelperJson(helperPath: string, args: string[], timeoutMs = 5000): 
     try {
       child = spawn(helperPath, args, {
         windowsHide: true,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        // stdin/stderr 不需要：stderr 用 ignore 避免子进程写满管道缓冲被卡住
+        stdio: ['ignore', 'pipe', 'ignore'],
       });
-    } catch {
+    } catch (err) {
+      console.error('[System] spawn helper failed:', err);
       resolve(null);
       return;
     }
@@ -537,12 +536,24 @@ async function enqueueBrightnessSet(value: number): Promise<boolean> {
     const task = brightnessSetTask;
     brightnessSetTask = null;
     const helperPath = findBrightnessHelper();
-    if (!helperPath) {
-      result = false;
-      continue;
+    if (helperPath) {
+      const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
+      result = parsed?.success === true;
+      if (result) {
+        // 写入成功后主动广播目标值：monitor 推送可能有延迟，避免 UI 短暂回跳
+        emitLevel('system:brightness:changed', Math.round(task.value));
+        continue;
+      }
+      console.error('[System] brightness:set helper failed, fallback to sync API');
     }
-    const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
-    result = parsed?.success === true;
+    // 兜底：helper EXE 不可用（未构建/路径异常）时走包自带同步 API，宁可慢也不能失效
+    try {
+      result = setBrightness(task.value);
+      if (result) emitLevel('system:brightness:changed', Math.round(task.value));
+    } catch (err) {
+      console.error('[System] brightness:set fallback error:', err);
+      result = false;
+    }
   }
   brightnessSetRunning = false;
   return result;
@@ -561,12 +572,23 @@ async function enqueueVolumeSet(value: number): Promise<boolean> {
     const task = volumeSetTask;
     volumeSetTask = null;
     const helperPath = findVolumeHelper();
-    if (!helperPath) {
-      result = false;
-      continue;
+    if (helperPath) {
+      const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
+      result = parsed?.success === true;
+      if (result) {
+        emitLevel('system:volume:changed', Math.round(task.value));
+        continue;
+      }
+      console.error('[System] volume:set helper failed, fallback to sync API');
     }
-    const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
-    result = parsed?.success === true;
+    // 兜底：同亮度，helper EXE 不可用时走包自带同步 API
+    try {
+      result = setVolume(task.value);
+      if (result) emitLevel('system:volume:changed', Math.round(task.value));
+    } catch (err) {
+      console.error('[System] volume:set fallback error:', err);
+      result = false;
+    }
   }
   volumeSetRunning = false;
   return result;
@@ -575,7 +597,20 @@ async function enqueueVolumeSet(value: number): Promise<boolean> {
 /** 推送通道：向所有窗口广播系统亮度/音量变化 */
 export type SystemLevelBroadcast = (channel: string, ...args: unknown[]) => void;
 
+/** 全局广播句柄（由 registerSystemIpcHandlers 注入，供 set 成功后主动推送） */
+let levelBroadcast: SystemLevelBroadcast = () => undefined;
+
+/** monitor 是否已启动（幂等） */
 let monitorsStarted = false;
+
+/** 向所有窗口推送一条亮度/音量变化事件 */
+function emitLevel(channel: string, value: number): void {
+  try {
+    levelBroadcast(channel, value);
+  } catch (err) {
+    console.error('[System] broadcast level failed:', err);
+  }
+}
 
 /**
  * 启动系统亮度/音量事件监控（幂等）。
@@ -585,6 +620,7 @@ let monitorsStarted = false;
 export function startSystemLevelMonitors(broadcast?: SystemLevelBroadcast): void {
   if (process.platform !== 'win32' || monitorsStarted) return;
   monitorsStarted = true;
+  if (broadcast) levelBroadcast = broadcast;
   const emit: SystemLevelBroadcast = broadcast ?? (() => undefined);
 
   try {
