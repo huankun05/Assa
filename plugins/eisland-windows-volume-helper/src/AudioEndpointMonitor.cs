@@ -5,7 +5,8 @@ internal sealed class AudioEndpointMonitor : IDisposable
 {
     private readonly ManualResetEvent _stopEvent = new(false);
     private readonly AutoResetEvent _rebindEvent = new(false);
-    private readonly object _outputLock = new();
+    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly object _outputLock;
     private readonly EndpointNotificationClient _notificationClient;
     private readonly EndpointVolumeCallback _volumeCallback;
 
@@ -14,13 +15,24 @@ internal sealed class AudioEndpointMonitor : IDisposable
     private IAudioEndpointVolume? _endpointVolume;
     private bool _disposed;
 
-    public AudioEndpointMonitor()
+    /**
+     * @param jsonOptions 事件序列化选项（serve 模式传入，保证与响应同风格）
+     * @param outputLock 输出锁（serve 模式传入，使事件与命令响应共用一把锁，避免行交错）
+     */
+    public AudioEndpointMonitor(JsonSerializerOptions? jsonOptions = null, object? outputLock = null)
     {
+        _jsonOptions = jsonOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        _outputLock = outputLock ?? new object();
         _notificationClient = new EndpointNotificationClient(_rebindEvent);
         _volumeCallback = new EndpointVolumeCallback(EmitVolumeChanged);
     }
 
-    public void Run()
+    /**
+     * 运行监控主循环（阻塞）。
+     * @param commandEvent 外部命令到达信号（serve 模式），触发时在主线程回调 onCommand
+     * @param onCommand    命令处理回调（保证所有 COM 调用都在主线程执行）
+     */
+    public void Run(WaitHandle? commandEvent = null, Action? onCommand = null)
     {
         try
         {
@@ -28,7 +40,9 @@ internal sealed class AudioEndpointMonitor : IDisposable
             _enumerator.RegisterEndpointNotificationCallback(_notificationClient);
             RebindDefaultEndpoint();
 
-            var waitHandles = new WaitHandle[] { _stopEvent, _rebindEvent };
+            var waitHandles = commandEvent is null
+                ? new WaitHandle[] { _stopEvent, _rebindEvent }
+                : new WaitHandle[] { _stopEvent, _rebindEvent, commandEvent };
             while (true)
             {
                 var signaled = WaitHandle.WaitAny(waitHandles);
@@ -37,7 +51,13 @@ internal sealed class AudioEndpointMonitor : IDisposable
                     break;
                 }
 
-                RebindDefaultEndpoint();
+                if (signaled == 1)
+                {
+                    RebindDefaultEndpoint();
+                    continue;
+                }
+
+                onCommand?.Invoke();
             }
         }
         catch (Exception exception)
@@ -131,6 +151,7 @@ internal sealed class AudioEndpointMonitor : IDisposable
     {
         Emit(new
         {
+            @event = "volume-changed",
             eventName = "volume-changed",
             level,
             timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
@@ -141,6 +162,7 @@ internal sealed class AudioEndpointMonitor : IDisposable
     {
         Emit(new
         {
+            @event = "error",
             eventName = "error",
             message,
             timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
@@ -151,7 +173,7 @@ internal sealed class AudioEndpointMonitor : IDisposable
     {
         lock (_outputLock)
         {
-            Console.WriteLine(JsonSerializer.Serialize(payload));
+            Console.WriteLine(JsonSerializer.Serialize(payload, _jsonOptions));
             Console.Out.Flush();
         }
     }

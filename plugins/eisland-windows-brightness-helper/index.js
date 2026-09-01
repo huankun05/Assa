@@ -26,6 +26,7 @@ const { spawnSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
+const { HelperDaemon } = require('./daemon');
 
 const helperFileName = 'eIslandBrightnessReader.exe';
 const helperCandidates = [
@@ -98,6 +99,69 @@ function setBrightness(brightness) {
   const val = Math.max(0, Math.min(100, Math.round(brightness)));
   const result = callHelper(['set', String(val)]);
   return result?.success === true;
+}
+
+/**
+ * 常驻进程（serve 模式）客户端：进程只启动一次，命令走 stdin/stdout。
+ * 单次调用从 ~380ms 降到亚毫秒级；EXE 为旧版时自动回退（见 getBrightnessAsync）。
+ */
+const daemon = new HelperDaemon({
+  name: 'brightness',
+  findHelper: findHelper,
+  eventName: 'brightness-changed',
+  valueKey: 'brightness',
+});
+
+/**
+ * 异步获取当前亮度（走常驻进程）
+ * @returns {Promise<import('.').BrightnessInfo | null>}
+ */
+async function getBrightnessAsync() {
+  try {
+    const result = await daemon.request('get');
+    return result ?? null;
+  } catch (error) {
+    // serve 不可用（旧版 EXE / 未构建）→ 回退到一次性 spawn
+    if (daemon.isSupported()) {
+      try {
+        return await Promise.resolve(getBrightness());
+      } catch {
+        return null;
+      }
+    }
+    return getBrightness();
+  }
+}
+
+/**
+ * 异步设置屏幕亮度（走常驻进程）
+ * @param {number} brightness - 目标亮度 (0-100)
+ * @returns {Promise<boolean>}
+ */
+async function setBrightnessAsync(brightness) {
+  const value = Math.max(0, Math.min(100, Math.round(brightness)));
+  try {
+    const result = await daemon.request('set', value);
+    return result?.success === true;
+  } catch (error) {
+    if (daemon.isSupported()) {
+      try {
+        return await Promise.resolve(setBrightness(value));
+      } catch {
+        return false;
+      }
+    }
+    return setBrightness(value);
+  }
+}
+
+/**
+ * 订阅亮度变化（走常驻进程的事件推送）
+ * @param {(brightness: number) => void} listener
+ * @returns {() => void} 取消订阅
+ */
+function onBrightnessChanged(listener) {
+  return daemon.onValue(listener);
 }
 
 /**
@@ -191,5 +255,9 @@ module.exports = {
   getBrightness,
   setBrightness,
   getHelperPath,
+  getBrightnessAsync,
+  setBrightnessAsync,
+  onBrightnessChanged,
+  stopDaemon: () => daemon.stop(),
   BrightnessMonitor,
 };

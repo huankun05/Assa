@@ -26,11 +26,21 @@
  */
 
 import { ipcMain } from 'electron';
-import { exec, spawn } from 'child_process';
+import { exec } from 'child_process';
 import os from 'os';
 import * as si from 'systeminformation';
-import { getBrightness, setBrightness, BrightnessMonitor, getHelperPath as getBrightnessHelperPath } from '@eisland/windows-brightness-helper';
-import { getVolume, setVolume, VolumeMonitor, getHelperPath as getVolumeHelperPath } from '@eisland/windows-volume-helper';
+import {
+  getBrightnessAsync,
+  setBrightnessAsync,
+  onBrightnessChanged,
+  stopDaemon as stopBrightnessDaemon,
+} from '@eisland/windows-brightness-helper';
+import {
+  getVolumeAsync,
+  setVolumeAsync,
+  onVolumeChanged,
+  stopDaemon as stopVolumeDaemon,
+} from '@eisland/windows-volume-helper';
 
 interface PerformanceSnapshot {
   timestamp: number;
@@ -375,10 +385,11 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
     return options.queryFocusedWindow();
   });
 
-  ipcMain.handle('system:brightness:get', () => {
+  ipcMain.handle('system:brightness:get', async () => {
     if (process.platform !== 'win32') return null;
     try {
-      return getBrightness()?.currentBrightness ?? null;
+      // 走常驻 serve 进程（亚毫秒级）；旧版 EXE 时包内自动回退到一次性 spawn
+      return (await getBrightnessAsync())?.currentBrightness ?? null;
     } catch (err) {
       console.error('[System] brightness:get error:', err);
       return null;
@@ -398,10 +409,10 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
     }
   });
 
-  ipcMain.handle('system:volume:get', () => {
+  ipcMain.handle('system:volume:get', async () => {
     if (process.platform !== 'win32') return null;
     try {
-      return getVolume();
+      return await getVolumeAsync();
     } catch (err) {
       console.error('[System] volume:get error:', err);
       return null;
@@ -432,92 +443,19 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
   startSystemLevelMonitors(options.broadcast);
 }
 
-/* ========== 亮度/音量：异步写入队列 + 事件驱动推送 ==========
+/* ========== 亮度/音量：常驻 serve 进程 + 事件驱动推送 ==========
  *
- * 背景：helper 是 C# 子进程（spawnSync 每次要启动整个 .NET 运行时，几十~上百 ms），
- * 若 handler 同步调用会阻塞主进程消息循环 → 鼠标移动卡顿；且「轮询拉真值」在拖动时
- * 会拉回尚未生效的旧值 → 滑条回跳、不顺手。
+ * 背景：helper 是 C# 程序，每次 get/set 都 spawn 新进程要启动整个 .NET 运行时
+ * （实测 250-380ms），拖动滑条时写入严重滞后 → 系统值追不上 UI，还会把 UI 拉回旧值
+ * 造成闪烁。serve 模式下进程常驻（stdin/stdout 行式 JSON），单次调用降到毫秒级。
  *
  * 本方案：
- *  1. set 全部改异步 spawn + 「最新值合并队列」——渲染端拖动高频写回不阻塞主线程，
- *     队列串行执行、只保留最新目标值，不会堆积；
- *  2. 常驻 BrightnessMonitor / VolumeMonitor 子进程，系统亮度/音量一变即事件驱动推送
- *     给渲染进程（零轮询），外部修改也能同步；
- *  3. monitor 启动时立即推送一次当前值，渲染端据此确认推送链路可用并校准缓存。
+ *  1. get/set 全部走包内 daemon（serve 进程），旧版 EXE 时包内自动回退一次性 spawn；
+ *  2. 系统值变化由 serve 进程推送（onBrightnessChanged/onVolumeChanged），零轮询；
+ *  3. 写入回声抑制：set 成功后短暂窗口内，忽略 monitor 推送的旧值，杜绝「拖到 50%
+ *     又闪回 25%」的回跳；
+ *  4. set 仍用「最新值合并队列」——拖动高频写回不堆积，串行执行。
  */
-
-/**
- * 查找亮度 helper EXE 路径
- * @description 路径解析权归 helper 包（单一真源）。早期版本在这里按 `__dirname`
- * 硬拼 `../../../node_modules/...`，dev 下 `__dirname` 是构建产物目录（out/main），
- * 拼出来的路径指向工作区之外 → 永远找不到 EXE → set 静默失败（亮度拖不动）。
- */
-function findBrightnessHelper(): string | null {
-  try {
-    return typeof getBrightnessHelperPath === 'function' ? getBrightnessHelperPath() : null;
-  } catch (err) {
-    console.error('[System] resolve brightness helper path failed:', err);
-    return null;
-  }
-}
-
-/** 查找音量 helper EXE 路径（同上，路径解析权归 helper 包） */
-function findVolumeHelper(): string | null {
-  try {
-    return typeof getVolumeHelperPath === 'function' ? getVolumeHelperPath() : null;
-  } catch (err) {
-    console.error('[System] resolve volume helper path failed:', err);
-    return null;
-  }
-}
-
-/** 异步调用 helper EXE（不阻塞主线程），解析 stdout 首行 JSON */
-function spawnHelperJson(helperPath: string, args: string[], timeoutMs = 5000): Promise<Record<string, unknown> | null> {
-  return new Promise((resolve) => {
-    let child;
-    try {
-      child = spawn(helperPath, args, {
-        windowsHide: true,
-        // stdin/stderr 不需要：stderr 用 ignore 避免子进程写满管道缓冲被卡住
-        stdio: ['ignore', 'pipe', 'ignore'],
-      });
-    } catch (err) {
-      console.error('[System] spawn helper failed:', err);
-      resolve(null);
-      return;
-    }
-
-    let stdout = '';
-    const timer = setTimeout(() => {
-      try {
-        child.kill();
-      } catch {
-        // ignore
-      }
-      resolve(null);
-    }, timeoutMs);
-
-    child.stdout.on('data', (chunk: Buffer) => {
-      stdout += chunk.toString('utf8');
-    });
-    child.on('error', () => {
-      clearTimeout(timer);
-      resolve(null);
-    });
-    child.on('close', (code) => {
-      clearTimeout(timer);
-      if (code !== 0 || !stdout) {
-        resolve(null);
-        return;
-      }
-      try {
-        resolve(JSON.parse(stdout.trim()) as Record<string, unknown>);
-      } catch {
-        resolve(null);
-      }
-    });
-  });
-}
 
 interface PendingSetTask {
   value: number;
@@ -535,24 +473,16 @@ async function enqueueBrightnessSet(value: number): Promise<boolean> {
   while (brightnessSetTask) {
     const task = brightnessSetTask;
     brightnessSetTask = null;
-    const helperPath = findBrightnessHelper();
-    if (helperPath) {
-      const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
-      result = parsed?.success === true;
-      if (result) {
-        // 写入成功后主动广播目标值：monitor 推送可能有延迟，避免 UI 短暂回跳
-        emitLevel('system:brightness:changed', Math.round(task.value));
-        continue;
-      }
-      console.error('[System] brightness:set helper failed, fallback to sync API');
-    }
-    // 兜底：helper EXE 不可用（未构建/路径异常）时走包自带同步 API，宁可慢也不能失效
     try {
-      result = setBrightness(task.value);
-      if (result) emitLevel('system:brightness:changed', Math.round(task.value));
+      result = await setBrightnessAsync(task.value);
     } catch (err) {
-      console.error('[System] brightness:set fallback error:', err);
+      console.error('[System] brightness:set error:', err);
       result = false;
+    }
+    if (result) {
+      // 写入成功后主动广播目标值：monitor 推送可能有延迟，避免 UI 短暂回跳
+      markLocalWrite('system:brightness:changed', Math.round(task.value));
+      emitLevel('system:brightness:changed', Math.round(task.value));
     }
   }
   brightnessSetRunning = false;
@@ -571,23 +501,15 @@ async function enqueueVolumeSet(value: number): Promise<boolean> {
   while (volumeSetTask) {
     const task = volumeSetTask;
     volumeSetTask = null;
-    const helperPath = findVolumeHelper();
-    if (helperPath) {
-      const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
-      result = parsed?.success === true;
-      if (result) {
-        emitLevel('system:volume:changed', Math.round(task.value));
-        continue;
-      }
-      console.error('[System] volume:set helper failed, fallback to sync API');
-    }
-    // 兜底：同亮度，helper EXE 不可用时走包自带同步 API
     try {
-      result = setVolume(task.value);
-      if (result) emitLevel('system:volume:changed', Math.round(task.value));
+      result = await setVolumeAsync(task.value);
     } catch (err) {
-      console.error('[System] volume:set fallback error:', err);
+      console.error('[System] volume:set error:', err);
       result = false;
+    }
+    if (result) {
+      markLocalWrite('system:volume:changed', Math.round(task.value));
+      emitLevel('system:volume:changed', Math.round(task.value));
     }
   }
   volumeSetRunning = false;
@@ -603,7 +525,35 @@ let levelBroadcast: SystemLevelBroadcast = () => undefined;
 /** monitor 是否已启动（幂等） */
 let monitorsStarted = false;
 
-/** 向所有窗口推送一条亮度/音量变化事件 */
+/**
+ * 写入回声抑制窗口（ms）：set 成功后此窗口内，monitor 推送的系统旧值一律忽略。
+ * 根因：系统亮度/音量是异步落盘的，set 返回后系统值短暂仍是旧值，
+ * WMI/CoreAudio 会先推一个旧值事件 → 渲染端把滑条拉回旧位置（闪动）。
+ * 窗口内只放行「与本地写入目标一致」的推送（即系统已追上目标值的确认）。
+ */
+const ECHO_SUPPRESS_WINDOW_MS = 600;
+
+/** 最近一次本地写入（按通道） */
+const lastLocalWrite: Record<string, { value: number; at: number }> = {};
+
+/** 记录一次本地写入（set 成功时调用），开启回声抑制窗口 */
+function markLocalWrite(channel: string, value: number): void {
+  lastLocalWrite[channel] = { value, at: Date.now() };
+}
+
+/**
+ * 判断一次 monitor 推送是否应当被忽略（写入回声）。
+ * @returns true = 忽略（这是 set 后系统尚未追上的旧值）
+ */
+function isEchoSuppressed(channel: string, value: number): boolean {
+  const write = lastLocalWrite[channel];
+  if (!write) return false;
+  if (Date.now() - write.at > ECHO_SUPPRESS_WINDOW_MS) return false;
+  // 窗口内：只有与写入目标一致才算系统确认（放行），否则视为旧值回声
+  return value !== write.value;
+}
+
+/** 向所有窗口推送一条亮度/音量变化事件（带写入回声抑制） */
 function emitLevel(channel: string, value: number): void {
   try {
     levelBroadcast(channel, value);
@@ -612,38 +562,53 @@ function emitLevel(channel: string, value: number): void {
   }
 }
 
+/** monitor 推送入口：过滤写入回声后广播 */
+function onLevelPush(channel: string, value: number): void {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return;
+  if (isEchoSuppressed(channel, value)) return;
+  emitLevel(channel, value);
+}
+
+/** 卸载时停止常驻进程与订阅（应用退出调用） */
+export function stopSystemLevelMonitors(): void {
+  try {
+    stopBrightnessDaemon();
+  } catch (err) {
+    console.error('[System] stop brightness daemon error:', err);
+  }
+  try {
+    stopVolumeDaemon();
+  } catch (err) {
+    console.error('[System] stop volume daemon error:', err);
+  }
+}
+
 /**
  * 启动系统亮度/音量事件监控（幂等）。
- * 常驻两个 C# helper 子进程（monitor 模式），系统值一变立即通过 broadcast 推送。
- * 启动失败（如 helper 缺失）时静默降级，不影响 get/set 基本功能。
+ * 复用常驻 serve 进程的事件推送（onBrightnessChanged/onVolumeChanged），
+ * 不再单独 spawn monitor 子进程——serve 进程内部已承担 WMI/CoreAudio 监听。
  */
 export function startSystemLevelMonitors(broadcast?: SystemLevelBroadcast): void {
   if (process.platform !== 'win32' || monitorsStarted) return;
   monitorsStarted = true;
   if (broadcast) levelBroadcast = broadcast;
-  const emit: SystemLevelBroadcast = broadcast ?? (() => undefined);
 
   try {
-    const brightnessMonitor = new BrightnessMonitor();
-    brightnessMonitor.on('brightness-changed', (value: number) => {
-      if (typeof value === 'number') emit('system:brightness:changed', value);
-    });
-    brightnessMonitor.start();
+    onBrightnessChanged((value: number) => onLevelPush('system:brightness:changed', value));
     // 首推当前值：让渲染端确认推送可用并校准缓存
-    const current = getBrightness()?.currentBrightness ?? null;
-    if (typeof current === 'number') emit('system:brightness:changed', current);
+    void getBrightnessAsync().then((info) => {
+      const current = info?.currentBrightness ?? null;
+      if (typeof current === 'number') emitLevel('system:brightness:changed', current);
+    }).catch(() => undefined);
   } catch (err) {
     console.error('[System] brightness monitor start failed:', err);
   }
 
   try {
-    const volumeMonitor = new VolumeMonitor();
-    volumeMonitor.on('volume-changed', (value: number) => {
-      if (typeof value === 'number') emit('system:volume:changed', value);
-    });
-    volumeMonitor.start();
-    const currentVolume = getVolume();
-    if (typeof currentVolume === 'number') emit('system:volume:changed', currentVolume);
+    onVolumeChanged((value: number) => onLevelPush('system:volume:changed', value));
+    void getVolumeAsync().then((current) => {
+      if (typeof current === 'number') emitLevel('system:volume:changed', current);
+    }).catch(() => undefined);
   } catch (err) {
     console.error('[System] volume monitor start failed:', err);
   }

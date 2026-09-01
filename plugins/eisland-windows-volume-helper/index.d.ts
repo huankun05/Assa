@@ -35,6 +35,24 @@ export function setVolume(level: number): boolean;
 /** 获取 helper EXE 绝对路径（未构建时返回 null），供调用方自行 spawn */
 export function getHelperPath(): string | null;
 
+/** 异步获取当前音量（走常驻进程，不可用时自动回退一次性调用） */
+export function getVolumeAsync(): Promise<number | null>;
+
+/** 异步设置音量 (0-100)，返回是否成功 */
+export function setVolumeAsync(level: number): Promise<boolean>;
+
+/** 订阅音量实时变化（常驻进程推送），返回取消订阅函数 */
+export function onVolumeChanged(listener: (level: number) => void): () => void;
+
+/** 异步获取静音状态 */
+export function getMuteAsync(): Promise<boolean | null>;
+
+/** 异步设置静音状态 */
+export function setMuteAsync(muted: boolean): Promise<boolean>;
+
+/** 停止常驻进程（应用退出时调用） */
+export function stopDaemon(): void;
+
 /** 当前默认播放设备的主音量监控器 */
 export class VolumeMonitor extends EventEmitter {
   constructor();

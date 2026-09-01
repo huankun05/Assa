@@ -41,10 +41,11 @@ interface UseVolumeReturn {
   volume: number;
   isAvailable: boolean;
   handleVolumeChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  /** 指针按下：进入本地拖动抑制（抑制系统推送回跳） */
+  handleVolumePointerDown: () => void;
+  /** 指针抬起/取消：结束抑制并校准到系统真值 */
+  handleVolumePointerUp: () => void;
 }
-
-/** 拖动停止多久后恢复外部推送校准（ms） */
-const ADJUST_END_DELAY_MS = 300;
 
 /**
  * 系统音量逻辑 Hook
@@ -58,8 +59,6 @@ export function useVolume(): UseVolumeReturn {
   const initial = getSystemLevels();
   const [volume, setVolume] = useState<number>(initial.volume ?? 50);
   const [isAvailable, setIsAvailable] = useState<boolean>(initial.volumeAvailable);
-  const adjustActiveRef = useRef(false);
-  const endAdjustTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const throttledSetRef = useRef<((value: number) => void) | null>(null);
 
   useEffect(() => {
@@ -75,11 +74,8 @@ export function useVolume(): UseVolumeReturn {
     });
     return () => {
       unsubscribe();
-      if (endAdjustTimerRef.current) clearTimeout(endAdjustTimerRef.current);
-      if (adjustActiveRef.current) {
-        adjustActiveRef.current = false;
-        endLocalAdjust();
-      }
+      // 拖动中面板被关闭（pointerup 未触发）时，兜底释放抑制引用计数
+      endLocalAdjust();
     };
   }, []);
 
@@ -88,18 +84,6 @@ export function useVolume(): UseVolumeReturn {
     setVolume(nextVolume);
     // 立即写入缓存：再次打开时 instant，且其它订阅者（如有）同步
     setLocalVolume(nextVolume);
-
-    // 拖动期间抑制外部推送回跳；停止 300ms 后恢复推送校准
-    if (!adjustActiveRef.current) {
-      adjustActiveRef.current = true;
-      beginLocalAdjust();
-    }
-    if (endAdjustTimerRef.current) clearTimeout(endAdjustTimerRef.current);
-    endAdjustTimerRef.current = setTimeout(() => {
-      endAdjustTimerRef.current = null;
-      adjustActiveRef.current = false;
-      endLocalAdjust();
-    }, ADJUST_END_DELAY_MS);
 
     // 节流写回主进程（异步队列，不阻塞；trailing 保证最后值落定）
     if (!throttledSetRef.current) {
@@ -110,5 +94,20 @@ export function useVolume(): UseVolumeReturn {
     throttledSetRef.current(nextVolume);
   }, []);
 
-  return { volume, isAvailable, handleVolumeChange };
+  // 指针驱动抑制：down 进入抑制（引用计数），up/cancel 退出并校准
+  const handleVolumePointerDown = useCallback((): void => {
+    beginLocalAdjust();
+  }, []);
+
+  const handleVolumePointerUp = useCallback((): void => {
+    endLocalAdjust();
+  }, []);
+
+  return {
+    volume,
+    isAvailable,
+    handleVolumeChange,
+    handleVolumePointerDown,
+    handleVolumePointerUp,
+  };
 }

@@ -46,6 +46,18 @@ export function getHelperPath(): string | null;
 /** 设置屏幕亮度 (0-100)，返回是否成功 */
 export function setBrightness(brightness: number): boolean;
 
+/** 异步获取当前屏幕亮度（走常驻进程，不可用时自动回退一次性调用） */
+export function getBrightnessAsync(): Promise<BrightnessInfo | null>;
+
+/** 异步设置屏幕亮度 (0-100)，返回是否成功 */
+export function setBrightnessAsync(brightness: number): Promise<boolean>;
+
+/** 订阅亮度实时变化（常驻进程推送），返回取消订阅函数 */
+export function onBrightnessChanged(listener: (brightness: number) => void): () => void;
+
+/** 停止常驻进程（应用退出时调用） */
+export function stopDaemon(): void;
+
 // ── 监控器类 ──────────────────────────────────────────────────
 
 /**

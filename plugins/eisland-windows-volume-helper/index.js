@@ -26,6 +26,7 @@ const { spawnSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
+const { HelperDaemon } = require('./daemon');
 
 const helperFileName = 'eIslandVolumeHelper.exe';
 const helperCandidates = [
@@ -109,6 +110,98 @@ function setVolume(level) {
   const normalized = Math.max(0, Math.min(100, Math.round(level)));
   const result = callHelper(['set', String(normalized)]);
   return result?.success === true;
+}
+
+/**
+ * 常驻进程（serve 模式）客户端：进程只启动一次，命令走 stdin/stdout。
+ * 单次调用从 ~280ms 降到亚毫秒级；EXE 为旧版时自动回退（见 getVolumeAsync）。
+ */
+const daemon = new HelperDaemon({
+  name: 'volume',
+  findHelper: findHelper,
+  eventName: 'volume-changed',
+  valueKey: 'level',
+});
+
+/**
+ * 异步获取当前音量（走常驻进程）
+ * @returns {Promise<number | null>}
+ */
+async function getVolumeAsync() {
+  try {
+    const result = await daemon.request('get');
+    // serve 模式 get 返回裸数字（如 10）；兼容对象形态 { level }
+    if (typeof result === 'number') return result;
+    return typeof result?.level === 'number' ? result.level : null;
+  } catch (error) {
+    if (daemon.isSupported()) {
+      try {
+        return await Promise.resolve(getVolume());
+      } catch {
+        return null;
+      }
+    }
+    return getVolume();
+  }
+}
+
+/**
+ * 异步设置音量（走常驻进程）
+ * @param {number} level - 目标音量 (0-100)
+ * @returns {Promise<boolean>}
+ */
+async function setVolumeAsync(level) {
+  const value = Math.max(0, Math.min(100, Math.round(level)));
+  try {
+    const result = await daemon.request('set', value);
+    return result?.success === true;
+  } catch (error) {
+    if (daemon.isSupported()) {
+      try {
+        return await Promise.resolve(setVolume(value));
+      } catch {
+        return false;
+      }
+    }
+    return setVolume(value);
+  }
+}
+
+/**
+ * 订阅音量变化（走常驻进程的事件推送）
+ * @param {(level: number) => void} listener
+ * @returns {() => void} 取消订阅
+ */
+function onVolumeChanged(listener) {
+  return daemon.onValue(listener);
+}
+
+/**
+ * 获取静音状态（走常驻进程，失败回退一次性调用）
+ * @returns {Promise<boolean | null>}
+ */
+async function getMuteAsync() {
+  try {
+    const result = await daemon.request('get-mute');
+    return typeof result === 'boolean' ? result : null;
+  } catch (error) {
+    return getMute();
+  }
+}
+
+/**
+ * 设置静音状态（走常驻进程，失败回退一次性调用）
+ * @param {boolean} muted
+ * @returns {Promise<boolean>}
+ */
+async function setMuteAsync(muted) {
+  if (typeof muted !== 'boolean') return false;
+  try {
+    const result = await daemon.request('set-mute', muted);
+    return result?.success === true;
+  } catch (error) {
+    return setMute(muted);
+  }
 }
 
 class VolumeMonitor extends EventEmitter {
@@ -203,5 +296,11 @@ module.exports = {
   getVolume,
   setVolume,
   getHelperPath,
+  getVolumeAsync,
+  setVolumeAsync,
+  onVolumeChanged,
+  getMuteAsync,
+  setMuteAsync,
+  stopDaemon: () => daemon.stop(),
   VolumeMonitor,
 };

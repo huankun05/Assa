@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import { type CSSProperties, type ReactElement } from 'react';
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVolume } from '../hooks/useVolume';
 
@@ -35,7 +35,19 @@ import { useVolume } from '../hooks/useVolume';
  */
 export function VolumeControl(): ReactElement {
   const { t } = useTranslation();
-  const { volume, isAvailable, handleVolumeChange } = useVolume();
+  const {
+    volume,
+    isAvailable,
+    handleVolumeChange,
+    handleVolumePointerDown,
+    handleVolumePointerUp,
+  } = useVolume();
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLInputElement>): void => {
+    // 指针捕获：拖动期间即使滑出滑块，pointerup 仍会回到本元素，抑制才可靠
+    event.currentTarget.setPointerCapture(event.pointerId);
+    handleVolumePointerDown();
+  };
 
   return (
     <div className="brightness-panel">
@@ -59,6 +71,9 @@ export function VolumeControl(): ReactElement {
           value={volume}
           disabled={!isAvailable}
           onChange={handleVolumeChange}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handleVolumePointerUp}
+          onPointerCancel={handleVolumePointerUp}
           aria-label={t('hover.volume.sliderLabel', { defaultValue: '系统音量' })}
           style={{ ['--slider-val' as string]: `${volume}%` } as CSSProperties}
         />

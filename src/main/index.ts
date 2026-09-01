@@ -44,7 +44,7 @@ import { registerCaptureIpcHandlers } from './ipc/window/capture';
 import { disposeLocalOcrWorker } from './services/captureLocalOcrService';
 import { registerScreenshotHotkeyIpcHandlers } from './ipc/system/screenshotHotkey';
 import { registerAppIpcHandlers } from './ipc/app/app';
-import { registerSystemIpcHandlers } from './ipc/system/system';
+import { registerSystemIpcHandlers, stopSystemLevelMonitors } from './ipc/system/system';
 import { registerUpdaterIpcHandlers } from './ipc/app/updater';
 import { registerDownloadIpcHandlers } from './ipc/app/download';
 import { registerImageCompressionIpcHandlers } from './ipc/app/imageCompression';
@@ -1053,9 +1053,10 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindowService.createWindow();
   });
 
-  /** 退出时清理汐月 Hermes Python 侧车 */
+  /** 退出时清理汐月 Hermes Python 侧车与 helper 常驻进程 */
   app.on('will-quit', () => {
     stopXiyueAgent();
+    stopSystemLevelMonitors();
   });
 });
 

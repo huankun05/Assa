@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import { type CSSProperties, type ReactElement } from 'react';
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBrightness } from '../hooks/useBrightness';
 
@@ -35,7 +35,19 @@ import { useBrightness } from '../hooks/useBrightness';
  */
 export function BrightnessControl(): ReactElement {
   const { t } = useTranslation();
-  const { brightness, isAvailable, handleBrightnessChange } = useBrightness();
+  const {
+    brightness,
+    isAvailable,
+    handleBrightnessChange,
+    handleBrightnessPointerDown,
+    handleBrightnessPointerUp,
+  } = useBrightness();
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLInputElement>): void => {
+    // 指针捕获：拖动期间即使滑出滑块，pointerup 仍会回到本元素，抑制才可靠
+    event.currentTarget.setPointerCapture(event.pointerId);
+    handleBrightnessPointerDown();
+  };
 
   return (
     <div className="brightness-panel">
@@ -59,6 +71,9 @@ export function BrightnessControl(): ReactElement {
           value={brightness}
           disabled={!isAvailable}
           onChange={handleBrightnessChange}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handleBrightnessPointerUp}
+          onPointerCancel={handleBrightnessPointerUp}
           aria-label={t('hover.brightness.sliderLabel', { defaultValue: '屏幕亮度' })}
           style={{ ['--slider-val' as string]: `${brightness}%` } as CSSProperties}
         />
