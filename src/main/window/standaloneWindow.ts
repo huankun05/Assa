@@ -173,5 +173,4 @@ export {
   openStandaloneSettingsWindow,
   closeStandaloneWindow,
   getStandaloneWindow,
-  precreateStandaloneWindow,
 };
