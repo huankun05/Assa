@@ -165,6 +165,9 @@ const api = {
   hideWindow: (): void => {
     ipcRenderer.send('window:hide');
   },
+  showWindow: (): void => {
+    ipcRenderer.send('window:show');
+  },
   /**
    * 获取当前鼠标位置（屏幕坐标）
    * @returns 包含 x、y 坐标的对象
@@ -648,6 +651,36 @@ const api = {
    */
   setVolume: (volume: number): Promise<boolean> => {
     return ipcRenderer.invoke('system:volume:set', volume);
+  },
+  /**
+   * 监听系统亮度实时变化（主进程 BrightnessMonitor 事件驱动推送）
+   * @param callback - 回调，参数为最新亮度百分比（0-100）
+   * @returns 取消监听函数
+   */
+  onBrightnessChanged: (callback: (brightness: number) => void): (() => void) => {
+    const channel = 'system:brightness:changed';
+    const handler = (_event: Electron.IpcRendererEvent, value: number): void => {
+      if (typeof value === 'number') callback(value);
+    };
+    ipcRenderer.on(channel, handler);
+    return () => {
+      ipcRenderer.removeListener(channel, handler);
+    };
+  },
+  /**
+   * 监听系统音量实时变化（主进程 VolumeMonitor 事件驱动推送）
+   * @param callback - 回调，参数为最新音量百分比（0-100）
+   * @returns 取消监听函数
+   */
+  onVolumeChanged: (callback: (volume: number) => void): (() => void) => {
+    const channel = 'system:volume:changed';
+    const handler = (_event: Electron.IpcRendererEvent, value: number): void => {
+      if (typeof value === 'number') callback(value);
+    };
+    ipcRenderer.on(channel, handler);
+    return () => {
+      ipcRenderer.removeListener(channel, handler);
+    };
   },
   getPerformanceSnapshot: (
     selection?: { cpu?: string; gpu?: string; disk?: string },

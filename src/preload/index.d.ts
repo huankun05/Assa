@@ -100,6 +100,7 @@ declare global {
       expandWindowSettings: (delayMs?: number) => void;
       collapseWindow: (delayMs?: number) => void;
       hideWindow: () => void;
+      showWindow: () => void;
       moveWindowDelta: (dx: number, dy: number) => void;
       getMousePosition: () => Promise<Point>;
       getMouseWindowState?: () => Promise<{ mousePosition: Point; bounds: Bounds } | null>;
@@ -298,6 +299,8 @@ declare global {
       setBrightness: (brightness: number) => Promise<boolean>;
       getVolume: () => Promise<number | null>;
       setVolume: (volume: number) => Promise<boolean>;
+      onBrightnessChanged: (callback: (brightness: number) => void) => () => void;
+      onVolumeChanged: (callback: (volume: number) => void) => () => void;
       hideProcessListGet: () => Promise<string[]>;
       hideProcessListSet: (list: string[]) => Promise<boolean>;
       autoHideFullscreenWindowsGet: () => Promise<boolean>;

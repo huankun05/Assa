@@ -20,17 +20,19 @@
 
 /**
  * @file systemLevels.ts
- * @description 屏幕亮度 / 系统音量的"实时值缓存"。
+ * @description 屏幕亮度 / 系统音量的"实时值缓存"（事件驱动版）。
  *
- * 问题背景：早期版本在每次打开浮层时才 IPC 拉真值，导致 (1) 先以默认值 50 渲染再跳真值；
- * (2) 打开有延迟。初版修复用「启动预热 + 每 500ms 后台轮询」，但亮度走的是主进程
- * 同步 WMI 查询，每 500ms 阻塞主线程一次、且面板关闭后仍在跑 —— 造成鼠标移动卡顿。
+ * 演进历史：
+ *  - v1（500ms 后台轮询）：亮度走主进程同步 WMI，每 500ms 阻塞主线程 → 鼠标卡顿；
+ *  - v2（打开时 1500ms 低频轮询）：面板关闭后零定时器，但拖动时轮询会拉回尚未生效的旧值 → 滑条回跳；
+ *  - v3（本版，事件驱动推送）：主进程常驻 BrightnessMonitor / VolumeMonitor 子进程，
+ *    系统亮度/音量一变即 IPC 推送到渲染进程（零轮询、零定时器、不阻塞主线程）。
  *
- * 本版改为：
- *  - 启动只预热【一次】真值（无循环），保证打开即真实值、无跳变；
- *  - 只在浮层【打开期间】才低频同步（默认 1500ms，且只查当前那一项），关闭即停；
- *  - 用引用计数管理定时器，多个面板同时打开也不会叠加多余轮询。
- * 这样背景零定时器、主线程零负担，鼠标不再卡。
+ * 本模块职责：
+ *  - 模块加载即订阅主进程推送，实时更新缓存并通知订阅者；
+ *  - 启动预热一次真值（推送链路尚未就绪或外部未变化时兜底）；
+ *  - 拖动期间通过 beginLocalAdjust/endLocalAdjust 抑制推送回跳（本地乐观值优先），
+ *    停止拖动后自动校准到系统真值。
  * @author WorkBuddy
  */
 
@@ -57,24 +59,15 @@ let state: SystemLevels = { ...EMPTY_LEVELS };
 const listeners = new Set<(next: SystemLevels) => void>();
 let warmed = false;
 
-/**
- * 仅在浮层打开时才进行的"低频后台同步"间隔。
- * 关闭后定时器被清除、主线程零负担；1500ms 足以贴近实时又几乎无感知开销。
- */
-const OPEN_POLL_INTERVAL_MS = 1500;
-
-/** 引用计数：有多少个已打开的面板在请求该项轮询 */
-let brightnessPollers = 0;
-let volumePollers = 0;
-let brightnessTimer: ReturnType<typeof setInterval> | null = null;
-let volumeTimer: ReturnType<typeof setInterval> | null = null;
+/** 用户正在本地拖动调节（引用计数）：期间外部推送只更新缓存、不 notify，避免滑条回跳 */
+let localAdjustActive = 0;
 
 /** 通知所有订阅者 */
 function notify(): void {
   for (const cb of listeners) cb(state);
 }
 
-/** 拉取一次最新亮度，仅在真值变化时更新并通知，避免无谓重渲染 */
+/** 拉取一次最新亮度（仅启动预热/推送链路未就绪时兜底），仅在真值变化时更新并通知 */
 async function refreshBrightness(): Promise<void> {
   if (typeof window === 'undefined' || !window.api) return;
   let brightness: number | null;
@@ -99,11 +92,11 @@ async function refreshBrightness(): Promise<void> {
 
   if (changed) {
     state = next;
-    notify();
+    if (localAdjustActive === 0) notify();
   }
 }
 
-/** 拉取一次最新音量，仅在真值变化时更新并通知 */
+/** 拉取一次最新音量（同上） */
 async function refreshVolume(): Promise<void> {
   if (typeof window === 'undefined' || !window.api) return;
   let volume: number | null;
@@ -128,13 +121,28 @@ async function refreshVolume(): Promise<void> {
 
   if (changed) {
     state = next;
-    notify();
+    if (localAdjustActive === 0) notify();
   }
 }
 
+/** 应用外部推送/兜底拉取的真实值到缓存 */
+function applyExternal(kind: 'brightness' | 'volume', value: number): void {
+  const next: SystemLevels = { ...state };
+  if (kind === 'brightness') {
+    next.brightness = value;
+    next.brightnessAvailable = true;
+  } else {
+    next.volume = value;
+    next.volumeAvailable = true;
+  }
+  state = next;
+  // 本地拖动期间不打扰 UI，停止后由 endLocalAdjust 统一校准
+  if (localAdjustActive === 0) notify();
+}
+
 /**
- * 启动预热：应用启动只拉取一次真值（不开启任何定时器）。幂等。
- * 同时供 startXxxPolling 在面板打开时复用，确保首次打开即拿到真实值。
+ * 启动预热：应用启动只拉取一次真值（推送链路建立前的兜底）。幂等。
+ * 推送链路（主进程 monitor）建立后，亮度/音量变化全部走事件推送，不再依赖本函数。
  */
 export function initSystemLevels(): void {
   if (warmed) return;
@@ -144,42 +152,51 @@ export function initSystemLevels(): void {
   void refreshVolume();
 }
 
-/** 打开亮度浮层时调用：开始低频同步亮度；引用计数，重复调用安全 */
-export function startBrightnessPolling(): void {
-  initSystemLevels();
-  brightnessPollers += 1;
-  if (brightnessTimer === null) {
-    void refreshBrightness();
-    brightnessTimer = setInterval(() => void refreshBrightness(), OPEN_POLL_INTERVAL_MS);
-  }
+/**
+ * 订阅主进程事件驱动推送（模块加载时注册一次）。
+ * 收到首帧推送即代表推送链路可用；值变化即更新缓存并通知。
+ */
+function subscribePushes(): void {
+  if (typeof window === 'undefined' || !window.api) return;
+  const unsubBrightness = window.api.onBrightnessChanged((value) => {
+    applyExternal('brightness', value);
+  });
+  const unsubVolume = window.api.onVolumeChanged((value) => {
+    applyExternal('volume', value);
+  });
+  // 订阅生命周期跟随模块（渲染进程常驻），无需主动退订
+  void unsubBrightness;
+  void unsubVolume;
 }
 
-/** 关闭亮度浮层时调用：引用计数归零即停止定时器 */
-export function stopBrightnessPolling(): void {
-  if (brightnessPollers > 0) brightnessPollers -= 1;
-  if (brightnessPollers === 0 && brightnessTimer !== null) {
-    clearInterval(brightnessTimer);
-    brightnessTimer = null;
-  }
+/**
+ * 本地拖动开始：抑制外部推送回跳。可重复调用（引用计数），
+ * 必须与 endLocalAdjust 成对调用。
+ */
+export function beginLocalAdjust(): void {
+  localAdjustActive += 1;
 }
 
-/** 打开音量浮层时调用：开始低频同步音量；引用计数，重复调用安全 */
-export function startVolumePolling(): void {
-  initSystemLevels();
-  volumePollers += 1;
-  if (volumeTimer === null) {
-    void refreshVolume();
-    volumeTimer = setInterval(() => void refreshVolume(), OPEN_POLL_INTERVAL_MS);
-  }
+/**
+ * 本地拖动结束：恢复推送应用，并用缓存中的最新系统值校准 UI。
+ */
+export function endLocalAdjust(): void {
+  if (localAdjustActive > 0) localAdjustActive -= 1;
+  if (localAdjustActive === 0) notify();
 }
 
-/** 关闭音量浮层时调用：引用计数归零即停止定时器 */
-export function stopVolumePolling(): void {
-  if (volumePollers > 0) volumePollers -= 1;
-  if (volumePollers === 0 && volumeTimer !== null) {
-    clearInterval(volumeTimer);
-    volumeTimer = null;
-  }
+/**
+ * 确保亮度缓存有值（推送尚未就绪时由 hooks 挂载兜底拉取一次）。
+ */
+export function ensureBrightnessWarm(): void {
+  if (state.brightness === null) void refreshBrightness();
+}
+
+/**
+ * 确保音量缓存有值（同上）。
+ */
+export function ensureVolumeWarm(): void {
+  if (state.volume === null) void refreshVolume();
 }
 
 /** 读取当前缓存快照（打开浮层时直接用它作为初始值，零延迟） */
@@ -202,18 +219,47 @@ export function subscribeSystemLevels(cb: (next: SystemLevels) => void): () => v
 
 /** 用户拖动亮度滑块时立即写入缓存，保证再次打开 instant 且外部订阅同步 */
 export function setLocalBrightness(value: number): void {
-  const next: SystemLevels = { ...state, brightness: value, brightnessAvailable: true };
-  state = next;
+  state = { ...state, brightness: value, brightnessAvailable: true };
   notify();
 }
 
 /** 用户拖动音量滑块时立即写入缓存 */
 export function setLocalVolume(value: number): void {
-  const next: SystemLevels = { ...state, volume: value, volumeAvailable: true };
-  state = next;
+  state = { ...state, volume: value, volumeAvailable: true };
   notify();
 }
 
-// 应用启动只预热一次（悬浮窗模块图在应用启动时被加载），
-// 这样用户首次打开亮度/音量浮层时缓存早已就绪。注意：此处【不】开启任何轮询定时器。
+/**
+ * 节流（trailing 保证最后值落定）：拖动高频 change 时限制写回主进程的频率。
+ * 主进程侧另有"最新值合并队列"，渲染端只需防止 IPC 洪泛即可。
+ */
+export function throttleTrailing(fn: (value: number) => void, ms: number): (value: number) => void {
+  let last = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let pending: number | null = null;
+  return (value: number): void => {
+    pending = value;
+    const now = Date.now();
+    if (now - last >= ms) {
+      last = now;
+      const next = pending;
+      pending = null;
+      if (next !== null) fn(next);
+      return;
+    }
+    if (timer === null) {
+      const remaining = ms - (now - last);
+      timer = setTimeout(() => {
+        timer = null;
+        last = Date.now();
+        const next = pending;
+        pending = null;
+        if (next !== null) fn(next);
+      }, remaining);
+    }
+  };
+}
+
+// 模块加载即订阅推送 + 预热一次真值
+subscribePushes();
 initSystemLevels();

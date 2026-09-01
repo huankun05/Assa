@@ -26,11 +26,13 @@
  */
 
 import { ipcMain } from 'electron';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
+import { existsSync } from 'fs';
+import { join } from 'path';
 import os from 'os';
 import * as si from 'systeminformation';
-import { getBrightness, setBrightness } from '@eisland/windows-brightness-helper';
-import { getVolume, setVolume } from '@eisland/windows-volume-helper';
+import { getBrightness, BrightnessMonitor } from '@eisland/windows-brightness-helper';
+import { getVolume, VolumeMonitor } from '@eisland/windows-volume-helper';
 
 interface PerformanceSnapshot {
   timestamp: number;
@@ -109,6 +111,8 @@ interface RegisterSystemIpcHandlersOptions {
   queryRunningNonSystemProcessesWithIcons: () => Promise<RunningProcessInfo[]>;
   queryOpenWindowsWithIcons: () => Promise<RunningWindowInfo[]>;
   queryFocusedWindow: () => Promise<RunningWindowInfo | null>;
+  /** 向所有窗口广播事件（用于亮度/音量实时推送），由 main/index.ts 提供 */
+  broadcast?: SystemLevelBroadcast;
 }
 
 function finiteNumber(value: unknown): number | null {
@@ -383,12 +387,13 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
     }
   });
 
-  ipcMain.handle('system:brightness:set', (_event, brightness: unknown) => {
+  ipcMain.handle('system:brightness:set', async (_event, brightness: unknown) => {
     if (process.platform !== 'win32' || typeof brightness !== 'number' || !Number.isFinite(brightness)) {
       return false;
     }
     try {
-      return setBrightness(brightness);
+      // 异步 spawn + 最新值合并队列：不阻塞主进程消息循环（拖动高频写回不卡鼠标）
+      return enqueueBrightnessSet(Math.max(0, Math.min(100, brightness)));
     } catch (err) {
       console.error('[System] brightness:set error:', err);
       return false;
@@ -405,12 +410,13 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
     }
   });
 
-  ipcMain.handle('system:volume:set', (_event, volume: unknown) => {
+  ipcMain.handle('system:volume:set', async (_event, volume: unknown) => {
     if (process.platform !== 'win32' || typeof volume !== 'number' || !Number.isFinite(volume)) {
       return false;
     }
     try {
-      return setVolume(volume);
+      // 异步 spawn + 最新值合并队列：不阻塞主进程消息循环
+      return enqueueVolumeSet(Math.max(0, Math.min(100, volume)));
     } catch (err) {
       console.error('[System] volume:set error:', err);
       return false;
@@ -424,4 +430,185 @@ export function registerSystemIpcHandlers(options: RegisterSystemIpcHandlersOpti
     },
   );
 
+  // 启动亮度/音量事件监控：系统值一变即事件驱动推送（替代渲染端轮询，零定时器、不阻塞主线程）
+  startSystemLevelMonitors(options.broadcast);
+}
+
+/* ========== 亮度/音量：异步写入队列 + 事件驱动推送 ==========
+ *
+ * 背景：helper 是 C# 子进程（spawnSync 每次要启动整个 .NET 运行时，几十~上百 ms），
+ * 若 handler 同步调用会阻塞主进程消息循环 → 鼠标移动卡顿；且「轮询拉真值」在拖动时
+ * 会拉回尚未生效的旧值 → 滑条回跳、不顺手。
+ *
+ * 本方案：
+ *  1. set 全部改异步 spawn + 「最新值合并队列」——渲染端拖动高频写回不阻塞主线程，
+ *     队列串行执行、只保留最新目标值，不会堆积；
+ *  2. 常驻 BrightnessMonitor / VolumeMonitor 子进程，系统亮度/音量一变即事件驱动推送
+ *     给渲染进程（零轮询），外部修改也能同步；
+ *  3. monitor 启动时立即推送一次当前值，渲染端据此确认推送链路可用并校准缓存。
+ */
+
+/** 查找亮度 helper EXE 路径（与 @eisland/windows-brightness-helper 内部候选一致） */
+function findBrightnessHelper(): string | null {
+  const exeName = 'eIslandBrightnessReader.exe';
+  const candidates = [
+    ...(typeof process.resourcesPath === 'string'
+      ? [join(process.resourcesPath, 'helpers', 'brightness', exeName)]
+      : []),
+    join(__dirname, '../../../node_modules/@eisland/windows-brightness-helper/src/bin/Release/net10.0/win-x64', exeName),
+    join(__dirname, '../../../node_modules/@eisland/windows-brightness-helper/src/bin/Debug/net10.0/win-x64', exeName),
+  ];
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+/** 查找音量 helper EXE 路径 */
+function findVolumeHelper(): string | null {
+  const exeName = 'eIslandVolumeHelper.exe';
+  const candidates = [
+    ...(typeof process.resourcesPath === 'string'
+      ? [join(process.resourcesPath, 'helpers', 'volume', exeName)]
+      : []),
+    join(__dirname, '../../../node_modules/@eisland/windows-volume-helper/src/bin/Release/net10.0/win-x64', exeName),
+    join(__dirname, '../../../node_modules/@eisland/windows-volume-helper/src/bin/Debug/net10.0/win-x64', exeName),
+  ];
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+/** 异步调用 helper EXE（不阻塞主线程），解析 stdout 首行 JSON */
+function spawnHelperJson(helperPath: string, args: string[], timeoutMs = 5000): Promise<Record<string, unknown> | null> {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(helperPath, args, {
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch {
+      resolve(null);
+      return;
+    }
+
+    let stdout = '';
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {
+        // ignore
+      }
+      resolve(null);
+    }, timeoutMs);
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.on('error', () => {
+      clearTimeout(timer);
+      resolve(null);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (code !== 0 || !stdout) {
+        resolve(null);
+        return;
+      }
+      try {
+        resolve(JSON.parse(stdout.trim()) as Record<string, unknown>);
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
+
+interface PendingSetTask {
+  value: number;
+}
+
+/** 亮度 set 队列：串行执行、只保留最新目标值（拖动中高频写回不堆积） */
+let brightnessSetTask: PendingSetTask | null = null;
+let brightnessSetRunning = false;
+
+async function enqueueBrightnessSet(value: number): Promise<boolean> {
+  brightnessSetTask = { value };
+  if (brightnessSetRunning) return true;
+  brightnessSetRunning = true;
+  let result = false;
+  while (brightnessSetTask) {
+    const task = brightnessSetTask;
+    brightnessSetTask = null;
+    const helperPath = findBrightnessHelper();
+    if (!helperPath) {
+      result = false;
+      continue;
+    }
+    const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
+    result = parsed?.success === true;
+  }
+  brightnessSetRunning = false;
+  return result;
+}
+
+/** 音量 set 队列：同上 */
+let volumeSetTask: PendingSetTask | null = null;
+let volumeSetRunning = false;
+
+async function enqueueVolumeSet(value: number): Promise<boolean> {
+  volumeSetTask = { value };
+  if (volumeSetRunning) return true;
+  volumeSetRunning = true;
+  let result = false;
+  while (volumeSetTask) {
+    const task = volumeSetTask;
+    volumeSetTask = null;
+    const helperPath = findVolumeHelper();
+    if (!helperPath) {
+      result = false;
+      continue;
+    }
+    const parsed = await spawnHelperJson(helperPath, ['set', String(Math.round(task.value))]);
+    result = parsed?.success === true;
+  }
+  volumeSetRunning = false;
+  return result;
+}
+
+/** 推送通道：向所有窗口广播系统亮度/音量变化 */
+export type SystemLevelBroadcast = (channel: string, ...args: unknown[]) => void;
+
+let monitorsStarted = false;
+
+/**
+ * 启动系统亮度/音量事件监控（幂等）。
+ * 常驻两个 C# helper 子进程（monitor 模式），系统值一变立即通过 broadcast 推送。
+ * 启动失败（如 helper 缺失）时静默降级，不影响 get/set 基本功能。
+ */
+export function startSystemLevelMonitors(broadcast?: SystemLevelBroadcast): void {
+  if (process.platform !== 'win32' || monitorsStarted) return;
+  monitorsStarted = true;
+  const emit: SystemLevelBroadcast = broadcast ?? (() => undefined);
+
+  try {
+    const brightnessMonitor = new BrightnessMonitor();
+    brightnessMonitor.on('brightness-changed', (value: number) => {
+      if (typeof value === 'number') emit('system:brightness:changed', value);
+    });
+    brightnessMonitor.start();
+    // 首推当前值：让渲染端确认推送可用并校准缓存
+    const current = getBrightness()?.currentBrightness ?? null;
+    if (typeof current === 'number') emit('system:brightness:changed', current);
+  } catch (err) {
+    console.error('[System] brightness monitor start failed:', err);
+  }
+
+  try {
+    const volumeMonitor = new VolumeMonitor();
+    volumeMonitor.on('volume-changed', (value: number) => {
+      if (typeof value === 'number') emit('system:volume:changed', value);
+    });
+    volumeMonitor.start();
+    const currentVolume = getVolume();
+    if (typeof currentVolume === 'number') emit('system:volume:changed', currentVolume);
+  } catch (err) {
+    console.error('[System] volume monitor start failed:', err);
+  }
 }

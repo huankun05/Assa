@@ -782,6 +782,11 @@ function registerIpcHandlers(): void {
     queryRunningNonSystemProcessesWithIcons,
     queryOpenWindowsWithIcons,
     queryFocusedWindow,
+    broadcast: (channel, ...args) => {
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send(channel, ...args);
+      }
+    },
   });
 
   registerUpdaterIpcHandlers({

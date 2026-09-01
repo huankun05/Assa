@@ -20,18 +20,20 @@
 
 /**
  * @file useVolume.ts
- * @description 系统音量状态与调节逻辑 Hook
- * @author 鸡哥
+ * @description 系统音量状态与调节逻辑 Hook（事件驱动版）
+ * @author 鸡哥 / WorkBuddy
  */
 
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { VOLUME_UPDATE_DELAY_MS } from '../config/volumeConfig';
 import {
+  beginLocalAdjust,
+  endLocalAdjust,
+  ensureVolumeWarm,
   getSystemLevels,
   setLocalVolume,
-  startVolumePolling,
-  stopVolumePolling,
   subscribeSystemLevels,
+  throttleTrailing,
 } from './systemLevels';
 
 /** useVolume 返回值类型 */
@@ -41,10 +43,14 @@ interface UseVolumeReturn {
   handleVolumeChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
+/** 拖动停止多久后恢复外部推送校准（ms） */
+const ADJUST_END_DELAY_MS = 300;
+
 /**
  * 系统音量逻辑 Hook
- * @description 初始值直接来自已预热的实时缓存（无 IPC 往返、无 50% 闪跳），
- * 并订阅后台同步以保持与系统一致；滑动时乐观更新本地缓存并防抖写入主进程。
+ * @description 初始值直接来自已预热的实时缓存（无 IPC 往返、无 50% 闪跳）；
+ * 系统音量变化由主进程事件驱动推送更新（零轮询）；拖动时本地乐观更新、
+ * 节流写回主进程，并临时抑制推送回跳，停止后自动校准到系统真值。
  * @returns 音量状态与调节回调
  */
 export function useVolume(): UseVolumeReturn {
@@ -52,11 +58,13 @@ export function useVolume(): UseVolumeReturn {
   const initial = getSystemLevels();
   const [volume, setVolume] = useState<number>(initial.volume ?? 50);
   const [isAvailable, setIsAvailable] = useState<boolean>(initial.volumeAvailable);
-  const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adjustActiveRef = useRef(false);
+  const endAdjustTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const throttledSetRef = useRef<((value: number) => void) | null>(null);
 
   useEffect(() => {
-    // 仅在本浮层挂载（即面板打开）期间才低频同步音量；卸载即停止，避免后台轮询卡顿
-    startVolumePolling();
+    // 推送链路尚未就绪时兜底拉取一次真值
+    ensureVolumeWarm();
     const unsubscribe = subscribeSystemLevels((next) => {
       if (next.volume !== null) {
         setVolume(next.volume);
@@ -67,8 +75,11 @@ export function useVolume(): UseVolumeReturn {
     });
     return () => {
       unsubscribe();
-      stopVolumePolling();
-      if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
+      if (endAdjustTimerRef.current) clearTimeout(endAdjustTimerRef.current);
+      if (adjustActiveRef.current) {
+        adjustActiveRef.current = false;
+        endLocalAdjust();
+      }
     };
   }, []);
 
@@ -78,10 +89,25 @@ export function useVolume(): UseVolumeReturn {
     // 立即写入缓存：再次打开时 instant，且其它订阅者（如有）同步
     setLocalVolume(nextVolume);
 
-    if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
-    updateTimerRef.current = setTimeout(() => {
-      void window.api.setVolume(nextVolume);
-    }, VOLUME_UPDATE_DELAY_MS);
+    // 拖动期间抑制外部推送回跳；停止 300ms 后恢复推送校准
+    if (!adjustActiveRef.current) {
+      adjustActiveRef.current = true;
+      beginLocalAdjust();
+    }
+    if (endAdjustTimerRef.current) clearTimeout(endAdjustTimerRef.current);
+    endAdjustTimerRef.current = setTimeout(() => {
+      endAdjustTimerRef.current = null;
+      adjustActiveRef.current = false;
+      endLocalAdjust();
+    }, ADJUST_END_DELAY_MS);
+
+    // 节流写回主进程（异步队列，不阻塞；trailing 保证最后值落定）
+    if (!throttledSetRef.current) {
+      throttledSetRef.current = throttleTrailing((value: number) => {
+        void window.api.setVolume(value);
+      }, VOLUME_UPDATE_DELAY_MS);
+    }
+    throttledSetRef.current(nextVolume);
   }, []);
 
   return { volume, isAvailable, handleVolumeChange };
