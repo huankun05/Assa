@@ -21,10 +21,16 @@
 /**
  * @file systemLevels.ts
  * @description 屏幕亮度 / 系统音量的"实时值缓存"。
- * 问题背景：原 useBrightness/useVolume 在每次打开浮层时才通过 IPC 拉取真值，
- * 导致 (1) 先以默认值 50 渲染再跳到真值；(2) 打开有明显延迟。
- * 本模块在应用启动即预热，并低频轮询保持与系统同步；浮层打开时直接读缓存，
- * 不再有 IPC 往返，达到 Windows 面板那种即时感。
+ *
+ * 问题背景：早期版本在每次打开浮层时才 IPC 拉真值，导致 (1) 先以默认值 50 渲染再跳真值；
+ * (2) 打开有延迟。初版修复用「启动预热 + 每 500ms 后台轮询」，但亮度走的是主进程
+ * 同步 WMI 查询，每 500ms 阻塞主线程一次、且面板关闭后仍在跑 —— 造成鼠标移动卡顿。
+ *
+ * 本版改为：
+ *  - 启动只预热【一次】真值（无循环），保证打开即真实值、无跳变；
+ *  - 只在浮层【打开期间】才低频同步（默认 1500ms，且只查当前那一项），关闭即停；
+ *  - 用引用计数管理定时器，多个面板同时打开也不会叠加多余轮询。
+ * 这样背景零定时器、主线程零负担，鼠标不再卡。
  * @author WorkBuddy
  */
 
@@ -49,69 +55,131 @@ const EMPTY_LEVELS: SystemLevels = {
 
 let state: SystemLevels = { ...EMPTY_LEVELS };
 const listeners = new Set<(next: SystemLevels) => void>();
-let started = false;
-let timer: ReturnType<typeof setInterval> | null = null;
+let warmed = false;
 
-/** 轮询间隔：500ms 足够"近实时"，又不会给系统带来压力 */
-const POLL_INTERVAL_MS = 500;
+/**
+ * 仅在浮层打开时才进行的"低频后台同步"间隔。
+ * 关闭后定时器被清除、主线程零负担；1500ms 足以贴近实时又几乎无感知开销。
+ */
+const OPEN_POLL_INTERVAL_MS = 1500;
+
+/** 引用计数：有多少个已打开的面板在请求该项轮询 */
+let brightnessPollers = 0;
+let volumePollers = 0;
+let brightnessTimer: ReturnType<typeof setInterval> | null = null;
+let volumeTimer: ReturnType<typeof setInterval> | null = null;
 
 /** 通知所有订阅者 */
 function notify(): void {
   for (const cb of listeners) cb(state);
 }
 
-/** 拉取一次最新值，仅在"真值发生变化"时更新并通知，避免无谓重渲染 */
-async function refreshLevels(): Promise<void> {
+/** 拉取一次最新亮度，仅在真值变化时更新并通知，避免无谓重渲染 */
+async function refreshBrightness(): Promise<void> {
+  if (typeof window === 'undefined' || !window.api) return;
+  let brightness: number | null;
   try {
-    const [brightness, volume] = await Promise.all([
-      window.api.getBrightness().catch(() => null),
-      window.api.getVolume().catch(() => null),
-    ]);
-
-    let changed = false;
-    const next: SystemLevels = { ...state };
-
-    if (brightness !== null) {
-      if (next.brightness !== brightness || !next.brightnessAvailable) {
-        next.brightness = brightness;
-        next.brightnessAvailable = true;
-        changed = true;
-      }
-    } else if (next.brightnessAvailable) {
-      next.brightnessAvailable = false;
-      changed = true;
-    }
-
-    if (volume !== null) {
-      if (next.volume !== volume || !next.volumeAvailable) {
-        next.volume = volume;
-        next.volumeAvailable = true;
-        changed = true;
-      }
-    } else if (next.volumeAvailable) {
-      next.volumeAvailable = false;
-      changed = true;
-    }
-
-    if (changed) {
-      state = next;
-      notify();
-    }
+    brightness = await window.api.getBrightness();
   } catch {
-    /* 单次刷新失败（如设备不支持）忽略，下一个周期再试 */
+    brightness = null;
+  }
+
+  let changed = false;
+  const next: SystemLevels = { ...state };
+  if (brightness !== null) {
+    if (next.brightness !== brightness || !next.brightnessAvailable) {
+      next.brightness = brightness;
+      next.brightnessAvailable = true;
+      changed = true;
+    }
+  } else if (next.brightnessAvailable) {
+    next.brightnessAvailable = false;
+    changed = true;
+  }
+
+  if (changed) {
+    state = next;
+    notify();
+  }
+}
+
+/** 拉取一次最新音量，仅在真值变化时更新并通知 */
+async function refreshVolume(): Promise<void> {
+  if (typeof window === 'undefined' || !window.api) return;
+  let volume: number | null;
+  try {
+    volume = await window.api.getVolume();
+  } catch {
+    volume = null;
+  }
+
+  let changed = false;
+  const next: SystemLevels = { ...state };
+  if (volume !== null) {
+    if (next.volume !== volume || !next.volumeAvailable) {
+      next.volume = volume;
+      next.volumeAvailable = true;
+      changed = true;
+    }
+  } else if (next.volumeAvailable) {
+    next.volumeAvailable = false;
+    changed = true;
+  }
+
+  if (changed) {
+    state = next;
+    notify();
   }
 }
 
 /**
- * 启动后台预热：立即拉取一次，之后每 POLL_INTERVAL_MS 刷新。
- * 幂等：多次调用安全，只启动一个轮询循环。
+ * 启动预热：应用启动只拉取一次真值（不开启任何定时器）。幂等。
+ * 同时供 startXxxPolling 在面板打开时复用，确保首次打开即拿到真实值。
  */
 export function initSystemLevels(): void {
-  if (started) return;
+  if (warmed) return;
   if (typeof window === 'undefined' || !window.api) return;
-  started = true;
-  void refreshLevels();
-  timer = setInterval(() => void refreshLevels(), POLL_INTERVAL_MS);
+  warmed = true;
+  void refreshBrightness();
+  void refreshVolume();
+}
+
+/** 打开亮度浮层时调用：开始低频同步亮度；引用计数，重复调用安全 */
+export function startBrightnessPolling(): void {
+  initSystemLevels();
+  brightnessPollers += 1;
+  if (brightnessTimer === null) {
+    void refreshBrightness();
+    brightnessTimer = setInterval(() => void refreshBrightness(), OPEN_POLL_INTERVAL_MS);
+  }
+}
+
+/** 关闭亮度浮层时调用：引用计数归零即停止定时器 */
+export function stopBrightnessPolling(): void {
+  if (brightnessPollers > 0) brightnessPollers -= 1;
+  if (brightnessPollers === 0 && brightnessTimer !== null) {
+    clearInterval(brightnessTimer);
+    brightnessTimer = null;
+  }
+}
+
+/** 打开音量浮层时调用：开始低频同步音量；引用计数，重复调用安全 */
+export function startVolumePolling(): void {
+  initSystemLevels();
+  volumePollers += 1;
+  if (volumeTimer === null) {
+    void refreshVolume();
+    volumeTimer = setInterval(() => void refreshVolume(), OPEN_POLL_INTERVAL_MS);
+  }
+}
+
+/** 关闭音量浮层时调用：引用计数归零即停止定时器 */
+export function stopVolumePolling(): void {
+  if (volumePollers > 0) volumePollers -= 1;
+  if (volumePollers === 0 && volumeTimer !== null) {
+    clearInterval(volumeTimer);
+    volumeTimer = null;
+  }
 }
 
 /** 读取当前缓存快照（打开浮层时直接用它作为初始值，零延迟） */
@@ -146,6 +214,6 @@ export function setLocalVolume(value: number): void {
   notify();
 }
 
-// 模块加载即开始预热（悬浮窗模块图在应用启动时被加载），
-// 这样用户首次打开亮度/音量浮层时缓存早已就绪。
+// 应用启动只预热一次（悬浮窗模块图在应用启动时被加载），
+// 这样用户首次打开亮度/音量浮层时缓存早已就绪。注意：此处【不】开启任何轮询定时器。
 initSystemLevels();

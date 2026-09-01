@@ -28,8 +28,9 @@ import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'reac
 import { BRIGHTNESS_UPDATE_DELAY_MS } from '../config/brightnessConfig';
 import {
   getSystemLevels,
-  initSystemLevels,
   setLocalBrightness,
+  startBrightnessPolling,
+  stopBrightnessPolling,
   subscribeSystemLevels,
 } from './systemLevels';
 
@@ -54,7 +55,8 @@ export function useBrightness(): UseBrightnessReturn {
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    initSystemLevels();
+    // 仅在本浮层挂载（即面板打开）期间才低频同步亮度；卸载即停止，避免后台轮询卡顿
+    startBrightnessPolling();
     const unsubscribe = subscribeSystemLevels((next) => {
       if (next.brightness !== null) {
         setBrightness(next.brightness);
@@ -65,6 +67,7 @@ export function useBrightness(): UseBrightnessReturn {
     });
     return () => {
       unsubscribe();
+      stopBrightnessPolling();
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     };
   }, []);

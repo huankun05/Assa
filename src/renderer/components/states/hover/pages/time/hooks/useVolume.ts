@@ -28,8 +28,9 @@ import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'reac
 import { VOLUME_UPDATE_DELAY_MS } from '../config/volumeConfig';
 import {
   getSystemLevels,
-  initSystemLevels,
   setLocalVolume,
+  startVolumePolling,
+  stopVolumePolling,
   subscribeSystemLevels,
 } from './systemLevels';
 
@@ -54,7 +55,8 @@ export function useVolume(): UseVolumeReturn {
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    initSystemLevels();
+    // 仅在本浮层挂载（即面板打开）期间才低频同步音量；卸载即停止，避免后台轮询卡顿
+    startVolumePolling();
     const unsubscribe = subscribeSystemLevels((next) => {
       if (next.volume !== null) {
         setVolume(next.volume);
@@ -65,6 +67,7 @@ export function useVolume(): UseVolumeReturn {
     });
     return () => {
       unsubscribe();
+      stopVolumePolling();
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     };
   }, []);
