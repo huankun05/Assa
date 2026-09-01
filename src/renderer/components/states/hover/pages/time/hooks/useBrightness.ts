@@ -26,6 +26,12 @@
 
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { BRIGHTNESS_UPDATE_DELAY_MS } from '../config/brightnessConfig';
+import {
+  getSystemLevels,
+  initSystemLevels,
+  setLocalBrightness,
+  subscribeSystemLevels,
+} from './systemLevels';
 
 /** useBrightness 返回值类型 */
 interface UseBrightnessReturn {
@@ -36,27 +42,29 @@ interface UseBrightnessReturn {
 
 /**
  * 屏幕亮度逻辑 Hook
- * @description 读取当前屏幕亮度，并在滑动时通过主进程更新系统亮度
+ * @description 初始值直接来自已预热的实时缓存（无 IPC 往返、无 50% 闪跳），
+ * 并订阅后台同步以保持与系统一致；滑动时乐观更新本地缓存并防抖写入主进程。
  * @returns 亮度状态与调节回调
  */
 export function useBrightness(): UseBrightnessReturn {
-  const [brightness, setBrightness] = useState(50);
-  const [isAvailable, setIsAvailable] = useState(false);
+  // 关键修复：初始值取自实时缓存，而非固定 50 —— 打开即真实值
+  const initial = getSystemLevels();
+  const [brightness, setBrightness] = useState<number>(initial.brightness ?? 50);
+  const [isAvailable, setIsAvailable] = useState<boolean>(initial.brightnessAvailable);
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-
-    window.api.getBrightness().then((value) => {
-      if (cancelled || value === null) return;
-      setBrightness(value);
-      setIsAvailable(true);
-    }).catch(() => {
-      if (!cancelled) setIsAvailable(false);
+    initSystemLevels();
+    const unsubscribe = subscribeSystemLevels((next) => {
+      if (next.brightness !== null) {
+        setBrightness(next.brightness);
+        setIsAvailable(true);
+      } else {
+        setIsAvailable(next.brightnessAvailable);
+      }
     });
-
     return () => {
-      cancelled = true;
+      unsubscribe();
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     };
   }, []);
@@ -64,6 +72,8 @@ export function useBrightness(): UseBrightnessReturn {
   const handleBrightnessChange = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
     const nextBrightness = Number(event.target.value);
     setBrightness(nextBrightness);
+    // 立即写入缓存：再次打开时 instant，且其它订阅者（如有）同步
+    setLocalBrightness(nextBrightness);
 
     if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     updateTimerRef.current = setTimeout(() => {

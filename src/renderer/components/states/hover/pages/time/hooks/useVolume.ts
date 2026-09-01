@@ -26,6 +26,12 @@
 
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { VOLUME_UPDATE_DELAY_MS } from '../config/volumeConfig';
+import {
+  getSystemLevels,
+  initSystemLevels,
+  setLocalVolume,
+  subscribeSystemLevels,
+} from './systemLevels';
 
 /** useVolume 返回值类型 */
 interface UseVolumeReturn {
@@ -36,27 +42,29 @@ interface UseVolumeReturn {
 
 /**
  * 系统音量逻辑 Hook
- * @description 读取默认播放设备音量，并在滑动时通过主进程更新系统音量
+ * @description 初始值直接来自已预热的实时缓存（无 IPC 往返、无 50% 闪跳），
+ * 并订阅后台同步以保持与系统一致；滑动时乐观更新本地缓存并防抖写入主进程。
  * @returns 音量状态与调节回调
  */
 export function useVolume(): UseVolumeReturn {
-  const [volume, setVolume] = useState(50);
-  const [isAvailable, setIsAvailable] = useState(false);
+  // 关键修复：初始值取自实时缓存，而非固定 50 —— 打开即真实值
+  const initial = getSystemLevels();
+  const [volume, setVolume] = useState<number>(initial.volume ?? 50);
+  const [isAvailable, setIsAvailable] = useState<boolean>(initial.volumeAvailable);
   const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-
-    window.api.getVolume().then((value) => {
-      if (cancelled || value === null) return;
-      setVolume(value);
-      setIsAvailable(true);
-    }).catch(() => {
-      if (!cancelled) setIsAvailable(false);
+    initSystemLevels();
+    const unsubscribe = subscribeSystemLevels((next) => {
+      if (next.volume !== null) {
+        setVolume(next.volume);
+        setIsAvailable(true);
+      } else {
+        setIsAvailable(next.volumeAvailable);
+      }
     });
-
     return () => {
-      cancelled = true;
+      unsubscribe();
       if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     };
   }, []);
@@ -64,6 +72,8 @@ export function useVolume(): UseVolumeReturn {
   const handleVolumeChange = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
     const nextVolume = Number(event.target.value);
     setVolume(nextVolume);
+    // 立即写入缓存：再次打开时 instant，且其它订阅者（如有）同步
+    setLocalVolume(nextVolume);
 
     if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
     updateTimerRef.current = setTimeout(() => {
