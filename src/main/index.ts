@@ -72,7 +72,7 @@ import { createHotkeyService } from './services/hotkeyService';
 import { initUpdaterService } from './services/updaterService';
 import { createCaptureWindowService } from './window/captureWindow';
 import { createMainWindowService } from './window/mainWindow';
-import { openStandaloneSettingsWindow } from './window/standaloneWindow';
+import { openStandaloneSettingsWindow, precreateStandaloneWindow } from './window/standaloneWindow';
 import { showSplashWindow, closeSplashWindow, dismissSplashWindow } from './window/splashWindow';
 import { showGuideWindow } from './window/guideWindow';
 import { createSmtcService } from './music/smtcService';
@@ -938,7 +938,20 @@ app.whenReady().then(() => {
     showSplashWindow({ interactive: true });
   }
   mainWindowService.createWindow();
-  createTray(mainWindow);
+  createTray(() => mainWindow);
+
+  // 启动空闲后预创建独立窗口：把「首次打开」的建窗 + loadURL 成本前移，使第一次打开也秒开。
+  // 仅常驻一个隐藏窗口（所有 tab 共用），代价是启动即占用约一个窗口内存（~50–150MB）。
+  // 退出由 onWindowAllClosed → app.quit() 显式驱动，隐藏窗口不会卡住退出。
+  if (process.platform === 'win32') {
+    setTimeout(() => {
+      try {
+        precreateStandaloneWindow();
+      } catch (err) {
+        console.error('[StandaloneWindow] 预创建失败（不影响正常使用）：', err);
+      }
+    }, 6000);
+  }
 
   smtcService.initWorker();
   setSmtcAccessor(smtcService.getSmtcSessionRuntime, smtcService.getCurrentDeviceId);

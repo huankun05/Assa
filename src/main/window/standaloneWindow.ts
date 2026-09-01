@@ -31,6 +31,8 @@ import { is } from '@electron-toolkit/utils';
 import { broadcastSettingChange } from '../utils/broadcast';
 
 let standaloneWindow: BrowserWindow | null = null;
+/** 窗口创建时是否允许在 ready-to-show 自动显示（预创建隐藏窗口时设为 false） */
+let standaloneWindowAutoShow = false;
 
 /** 独立窗口「设置」标签页键 */
 const SETTINGS_TAB = 'settings';
@@ -41,19 +43,12 @@ const ACTIVE_TAB_STORE_KEY = 'standalone-window-active-tab';
 /**
  * 打开独立窗口（若已打开则聚焦）
  */
-function openStandaloneWindow(): void {
-  if (standaloneWindow && !standaloneWindow.isDestroyed()) {
-    // 保活模式：窗口仍驻留（只是被隐藏），直接重新显示即可，无需重建 → 秒开、省去 loadURL 开销
-    if (standaloneWindow.isVisible()) {
-      standaloneWindow.focus();
-    } else {
-      standaloneWindow.show();
-      standaloneWindow.focus();
-    }
-    return;
-  }
-
-  standaloneWindow = new BrowserWindow({
+/**
+ * 创建独立窗口
+ * @param autoShow - ready-to-show 时是否自动显示（预创建隐藏窗口时传 false）
+ */
+function createStandaloneWindow(autoShow: boolean): BrowserWindow {
+  const win = new BrowserWindow({
     width: 1155,
     height: 640,
     minWidth: 1155,
@@ -75,32 +70,62 @@ function openStandaloneWindow(): void {
     },
   });
 
-  standaloneWindow.on('ready-to-show', () => {
-    standaloneWindow?.show();
+  standaloneWindowAutoShow = autoShow;
+
+  win.on('ready-to-show', () => {
+    if (standaloneWindowAutoShow) win.show();
   });
 
   // 关闭即隐藏而非销毁：拦截 'close' 事件（含窗口 X 按钮、Alt+F4、closeStandaloneWindow），
   // 保留渲染进程常驻，下次打开无需重建窗口与重新 loadURL，实现秒开。
   // 内存代价仅在「首次打开过」之后产生（常驻一个窗口），启动阶段零额外占用。
-  standaloneWindow.on('close', (event) => {
+  win.on('close', (event) => {
     event.preventDefault();
-    standaloneWindow?.hide();
+    win.hide();
   });
 
-  standaloneWindow.on('closed', () => {
+  win.on('closed', () => {
     standaloneWindow = null;
   });
 
-  standaloneWindow.webContents.setWindowOpenHandler((details) => {
+  win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: 'deny' };
   });
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    standaloneWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/DynamicIslandStandalone.html');
+    win.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/DynamicIslandStandalone.html');
   } else {
-    standaloneWindow.loadFile(join(__dirname, '../renderer/DynamicIslandStandalone.html'));
+    win.loadFile(join(__dirname, '../renderer/DynamicIslandStandalone.html'));
   }
+
+  return win;
+}
+
+/**
+ * 打开独立窗口（若已打开则直接显示，否则创建并自动显示）
+ */
+function openStandaloneWindow(): void {
+  if (standaloneWindow && !standaloneWindow.isDestroyed()) {
+    // 保活模式：窗口仍驻留（只是被隐藏），直接重新显示即可，无需重建 → 秒开、省去 loadURL 开销
+    if (standaloneWindow.isVisible()) {
+      standaloneWindow.focus();
+    } else {
+      standaloneWindow.show();
+      standaloneWindow.focus();
+    }
+    return;
+  }
+  standaloneWindow = createStandaloneWindow(true);
+}
+
+/**
+ * 启动空闲后预创建隐藏窗口：把「首次打开」的建窗 + loadURL + 首屏渲染成本前移，
+ * 使第一次打开也秒开。仅创建一个窗口（所有 tab 共用），代价是启动即常驻一个窗口内存（~50–150MB）。
+ */
+export function precreateStandaloneWindow(): void {
+  if (standaloneWindow && !standaloneWindow.isDestroyed()) return;
+  standaloneWindow = createStandaloneWindow(false);
 }
 
 /**
@@ -148,4 +173,5 @@ export {
   openStandaloneSettingsWindow,
   closeStandaloneWindow,
   getStandaloneWindow,
+  precreateStandaloneWindow,
 };
