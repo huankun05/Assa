@@ -358,6 +358,89 @@ const api = {
     };
   },
   /**
+   * 汐月 Hermes 侧车：健康检查
+   */
+  xiyueHealth: (): Promise<{ ok: boolean; model?: string; error?: string }> => {
+    return ipcRenderer.invoke('xiyue:health');
+  },
+  /**
+   * 汐月 Hermes 侧车：文本对话（返回 { user, reply, audio, audio_b64 }）
+   */
+  xiyueChat: (text: string): Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }> => {
+    return ipcRenderer.invoke('xiyue:chat', text);
+  },
+  /**
+   * 汐月 Hermes 侧车：语音对话（录音→STT→LLM→TTS）
+   */
+  xiyueVoice: (): Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }> => {
+    return ipcRenderer.invoke('xiyue:voice');
+  },
+  /**
+   * 汐月 Hermes 侧车：本地转写（16k mono wav base64 → 文本）
+   */
+  xiyueTranscribe: (audioB64: string): Promise<{ text: string }> => {
+    return ipcRenderer.invoke('xiyue:transcribe', audioB64);
+  },
+  /**
+   * 汐月 Hermes 侧车：启动工具化流式对话（SSE 事件经 onXiyueStreamEvent 推送）
+   */
+  xiyueStreamChatStart: (sessionId: string, text: string): Promise<{ ok: boolean; error?: string }> => {
+    return ipcRenderer.invoke('xiyue:stream:start', sessionId, text);
+  },
+  /**
+   * 汐月 Hermes 侧车：中止流式会话
+   */
+  xiyueStreamAbort: (sessionId: string): Promise<{ ok: boolean }> => {
+    return ipcRenderer.invoke('xiyue:stream:abort', sessionId);
+  },
+  /**
+   * 汐月 Hermes 侧车：回传本地工具执行结果
+   */
+  xiyueToolResult: (requestId: string, result: unknown): Promise<{ ok: boolean }> => {
+    return ipcRenderer.invoke('xiyue:tool-result', requestId, result);
+  },
+  xiyueIdentity: (): Promise<{
+    name: string;
+    visible_name: string;
+    english_name: string;
+    role: string;
+    model_default: string;
+    system_identifier: string;
+    greeting: string;
+    language_default: string;
+    local_first: boolean;
+    cloud_fallback_default_off: boolean;
+    data_never_leave_machine: boolean;
+    emotion_enabled: boolean;
+    emotion_default_state: string;
+    memory_enabled: boolean;
+    max_history_turns: number;
+    tools_enabled: boolean;
+    max_tool_rounds: number;
+  }> => {
+    return ipcRenderer.invoke('xiyue:identity');
+  },
+  /**
+   * 监听汐月流式对话事件
+   * @returns 取消监听函数
+   */
+  onXiyueStreamEvent: (
+    sessionId: string,
+    callback: (event: { type: string; payload?: Record<string, unknown> }) => void,
+  ): (() => void) => {
+    const channel = `xiyue:stream:event:${sessionId}`;
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { type: string; payload?: Record<string, unknown> },
+    ): void => {
+      callback(data);
+    };
+    ipcRenderer.on(channel, handler);
+    return () => {
+      ipcRenderer.removeListener(channel, handler);
+    };
+  },
+  /**
    * 启动自定义 API 直连 ReAct 编排会话
    */
   customDirectChatStart: (
@@ -420,6 +503,18 @@ const api = {
    */
   openStandaloneWindow: (): Promise<boolean> => {
     return ipcRenderer.invoke('app:open-standalone-window');
+  },
+  /**
+   * 打开独立窗口并停留到「设置」标签
+   */
+  openSettingsWindow: (): Promise<boolean> => {
+    return ipcRenderer.invoke('app:open-settings-window');
+  },
+  /**
+   * 重置为首次启动（删除首次启动标记，下次启动重新播放启动动画并进入引导）
+   */
+  resetGuide: (): Promise<boolean> => {
+    return ipcRenderer.invoke('guide:reset');
   },
   /**
    * 关闭倒数日/TODOs 独立窗口
@@ -1042,6 +1137,40 @@ const api = {
    */
   musicWhitelistSet: (list: string[]): Promise<boolean> => {
     return ipcRenderer.invoke('music:whitelist:set', list);
+  },
+  /**
+   * 查询某首歌是否已加入本地收藏
+   * @param title - 歌曲名
+   * @param artist - 歌手名
+   * @returns 是否已收藏
+   */
+  musicLikeCheck: (title: string, artist: string): Promise<boolean> => {
+    return ipcRenderer.invoke('music:like:check', title, artist);
+  },
+  /**
+   * 切换某首歌的收藏状态
+   * @description 本地收藏会持久化；若当前音源是网易云音乐，还会发送其「喜欢单曲」全局快捷键
+   * @param title - 歌曲名
+   * @param artist - 歌手名
+   * @returns 切换后的状态，以及是否成功派发到播放器
+   */
+  musicLikeToggle: (title: string, artist: string): Promise<{ liked: boolean; synced: boolean }> => {
+    return ipcRenderer.invoke('music:like:toggle', title, artist);
+  },
+  /**
+   * 获取「喜欢」快捷键配置
+   * @returns 快捷键字符串，如 Ctrl+Alt+L
+   */
+  musicLikeHotkeyGet: (): Promise<string> => {
+    return ipcRenderer.invoke('music:like:hotkey:get');
+  },
+  /**
+   * 设置「喜欢」快捷键配置
+   * @param hotkey - 快捷键字符串，需为「修饰键+主键」组合
+   * @returns 是否保存成功
+   */
+  musicLikeHotkeySet: (hotkey: string): Promise<boolean> => {
+    return ipcRenderer.invoke('music:like:hotkey:set', hotkey);
   },
   /**
    * 获取音乐提供商登录状态

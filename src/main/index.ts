@@ -27,7 +27,7 @@
 import { app, BrowserWindow, globalShortcut, protocol, net, ipcMain } from 'electron';
 import { join, resolve as resolvePath, sep } from 'path';
 import { pathToFileURL } from 'url';
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, existsSync } from 'fs';
 import { electronApp, optimizer } from '@electron-toolkit/utils';
 import { autoUpdater } from 'electron-updater';
 import { createTray, destroyTray, toggleTray } from './tray';
@@ -36,6 +36,9 @@ import { startClipboardUrlWatcher, stopClipboardUrlWatcher } from './clipboard/u
 import { createClipboardUrlState } from './clipboard/clipboardUrlState';
 import { registerClaudeCodeStatusIpcHandlers } from './ipc/agent/claudeCodeStatusIpc';
 import { registerCodexStatusIpcHandlers } from './ipc/agent/codexStatusIpc';
+import { registerXiyueAgentIpcHandlers } from './ipc/agent/xiyueAgentIpc';
+import { registerXiyueIdentityIpcHandlers } from './ipc/agent/xiyueIdentity';
+import { startXiyueAgent, stopXiyueAgent } from './services/xiyueAgentService';
 import { registerClipboardIpcHandlers } from './ipc/settings/clipboard';
 import { registerCaptureIpcHandlers } from './ipc/window/capture';
 import { disposeLocalOcrWorker } from './services/captureLocalOcrService';
@@ -69,11 +72,12 @@ import { createHotkeyService } from './services/hotkeyService';
 import { initUpdaterService } from './services/updaterService';
 import { createCaptureWindowService } from './window/captureWindow';
 import { createMainWindowService } from './window/mainWindow';
-import { openStandaloneWindow } from './window/standaloneWindow';
-import { showSplashWindow, closeSplashWindow } from './window/splashWindow';
+import { openStandaloneSettingsWindow } from './window/standaloneWindow';
+import { showSplashWindow, closeSplashWindow, dismissSplashWindow } from './window/splashWindow';
 import { showGuideWindow } from './window/guideWindow';
 import { createSmtcService } from './music/smtcService';
 import { setSmtcAccessor } from './music/smtcAccessor';
+import { createTitleFallbackService, setTitleFallbackInstance } from './music/titleFallback';
 import { createAutoHideWatcher } from './system/autoHideWatcher';
 import { createExternalAgentWatcher } from './system/externalAgentWatcher';
 import { createClaudeCodeStatusService } from './system/claudeCodeStatusService';
@@ -349,6 +353,9 @@ let islandDisplaySelection = DEFAULT_ISLAND_DISPLAY_SELECTION;
 /** 本次启动是否需要显示首次引导窗口 */
 let shouldShowGuideOnStartup = false;
 
+/** 本次启动用户是否已从启动动画直接进入设置窗口（进入后跳过首次引导） */
+let skipGuideOnStartup = false;
+
 const mainWindowService = createMainWindowService({
   getMainWindow: () => mainWindow,
   setMainWindow: (window) => {
@@ -366,7 +373,16 @@ const mainWindowService = createMainWindowService({
   },
   onReadyToShow: async () => {
     await closeSplashWindow();
-    const shouldShowGuide = shouldShowGuideOnStartup || !app.isPackaged;
+    const shouldShowGuide = shouldShowGuideOnStartup;
+
+    /** 用户在启动动画里点了设置按钮：视为自行完成配置，不再弹首次引导 */
+    if (skipGuideOnStartup) {
+      skipGuideOnStartup = false;
+      shouldShowGuideOnStartup = false;
+      if (shouldShowGuide) writeFirstLaunchConfig();
+      return;
+    }
+
     if (!shouldShowGuide) return;
 
     await showGuideWindow();
@@ -407,6 +423,21 @@ const smtcService = createSmtcService({
   cleanupIntervalMs: SMTC_RUNTIME_CLEANUP_INTERVAL_MS,
 });
 
+/** 窗口标题兜底检测：SMTC 无活跃会话时（如网易云未注册 SMTC）轮询窗口标题展示当前曲目 */
+const titleFallbackService = createTitleFallbackService({
+  hasActiveSmtcSession: () => {
+    const runtime = smtcService.getSmtcSessionRuntime();
+    if (!runtime) return false;
+    const whitelist = nowPlayingWhitelist.map((name) => name.toLowerCase());
+    for (const [sourceAppId, entry] of runtime) {
+      const idLower = sourceAppId.toLowerCase();
+      if (whitelist.some((name) => idLower.includes(name)) && entry.hasTitle) return true;
+    }
+    return false;
+  },
+});
+setTitleFallbackInstance(titleFallbackService);
+
 const hotkeyService = createHotkeyService({
   getMainWindow: () => mainWindow,
   setHiddenByAutoHideProcess: autoHideWatcher.setHiddenByAutoHideProcess,
@@ -445,32 +476,13 @@ const hotkeyService = createHotkeyService({
   onToggleTrayHotkey: () => {
     toggleTray();
   },
+  /**
+   * 设置窗口快捷键
+   * @description 任何窗口模式下都可用：设置是独立于灵动岛的管理入口，
+   *   不再依赖「独立窗口模式」，否则默认模式下快捷键会静默失效
+   */
   onShowSettingsWindowHotkey: () => {
-    const storeDir = join(app.getPath('userData'), 'eIsland_store');
-    const readMode = (key: string): string | null => {
-      try {
-        const filePath = join(storeDir, `${key}.json`);
-        if (!existsSync(filePath)) return null;
-        const parsed = JSON.parse(readFileSync(filePath, 'utf-8'));
-        return typeof parsed === 'string' ? parsed : null;
-      } catch {
-        return null;
-      }
-    };
-    const mode = readMode('standalone-window-mode') ?? readMode('countdown-window-mode');
-    if (mode !== 'standalone') return;
-
-    if (!existsSync(storeDir)) {
-      mkdirSync(storeDir, { recursive: true });
-    }
-    try {
-      writeFileSync(join(storeDir, 'standalone-window-active-tab.json'), JSON.stringify('settings', null, 2), 'utf-8');
-    } catch {
-      // ignore
-    }
-
-    openStandaloneWindow();
-    broadcastSettingChange(-1, 'store:standalone-window-active-tab', 'settings');
+    openStandaloneSettingsWindow();
   },
   onOpenClipboardHistoryHotkey: () => {
     const target = mainWindow;
@@ -504,6 +516,16 @@ const hotkeyService = createHotkeyService({
 
 /** 注册 IPC 处理器 */
 function registerIpcHandlers(): void {
+  /**
+   * 启动动画上的设置按钮：直接进入独立设置窗口（可控制所有页面与功能启停），
+   * 同时收起启动画面并跳过本次的首次引导
+   */
+  ipcMain.on('splash:open-settings', () => {
+    skipGuideOnStartup = true;
+    openStandaloneSettingsWindow();
+    dismissSplashWindow();
+  });
+
   // CLI 检测：显示/关闭全屏边缘光效（独立窗口，由用户响应弹窗后关闭）
   ipcMain.handle('cli-glow:show', () => { showCliGlowWindow(); return true; });
   ipcMain.handle('cli-glow:hide', () => { hideCliGlowWindow(); return true; });
@@ -627,6 +649,7 @@ function registerIpcHandlers(): void {
     },
     sanitizeSmtcUnsubscribeMs,
     detectAllSources: smtcService.detectAllSources,
+    getCurrentDeviceId: smtcService.getCurrentDeviceId,
   });
 
   // ===== 歌曲设置 IPC =====
@@ -816,6 +839,7 @@ registerAppLifecycleHandlers({
     externalAgentWatcher.stop();
     claudeCodeStatusService.stop();
     stopClipboardUrlWatcher();
+    titleFallbackService.stop();
     smtcService.cleanupWorker();
     void disposeLocalOcrWorker();
     destroyTray();
@@ -824,6 +848,7 @@ registerAppLifecycleHandlers({
   onWindowAllClosed: () => {
     autoHideWatcher.stop();
     externalAgentWatcher.stop();
+    titleFallbackService.stop();
     smtcService.cleanupWorker();
     destroyTray();
     if (process.platform !== 'darwin') {
@@ -837,6 +862,11 @@ registerAppLifecycleHandlers({
  */
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.eisland.app');
+
+  /** 汐月 Hermes Python 侧车：启动 + IPC 桥 */
+  startXiyueAgent();
+  registerXiyueAgentIpcHandlers();
+  registerXiyueIdentityIpcHandlers();
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);
@@ -899,14 +929,20 @@ app.whenReady().then(() => {
   /** 是否需要在本次启动显示首次引导 */
   shouldShowGuideOnStartup = readFirstLaunchConfig();
 
-  if (readStartupAnimationEnabledConfig()) {
-    showSplashWindow();
+  /**
+   * 启动动画与首次引导一样只在首次启动出现：
+   * 非首次启动直接进主界面，避免每次开机都等一段动画
+   * interactive 为 true 时窗口可聚焦，保证画面上的设置按钮能响应点击
+   */
+  if (shouldShowGuideOnStartup && readStartupAnimationEnabledConfig()) {
+    showSplashWindow({ interactive: true });
   }
   mainWindowService.createWindow();
   createTray(mainWindow);
 
   smtcService.initWorker();
   setSmtcAccessor(smtcService.getSmtcSessionRuntime, smtcService.getCurrentDeviceId);
+  titleFallbackService.start();
   startClipboardUrlWatcher({
     getWindow: () => mainWindow,
     getEnabled: clipboardUrlState.getMonitorEnabled,
@@ -997,6 +1033,11 @@ app.whenReady().then(() => {
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) mainWindowService.createWindow();
+  });
+
+  /** 退出时清理汐月 Hermes Python 侧车 */
+  app.on('will-quit', () => {
+    stopXiyueAgent();
   });
 });
 

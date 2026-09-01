@@ -33,8 +33,9 @@ import { basename, dirname, resolve } from 'path';
 import { createHash } from 'crypto';
 import os from 'os';
 import { clearLogsCacheFiles, ensureLogsDir } from '../../log/mainLog';
-import { openStandaloneWindow, closeStandaloneWindow } from '../../window/standaloneWindow';
+import { openStandaloneWindow, openStandaloneSettingsWindow, closeStandaloneWindow } from '../../window/standaloneWindow';
 import { registerAgentIpcHandlers } from '../agent';
+import { xiyueAuditLog, xiyueFinalCheck, type XiyueToolAuditRecord } from '../../services/xiyueToolSchema';
 import { queryOpenWindowsWithIcons, type RunningWindowInfo } from '../../system/runningProcesses';
 import { broadcastSettingChange } from '../../utils/broadcast';
 import { getSmtcNowPlaying } from '../../music/smtcAccessor';
@@ -377,6 +378,19 @@ async function executeAgentLocalTool(request: AgentLocalToolRequest): Promise<{
     const workspaces = parseWorkspaces(request?.workspaces);
     if (!tool) {
       throw new Error('tool 不能为空');
+    }
+
+    const finalCheck = xiyueFinalCheck({ tool, arguments: args, workspaces });
+    if (!finalCheck.allowed) {
+      xiyueAuditLog({
+        tool,
+        arguments: args,
+        workspaces,
+        success: false,
+        error: `终审拒绝：${finalCheck.denyReason}`,
+        durationMs: Date.now() - startedAt,
+      });
+      throw new Error(`汐月终审拒绝：${finalCheck.denyReason}`);
     }
 
     if (tool === 'file.list') {
@@ -2113,6 +2127,54 @@ async function executeAgentLocalTool(request: AgentLocalToolRequest): Promise<{
       return { success: true, result: { updated: target }, error: '', durationMs: Date.now() - startedAt };
     }
 
+    if (tool === 'browser.open' || tool === 'browser.screenshot' || tool === 'browser.navigate') {
+      const urlArg = getStringArg(args, 'url');
+      if (!urlArg) {
+        throw new Error('browser.open/screenshot/navigate 需要 url');
+      }
+      if (!/^https?:\/\//i.test(urlArg)) {
+        throw new Error('browser: url 必须以 http:// 或 https:// 开头');
+      }
+      const browserResult = await callPythonBrowserTool(tool, { url: urlArg });
+      return {
+        success: browserResult.ok,
+        result: browserResult,
+        error: browserResult.error || '',
+        durationMs: Date.now() - startedAt,
+      };
+    }
+    if (tool === 'browser.click' || tool === 'browser.fill' || tool === 'browser.scroll') {
+      const urlArg = getStringArg(args, 'url');
+      if (!urlArg) {
+        throw new Error(`${tool} 需要 url`);
+      }
+      if (!/^https?:\/\//i.test(urlArg)) {
+        throw new Error('browser: url 必须以 http:// 或 https:// 开头');
+      }
+      const browserArgs: Record<string, unknown> = { url: urlArg };
+      if (tool === 'browser.click' || tool === 'browser.fill') {
+        const selector = getStringArg(args, 'selector');
+        if (!selector) throw new Error(`${tool} 需要 selector`);
+        browserArgs.selector = selector;
+      }
+      if (tool === 'browser.fill') {
+        const text = getStringArg(args, 'text');
+        if (!text) throw new Error('browser.fill 需要 text');
+        browserArgs.text = text;
+      }
+      if (tool === 'browser.scroll') {
+        const direction = getStringArg(args, 'direction');
+        if (direction) browserArgs.direction = direction;
+      }
+      const browserResult = await callPythonBrowserTool(tool, browserArgs);
+      return {
+        success: browserResult.ok,
+        result: browserResult,
+        error: browserResult.error || '',
+        durationMs: Date.now() - startedAt,
+      };
+    }
+
     throw new Error(`不支持的工具: ${tool}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error ?? 'local tool failed');
@@ -2123,6 +2185,25 @@ async function executeAgentLocalTool(request: AgentLocalToolRequest): Promise<{
       durationMs: Date.now() - startedAt,
     };
   }
+}
+
+async function callPythonBrowserTool(tool: string, args: Record<string, unknown>): Promise<any> {
+  const port = Number(process.env.XIYUE_AGENT_PORT) || 8765;
+  const url = `http://127.0.0.1:${port}/browser`;
+  const body = JSON.stringify({ tool, arguments: args });
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  });
+  
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`browser HTTP ${response.status}: ${text}`);
+  }
+  
+  return response.json();
 }
 
 /**
@@ -2420,6 +2501,16 @@ export function registerAppIpcHandlers(): void {
       return true;
     } catch (err) {
       console.error('[App] open-standalone-window error:', err);
+      return false;
+    }
+  });
+
+  /** 打开独立窗口并停留到「设置」标签（全量设置，可控制各页面与功能启停） */
+  ipcMain.handle('app:open-settings-window', () => {
+    try {
+      return openStandaloneSettingsWindow();
+    } catch (err) {
+      console.error('[App] open-settings-window error:', err);
       return false;
     }
   });

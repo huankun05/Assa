@@ -26,12 +26,37 @@
 
 import { Tray, Menu, nativeImage, BrowserWindow, app, shell } from 'electron';
 import { join } from 'path';
-import { existsSync, readFileSync } from 'fs';
 import { is } from '@electron-toolkit/utils';
-import { openStandaloneWindow } from './window/standaloneWindow';
+import { openStandaloneSettingsWindow } from './window/standaloneWindow';
 
 let tray: Tray | null = null;
 let cachedMainWindow: BrowserWindow | null = null;
+let cachedVisibleName: string | null = null;
+
+async function getTrayTooltip(): Promise<string> {
+  if (!cachedVisibleName) {
+    try {
+      const data = await window.api?.xiyueIdentity?.();
+      if (data?.visible_name) cachedVisibleName = String(data.visible_name);
+    } catch {
+      // ignore
+    }
+    cachedVisibleName = cachedVisibleName || '汐月';
+  }
+  return cachedVisibleName;
+}
+
+function setTrayTooltip(): void {
+  if (tray && cachedVisibleName) {
+    tray.setToolTip(cachedVisibleName);
+  }
+}
+
+async function refreshTrayIdentity(): Promise<void> {
+  cachedVisibleName = null;
+  const name = await getTrayTooltip();
+  if (tray) tray.setToolTip(name);
+}
 
 /**
  * 托盘图标路径常量
@@ -51,18 +76,6 @@ function createTray(mainWindow: BrowserWindow | null): Tray {
   tray = new Tray(icon);
   const logDir = join(app.getPath('userData'), 'logs');
 
-  let isStandaloneMode = false;
-  try {
-    const storeDir = join(app.getPath('userData'), 'eIsland_store');
-    const cfgPath = join(storeDir, 'standalone-window-mode.json');
-    const legacyCfgPath = join(storeDir, 'countdown-window-mode.json');
-    const modePath = existsSync(cfgPath) ? cfgPath : legacyCfgPath;
-    if (existsSync(modePath)) {
-      const raw = readFileSync(modePath, 'utf-8');
-      isStandaloneMode = JSON.parse(raw) === 'standalone';
-    }
-  } catch { /* ignore */ }
-
   const menuItems: Electron.MenuItemConstructorOptions[] = [
     {
       label: '显示灵动岛',
@@ -76,16 +89,13 @@ function createTray(mainWindow: BrowserWindow | null): Tray {
         mainWindow?.hide();
       }
     },
-  ];
-
-  if (isStandaloneMode) {
-    menuItems.push({
-      label: '打开配置界面',
+    {
+      label: '设置',
       click: () => {
-        openStandaloneWindow();
+        openStandaloneSettingsWindow();
       }
-    });
-  }
+    },
+  ];
 
   menuItems.push(
     {
@@ -99,16 +109,14 @@ function createTray(mainWindow: BrowserWindow | null): Tray {
     },
     { type: 'separator' },
     {
-      label: '打开日志文件夹',
-      click: async () => {
-        await shell.openPath(logDir);
-      }
-    },
-    {
       label: '重启灵动岛',
       click: () => {
-        app.relaunch();
-        app.quit();
+        try {
+          app.relaunch();
+          app.exit(0);
+        } catch (err) {
+          console.error('[Tray] restart error:', err);
+        }
       }
     },
     { type: 'separator' },
@@ -121,7 +129,7 @@ function createTray(mainWindow: BrowserWindow | null): Tray {
   );
 
   const contextMenu = Menu.buildFromTemplate(menuItems);
-  tray.setToolTip('汐月');
+  getTrayTooltip().then((name) => tray?.setToolTip(name));
   tray.setContextMenu(contextMenu);
 
   tray.on('click', () => {

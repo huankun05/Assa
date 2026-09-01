@@ -1,0 +1,11 @@
+# 本地 LLM 编排
+ollama>=0.4.0
+# 语音输入（实际在 voice/ 使用，这里仅声明协同）
+# faster-whisper>=1.0.0
+# 向量记忆（Phase1+ 启用）
+# sqlite-vec  # pip install sqlite-vec
+# 工具/网络
+requests>=2.31.0
+numpy>=1.26.0
+# 浏览器自动化（可选）
+playwright>=1.49.0

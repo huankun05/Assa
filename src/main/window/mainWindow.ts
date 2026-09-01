@@ -64,6 +64,21 @@ interface MainWindowService {
  */
 export function createMainWindowService(options: CreateMainWindowServiceOptions): MainWindowService {
   let initialCenterX = 0;
+  let cachedIdentityVisibleName: string | null = null;
+
+  async function getWindowIdentityTitle(): Promise<string> {
+    if (cachedIdentityVisibleName) return cachedIdentityVisibleName;
+    try {
+      const data = await window.api?.xiyueIdentity?.();
+      if (data?.visible_name) {
+        cachedIdentityVisibleName = String(data.visible_name);
+        return cachedIdentityVisibleName;
+      }
+    } catch {
+      // ignore
+    }
+    return '汐月';
+  }
 
   function getTargetDisplay(): Electron.Display {
     const selection = options.getIslandDisplaySelection();
@@ -123,9 +138,11 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
     });
   }
 
-  function createWindow(): void {
+  async function createWindow(): Promise<void> {
     const initialBounds = getInitialIslandBounds();
     initialCenterX = initialBounds.x + options.sizes.islandWidth / 2;
+
+    const title = await getWindowIdentityTitle();
 
     const mainWindow = new BrowserWindow({
       width: options.sizes.islandWidth,
@@ -139,7 +156,7 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
       resizable: false,
       alwaysOnTop: true,
       skipTaskbar: true,
-      title: '汐月',
+      title,
       hasShadow: false,
       icon: is.dev
         ? join(__dirname, '../../resources/icon/eisland_256x256.ico')
@@ -149,6 +166,7 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
         sandbox: false,
         contextIsolation: true,
         nodeIntegration: false,
+        backgroundThrottling: false,
         spellcheck: false,
         enableWebSQL: false,
         v8CacheOptions: 'bypassHeatCheck',

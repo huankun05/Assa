@@ -137,6 +137,17 @@ declare global {
         sessionId: string,
         callback: (event: ChatEvent) => void,
       ) => () => void;
+      xiyueHealth: () => Promise<{ ok: boolean; model?: string; error?: string }>;
+      xiyueChat: (text: string) => Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }>;
+      xiyueVoice: () => Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }>;
+      xiyueTranscribe: (audioB64: string) => Promise<{ text: string }>;
+      xiyueStreamChatStart: (sessionId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
+      xiyueStreamAbort: (sessionId: string) => Promise<{ ok: boolean }>;
+      xiyueToolResult: (requestId: string, result: unknown) => Promise<{ ok: boolean }>;
+      onXiyueStreamEvent: (
+        sessionId: string,
+        callback: (event: { type: string; payload?: Record<string, unknown> }) => void,
+      ) => () => void;
       customDirectChatStart: (
         sessionId: string,
         request: CustomDirectChatRequest,
@@ -151,6 +162,8 @@ declare global {
       windowMaximize: () => void;
       windowClose: () => void;
       openStandaloneWindow: () => Promise<boolean>;
+      openSettingsWindow: () => Promise<boolean>;
+      resetGuide: () => Promise<boolean>;
       closeStandaloneWindow: () => Promise<boolean>;
       mediaPlayPause: () => Promise<void>;
       mediaNext: () => Promise<void>;
@@ -234,6 +247,10 @@ declare global {
       logWrite: (level: string, message: string) => void;
       musicWhitelistGet: () => Promise<string[]>;
       musicWhitelistSet: (list: string[]) => Promise<boolean>;
+      musicLikeCheck: (title: string, artist: string) => Promise<boolean>;
+      musicLikeToggle: (title: string, artist: string) => Promise<{ liked: boolean; synced: boolean }>;
+      musicLikeHotkeyGet: () => Promise<string>;
+      musicLikeHotkeySet: (hotkey: string) => Promise<boolean>;
       musicProviderAuthStatus: (provider: MusicProviderId) => Promise<MusicProviderAuthStatus>;
       musicProviderAuthCreateQr: (provider: MusicProviderId) => Promise<MusicProviderQrCodeResult>;
       musicProviderAuthCheckQr: (provider: MusicProviderId, token: string) => Promise<MusicProviderAuthStatus>;
