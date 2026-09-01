@@ -24,18 +24,32 @@
  * @author 鸡哥
  */
 
-import { BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
+import { broadcastSettingChange } from '../utils/broadcast';
 
 let standaloneWindow: BrowserWindow | null = null;
+
+/** 独立窗口「设置」标签页键 */
+const SETTINGS_TAB = 'settings';
+
+/** 独立窗口活动标签页存储键，需与 renderer 侧 ACTIVE_TAB_STORE_KEY 保持一致 */
+const ACTIVE_TAB_STORE_KEY = 'standalone-window-active-tab';
 
 /**
  * 打开独立窗口（若已打开则聚焦）
  */
 function openStandaloneWindow(): void {
   if (standaloneWindow && !standaloneWindow.isDestroyed()) {
-    standaloneWindow.focus();
+    // 保活模式：窗口仍驻留（只是被隐藏），直接重新显示即可，无需重建 → 秒开、省去 loadURL 开销
+    if (standaloneWindow.isVisible()) {
+      standaloneWindow.focus();
+    } else {
+      standaloneWindow.show();
+      standaloneWindow.focus();
+    }
     return;
   }
 
@@ -65,6 +79,14 @@ function openStandaloneWindow(): void {
     standaloneWindow?.show();
   });
 
+  // 关闭即隐藏而非销毁：拦截 'close' 事件（含窗口 X 按钮、Alt+F4、closeStandaloneWindow），
+  // 保留渲染进程常驻，下次打开无需重建窗口与重新 loadURL，实现秒开。
+  // 内存代价仅在「首次打开过」之后产生（常驻一个窗口），启动阶段零额外占用。
+  standaloneWindow.on('close', (event) => {
+    event.preventDefault();
+    standaloneWindow?.hide();
+  });
+
   standaloneWindow.on('closed', () => {
     standaloneWindow = null;
   });
@@ -79,6 +101,30 @@ function openStandaloneWindow(): void {
   } else {
     standaloneWindow.loadFile(join(__dirname, '../renderer/DynamicIslandStandalone.html'));
   }
+}
+
+/**
+ * 打开独立设置窗口
+ * @description 先把活动标签持久化为「设置」再拉起/聚焦独立窗口，窗口（无论是否已存在）
+ *   都会停在全量设置页，可统一控制所有页面与功能的启停。不依赖倒计时窗口模式。
+ * @returns 是否成功发起打开
+ */
+function openStandaloneSettingsWindow(): boolean {
+  try {
+    const storeDir = join(app.getPath('userData'), 'eIsland_store');
+    if (!existsSync(storeDir)) mkdirSync(storeDir, { recursive: true });
+    writeFileSync(
+      join(storeDir, `${ACTIVE_TAB_STORE_KEY}.json`),
+      JSON.stringify(SETTINGS_TAB, null, 2),
+      'utf-8',
+    );
+  } catch (err) {
+    console.error('[StandaloneWindow] persist settings tab error:', err);
+  }
+
+  openStandaloneWindow();
+  broadcastSettingChange(-1, `store:${ACTIVE_TAB_STORE_KEY}`, SETTINGS_TAB);
+  return true;
 }
 
 /**
@@ -97,4 +143,9 @@ function getStandaloneWindow(): BrowserWindow | null {
   return standaloneWindow;
 }
 
-export { openStandaloneWindow, closeStandaloneWindow, getStandaloneWindow };
+export {
+  openStandaloneWindow,
+  openStandaloneSettingsWindow,
+  closeStandaloneWindow,
+  getStandaloneWindow,
+};
