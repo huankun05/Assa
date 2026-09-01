@@ -81,6 +81,14 @@
   padding-left: 6px;
   gap: 1px;
   -webkit-app-region: no-drag;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cw-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .cw-window-icon {
@@ -101,12 +109,12 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 32px;
-  padding: 0 20px;
+  height: 30px;
+  padding: 0 16px;
   border: none;
   border-radius: 8px 8px 0 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(255, 255, 255, 0.58);
   font-family: inherit;
   font-size: 12px;
   font-weight: 400;
@@ -114,6 +122,7 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cw-tab:hover {
@@ -440,7 +449,7 @@
 }
 
 [data-theme='light'] .cw-tab {
-  color: rgba(0, 0, 0, 0.48);
+  color: rgba(0, 0, 0, 0.58);
 }
 
 [data-theme='light'] .cw-tab:hover {
@@ -508,4 +517,84 @@
 [data-theme='light'] .expand-todo-popout-btn:hover {
   background: rgba(0, 113, 227, 0.1);
   color: #0071e3;
+}
+
+/** 自定义页面管理器（独立窗口） */
+.cw-custom-manager {
+  padding: 24px 28px;
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--text-color, #fff);
+}
+.cw-custom-manager-title { font-size: 20px; font-weight: 700; margin: 0 0 6px; }
+.cw-custom-manager-desc { font-size: 13px; opacity: 0.6; margin: 0 0 20px; }
+.cw-custom-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.cw-input {
+  flex: 1 1 200px;
+  min-width: 160px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 13px;
+}
+.cw-input::placeholder { color: rgba(255,255,255,0.4); }
+.cw-custom-template { display: flex; gap: 14px; }
+.cw-radio { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
+.cw-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.cw-btn:hover { background: rgba(255, 255, 255, 0.14); }
+.cw-btn-primary { background: #0071e3; border-color: #0071e3; }
+.cw-btn-primary:hover { background: #0a84ff; }
+.cw-btn-danger { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.4); }
+.cw-custom-list { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.cw-custom-empty { opacity: 0.5; font-size: 13px; padding: 12px 0; }
+.cw-custom-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.cw-custom-item-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cw-custom-item-title { font-size: 14px; font-weight: 600; }
+.cw-custom-item-meta { font-size: 12px; opacity: 0.55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cw-custom-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* 懒加载占位：标签页按需动态加载时的过渡态 */
+.cw-tab-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  width: 100%;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.cw-tab-loading::after {
+  content: "加载中…";
+  animation: cw-tab-loading-pulse 1.1s ease-in-out infinite;
+}
+@keyframes cw-tab-loading-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
 }

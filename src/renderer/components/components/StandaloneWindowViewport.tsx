@@ -24,24 +24,29 @@
  * @author 鸡哥
  */
 
+import { lazy, Suspense, useEffect } from 'react';
 import type { JSX } from 'react';
-import { TodoTab } from '../states/maxExpand/components/todo/components/TodoTab';
-import { CountdownTab } from '../states/maxExpand/components/countdown';
-import { UrlFavoritesTab } from '../states/maxExpand/components/urlFavorites';
-import { AlbumTab } from '../states/maxExpand/components/album/components/AlbumTab';
-import { MailTab } from '../states/maxExpand/components/mail';
-import { LocalFileSearchTab } from '../states/maxExpand/components/localFileSearch/components/LocalFileSearchTab';
-import { ClipboardHistoryTab } from '../states/maxExpand/components/clipBoardHistory';
-import { SettingsTab } from '../states/maxExpand/components/SettingsTab';
-import { MemoTab } from '../states/maxExpand/components/memo/components/MemoTab';
-import { AlarmTab } from '../states/maxExpand/components/alarm/components/AlarmTab';
-import { ToolboxTab } from '../states/maxExpand/components/ToolboxTab';
-import { LoginContent } from '../states/login';
-import { RegisterContent } from '../states/register/RegisterContent';
-import { ResetPasswordContent } from '../states/resetPassword';
-import { PaymentContent } from '../states/payment/PaymentContent';
-import { MusicProvidersLoginContent } from '../states/musicProvidersLogin';
 import type { WindowTab } from '../config/standaloneWindowConfig';
+
+// 代码分割：每个标签页按需动态加载，避免独立窗口一打开就把全部面板（含 SettingsTab /
+// AiChatTab / CustomPageManager 等重型模块）一次性打进首屏 bundle 并全量驻留内存。
+// 首次进入某 tab 时加载对应 chunk（加载后由浏览器缓存），未打开的 tab 代码不进堆，
+// 从而降低首开解析耗时与常驻内存。
+const TodoTab = lazy(() => import('../states/maxExpand/components/todo/components/TodoTab').then((m) => ({ default: m.TodoTab })));
+const CountdownTab = lazy(() => import('../states/maxExpand/components/countdown').then((m) => ({ default: m.CountdownTab })));
+const UrlFavoritesTab = lazy(() => import('../states/maxExpand/components/urlFavorites').then((m) => ({ default: m.UrlFavoritesTab })));
+const AlbumTab = lazy(() => import('../states/maxExpand/components/album/components/AlbumTab').then((m) => ({ default: m.AlbumTab })));
+const MailTab = lazy(() => import('../states/maxExpand/components/mail').then((m) => ({ default: m.MailTab })));
+const LocalFileSearchTab = lazy(() => import('../states/maxExpand/components/localFileSearch/components/LocalFileSearchTab').then((m) => ({ default: m.LocalFileSearchTab })));
+const ClipboardHistoryTab = lazy(() => import('../states/maxExpand/components/clipBoardHistory').then((m) => ({ default: m.ClipboardHistoryTab })));
+const SettingsTab = lazy(() => import('../states/maxExpand/components/SettingsTab').then((m) => ({ default: m.SettingsTab })));
+const MemoTab = lazy(() => import('../states/maxExpand/components/memo/components/MemoTab').then((m) => ({ default: m.MemoTab })));
+const AlarmTab = lazy(() => import('../states/maxExpand/components/alarm/components/AlarmTab').then((m) => ({ default: m.AlarmTab })));
+const ToolboxTab = lazy(() => import('../states/maxExpand/components/ToolboxTab').then((m) => ({ default: m.ToolboxTab })));
+const AiChatTab = lazy(() => import('../states/maxExpand/components/agent').then((m) => ({ default: m.AiChatTab })));
+const CalculatorTab = lazy(() => import('../states/maxExpand/components/calculator/components/CalculatorTab').then((m) => ({ default: m.CalculatorTab })));
+const TranslationTab = lazy(() => import('../states/expand/components/TranslationTab').then((m) => ({ default: m.TranslationTab })));
+const CustomPageManager = lazy(() => import('../states/maxExpand/components/customPages/CustomPageManager').then((m) => ({ default: m.CustomPageManager })));
 
 interface StandaloneWindowViewportProps {
   activeTab: WindowTab;
@@ -49,29 +54,41 @@ interface StandaloneWindowViewportProps {
 }
 
 /**
- * @description 根据标签页渲染独立窗口内容。
+ * @description 根据标签页渲染独立窗口内容（各面板按需懒加载）。
  * @param props - 视口渲染参数。
  * @returns 独立窗口内容视口节点。
  */
-export function StandaloneWindowViewport({ activeTab, state }: StandaloneWindowViewportProps): JSX.Element {
+export function StandaloneWindowViewport({ activeTab }: StandaloneWindowViewportProps): JSX.Element {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        void window.api.closeStandaloneWindow().catch(() => {});
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   return (
     <div className="cw-viewport">
-      {activeTab === 'todo' && <TodoTab />}
-      {activeTab === 'countdown' && <CountdownTab />}
-      {activeTab === 'urlFavorites' && <UrlFavoritesTab />}
-      {activeTab === 'album' && <AlbumTab />}
-      {activeTab === 'mail' && <MailTab />}
-      {activeTab === 'localFileSearch' && <LocalFileSearchTab />}
-      {activeTab === 'clipboardHistory' && <ClipboardHistoryTab />}
-      {activeTab === 'memo' && <MemoTab />}
-      {activeTab === 'alarm' && <AlarmTab />}
-      {activeTab === 'toolbox' && <ToolboxTab />}
-      {activeTab === 'settings' && state === 'login' && <LoginContent />}
-      {activeTab === 'settings' && state === 'register' && <RegisterContent />}
-      {activeTab === 'settings' && state === 'resetPassword' && <ResetPasswordContent />}
-      {activeTab === 'settings' && state === 'payment' && <PaymentContent />}
-      {activeTab === 'settings' && state === 'musicProvidersLogin' && <MusicProvidersLoginContent />}
-      {activeTab === 'settings' && state !== 'login' && state !== 'register' && state !== 'resetPassword' && state !== 'payment' && state !== 'musicProvidersLogin' && <SettingsTab />}
+      <Suspense fallback={<div className="cw-tab-loading">{/* 加载中占位，文本由 CSS 伪元素提供 */}</div>}>
+        {activeTab === 'todo' && <TodoTab />}
+        {activeTab === 'countdown' && <CountdownTab />}
+        {activeTab === 'urlFavorites' && <UrlFavoritesTab />}
+        {activeTab === 'album' && <AlbumTab />}
+        {activeTab === 'mail' && <MailTab />}
+        {activeTab === 'localFileSearch' && <LocalFileSearchTab />}
+        {activeTab === 'clipboardHistory' && <ClipboardHistoryTab />}
+        {activeTab === 'memo' && <MemoTab />}
+        {activeTab === 'alarm' && <AlarmTab />}
+        {activeTab === 'toolbox' && <ToolboxTab />}
+        {activeTab === 'chat' && <AiChatTab />}
+        {activeTab === 'calculator' && <CalculatorTab />}
+        {activeTab === 'translate' && <TranslationTab />}
+        {activeTab === 'settings' && <SettingsTab />}
+        {activeTab === 'customPages' && <CustomPageManager />}
+      </Suspense>
     </div>
   );
 }
