@@ -398,11 +398,18 @@
   opacity: .5;
 }
 
-/* WebKit 轨道：6px 高 + 圆角；fill 由 accent-color 自动着色 */
+/* WebKit 轨道：6px 高 + 圆角；左半（已填充）用主题色，右半（未填充）用淡色，
+   填充比例由 React 注入的 --slider-val 控制 */
 .control-center-popover .brightness-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: rgba(var(--color-text-rgb), 0.18);
+  background: linear-gradient(
+    to right,
+    var(--color-island-text) 0%,
+    var(--color-island-text) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) 100%
+  );
   border: none;
 }
 
@@ -432,7 +439,13 @@
 .control-center-popover .brightness-slider::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: rgba(var(--color-text-rgb), 0.18);
+  background: linear-gradient(
+    to right,
+    var(--color-island-text) 0%,
+    var(--color-island-text) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) 100%
+  );
   border: none;
 }
 .control-center-popover .brightness-slider::-moz-range-thumb {

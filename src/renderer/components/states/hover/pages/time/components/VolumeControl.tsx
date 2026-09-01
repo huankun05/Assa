@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import { type ReactElement } from 'react';
+import { type CSSProperties, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVolume } from '../hooks/useVolume';
 
@@ -41,11 +41,11 @@ export function VolumeControl(): ReactElement {
     <div className="brightness-panel">
       <div className="timer-title-row">
         <div className="timer-title">
-          <span className="text-[10px] text-[var(--color-island-text)] leading-tight">
+          <span className="text-[13px] font-medium text-[var(--color-island-text)] leading-tight">
             {t('hover.volume.title', { defaultValue: '系统音量' })}
           </span>
         </div>
-        <span className="text-[10px] text-[var(--color-island-text)] opacity-60 leading-tight ml-2">
+        <span className="text-[12px] text-[var(--color-island-text)] opacity-70 leading-tight ml-2">
           {t('hover.volume.hint', { defaultValue: '拖动调节' })}
         </span>
       </div>
@@ -60,6 +60,7 @@ export function VolumeControl(): ReactElement {
           disabled={!isAvailable}
           onChange={handleVolumeChange}
           aria-label={t('hover.volume.sliderLabel', { defaultValue: '系统音量' })}
+          style={{ ['--slider-val' as string]: `${volume}%` } as CSSProperties}
         />
         <span className="brightness-value">
           {isAvailable ? `${volume}%` : t('hover.volume.unavailable', { defaultValue: '不可用' })}

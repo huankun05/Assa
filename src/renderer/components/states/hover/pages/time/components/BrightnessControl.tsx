@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import { type ReactElement } from 'react';
+import { type CSSProperties, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBrightness } from '../hooks/useBrightness';
 
@@ -41,11 +41,11 @@ export function BrightnessControl(): ReactElement {
     <div className="brightness-panel">
       <div className="timer-title-row">
         <div className="timer-title">
-          <span className="text-[10px] text-[var(--color-island-text)] leading-tight">
+          <span className="text-[13px] font-medium text-[var(--color-island-text)] leading-tight">
             {t('hover.brightness.title', { defaultValue: '屏幕亮度' })}
           </span>
         </div>
-        <span className="text-[10px] text-[var(--color-island-text)] opacity-60 leading-tight ml-2">
+        <span className="text-[12px] text-[var(--color-island-text)] opacity-70 leading-tight ml-2">
           {t('hover.brightness.hint', { defaultValue: '拖动调节' })}
         </span>
       </div>
@@ -60,6 +60,7 @@ export function BrightnessControl(): ReactElement {
           disabled={!isAvailable}
           onChange={handleBrightnessChange}
           aria-label={t('hover.brightness.sliderLabel', { defaultValue: '屏幕亮度' })}
+          style={{ ['--slider-val' as string]: `${brightness}%` } as CSSProperties}
         />
         <span className="brightness-value">
           {isAvailable ? `${brightness}%` : t('hover.brightness.unavailable', { defaultValue: '不可用' })}
