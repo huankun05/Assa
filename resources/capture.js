@@ -28,12 +28,12 @@ const { ipcRenderer, clipboard } = require('electron');
 const bgCanvas = document.getElementById('bg-canvas');
 const drawCanvas = document.getElementById('draw-canvas');
 const tempCanvas = document.getElementById('temp-canvas');
-const maskCanvas = document.getElementById('mask-canvas');
+const captureHole = document.getElementById('captureHole');
+const captureHandles = document.getElementById('captureHandles');
 
 const bgCtx = bgCanvas.getContext('2d');
 const drawCtx = drawCanvas.getContext('2d');
 const tempCtx = tempCanvas.getContext('2d');
-const maskCtx = maskCanvas.getContext('2d');
 
 const sizeInfo = document.getElementById('size-info');
 const toolbar = document.getElementById('toolbar');
@@ -51,6 +51,9 @@ const btnTranslate = document.getElementById('btnTranslate');
 const btnTranslateLabel = document.getElementById('btnTranslateLabel');
 const translateOverlay = document.getElementById('translateOverlay');
 const translateMessage = document.getElementById('translateMessage');
+const magnifier = document.getElementById('magnifier');
+const magnifierCanvas = document.getElementById('magnifier-canvas');
+const captureHint = document.getElementById('captureHint');
 
 let bgImage = null;
 let W = 0;
@@ -96,9 +99,16 @@ let pendingWindowClickRect = null;
 let isTranslating = false;
 let isRecognizing = false;
 let ocrEngine = 'server';
+let translateEngine = 'server';
 let recognizedText = '';
 let translationCache = null;
 let displayedImageVersion = 'original';
+
+/** 放大镜状态：固定放大倍数（Snipaste 式，不循环切换）。
+ * MAGNIFIER_SIZE 取 zoom 整数倍（46 源像素 × 4 = 184 CSS px），保证像素网格精确对齐。 */
+const MAGNIFIER_ZOOM = 4;
+const MAGNIFIER_SIZE = 184;
+const magnifierCtx = magnifierCanvas ? magnifierCanvas.getContext('2d') : null;
 
 const CAPTURE_I18N = {
   'zh-CN': {
@@ -140,6 +150,8 @@ const CAPTURE_I18N = {
       captureWindowClosed: '截图窗口已关闭',
       cancel: '取消',
       done: '完成',
+      captureHint: '拖拽框选截图区域 · 悬停窗口可快速选中 · Enter 完成 · Esc 取消',
+      captureInputText: '输入文字',
     },
   },
   'en-US': {
@@ -181,6 +193,8 @@ const CAPTURE_I18N = {
       captureWindowClosed: 'Screenshot window was closed',
       cancel: 'Cancel',
       done: 'Done',
+      captureHint: 'Drag to select a region · Hover a window to select it · Enter to finish · Esc to cancel',
+      captureInputText: 'Enter text',
     },
   },
 };
@@ -226,28 +240,58 @@ async function initOcrEngine() {
   try {
     // 与 src/shared/storeKeys.ts 中 SCREENSHOT_OCR_ENGINE_STORE_KEY 保持一致
     const stored = await ipcRenderer.invoke('store:read', 'screenshot-ocr-engine');
-    ocrEngine = stored === 'local' ? 'local' : 'server';
+    ocrEngine = stored === 'paddleocr' || stored === 'local' ? stored : 'server';
+    // 与 src/shared/storeKeys.ts 中 SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY 保持一致
+    const trStored = await ipcRenderer.invoke('store:read', 'screenshot-translate-engine');
+    translateEngine = trStored === 'server' ? 'server' : 'local';
   } catch {
     ocrEngine = 'server';
+    translateEngine = 'server';
   }
   if (ocrProIcon) {
-    ocrProIcon.style.display = ocrEngine === 'local' ? 'none' : '';
+    // 本机引擎（Tesseract / PaddleOCR）都不需要服务端会员标识
+    ocrProIcon.style.display = ocrEngine === 'server' ? '' : 'none';
+  }
+  const translateProIcon = document.querySelector('.capture-translate-pro-icon');
+  if (translateProIcon) {
+    // 翻译按钮同理：本机 Hy-MT2 不需要服务端会员标识
+    translateProIcon.style.display = translateEngine === 'server' ? '' : 'none';
   }
 }
 
 void initOcrEngine();
 
+/** 当前窗口 DPR（高分屏 >1），canvas backing store 与 CSS 显示尺寸分离 */
+let canvasDpr = 1;
+
+/**
+ * 设置 canvas 的 backing store 为物理分辨率、CSS 显示为逻辑分辨率，
+ * 并让 2D context 以 DPR 缩放，使后续绘制代码可用逻辑坐标直接操作。
+ */
+function setupCanvasDpr(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = window.innerWidth;
+  const cssH = window.innerHeight;
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+  cv.style.width = `${cssW}px`;
+  cv.style.height = `${cssH}px`;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+}
+
 /**
  * 初始化各层画布尺寸
- * @description 在窗口尺寸变化后同步四层画布，保证坐标系统一致
+ * @description 在窗口尺寸变化后同步画布，保证坐标系统一致。
+ * 背景层 bgCanvas 一次性绘制屏幕位图；标注/临时层按需重绘；
+ * 遮罩与选区已 DOM 化（captureHole/captureHandles），不再占用 canvas 图层。
  */
 function initCanvases() {
+  canvasDpr = window.devicePixelRatio || 1;
   W = window.innerWidth;
   H = window.innerHeight;
-  [bgCanvas, drawCanvas, tempCanvas, maskCanvas].forEach((cv) => {
-    cv.width = W;
-    cv.height = H;
-  });
+  [bgCanvas, drawCanvas, tempCanvas].forEach(setupCanvasDpr);
   drawBackground();
   redrawFromHistoryTop();
   drawMask();
@@ -289,41 +333,73 @@ function clearTemp() {
  * 绘制遮罩层与选区边框
  * @description 非选区区域使用半透明遮罩，便于用户聚焦当前操作区域
  */
+/**
+ * 更新遮罩与选区装饰（DOM 版，取代旧的全屏 canvas 遮罩重绘）
+ * @description 单个 "洞" div（选区区域透明）+ 超大 box-shadow 形成四周遮罩；
+ * 选区外沿用边框高亮；resize 手柄为 DOM span，随选区位置批量更新。
+ * 全部为样式定位（GPU 合成），避免每次 mousemove 全屏填充 canvas。
+ */
+function layoutHole(hole) {
+  // hole: null → 整屏遮罩（未进入任何选区）
+  if (!hole) {
+    captureHole.classList.add('is-full');
+    captureHole.classList.remove('is-deep');
+    captureHole.style.display = 'block';
+    captureHole.style.left = '0px';
+    captureHole.style.top = '0px';
+    captureHole.style.width = `${W}px`;
+    captureHole.style.height = `${H}px`;
+    return;
+  }
+  captureHole.classList.remove('is-full');
+  captureHole.classList.add('is-deep');
+  captureHole.style.display = 'block';
+  captureHole.style.left = `${hole.x}px`;
+  captureHole.style.top = `${hole.y}px`;
+  captureHole.style.width = `${hole.width}px`;
+  captureHole.style.height = `${hole.height}px`;
+}
+
+function layoutHandles(visible) {
+  if (!visible) {
+    captureHandles.style.display = 'none';
+    return;
+  }
+  captureHandles.style.display = 'block';
+  captureHandles.style.left = `${selX}px`;
+  captureHandles.style.top = `${selY}px`;
+  captureHandles.style.width = `${selW}px`;
+  captureHandles.style.height = `${selH}px`;
+}
+
 function drawMask() {
-  maskCtx.clearRect(0, 0, W, H);
+  if (captureHint) {
+    // 仅 IDLE（未选区）时显示操作提示，进入选区/标注后隐藏
+    captureHint.style.display = state === STATE.IDLE ? 'flex' : 'none';
+  }
+
   if (state === STATE.IDLE) {
-    maskCtx.fillStyle = 'rgba(0,0,0,0.35)';
+    // 未选区：仅 hover 到窗口时开洞高亮，否则整屏遮罩
     if (!hoverWindowRect) {
-      maskCtx.fillRect(0, 0, W, H);
+      layoutHole(null);
+      layoutHandles(false);
       return;
     }
-    maskCtx.fillRect(0, 0, W, hoverWindowRect.y);
-    maskCtx.fillRect(0, hoverWindowRect.y + hoverWindowRect.height, W, H - hoverWindowRect.y - hoverWindowRect.height);
-    maskCtx.fillRect(0, hoverWindowRect.y, hoverWindowRect.x, hoverWindowRect.height);
-    maskCtx.fillRect(hoverWindowRect.x + hoverWindowRect.width, hoverWindowRect.y, W - hoverWindowRect.x - hoverWindowRect.width, hoverWindowRect.height);
-    maskCtx.strokeStyle = '#409cff';
-    maskCtx.lineWidth = 2;
-    maskCtx.strokeRect(hoverWindowRect.x, hoverWindowRect.y, hoverWindowRect.width, hoverWindowRect.height);
+    layoutHole(hoverWindowRect);
+    layoutHandles(false);
     return;
   }
 
-  maskCtx.fillStyle = 'rgba(0,0,0,0.46)';
-  maskCtx.fillRect(0, 0, W, selY);
-  maskCtx.fillRect(0, selY + selH, W, H - selY - selH);
-  maskCtx.fillRect(0, selY, selX, selH);
-  maskCtx.fillRect(selX + selW, selY, W - selX - selW, selH);
-
-  maskCtx.strokeStyle = '#409cff';
-  maskCtx.lineWidth = 1.5;
-  maskCtx.strokeRect(selX, selY, selW, selH);
-
-  if (activeTool === 'select' && (state === STATE.SELECTED || state === STATE.MOVING || state === STATE.RESIZING)) {
-    maskCtx.fillStyle = '#409cff';
-    const handles = getHandlePositions();
-    Object.values(handles).forEach((p) => {
-      maskCtx.fillRect(p[0] - HANDLE_SIZE, p[1] - HANDLE_SIZE, HANDLE_SIZE * 2, HANDLE_SIZE * 2);
-    });
+  // 选区/拖动/标注中：洞 = 当前选区
+  if (selW >= 1 && selH >= 1) {
+    layoutHole({ x: selX, y: selY, width: selW, height: selH });
+  } else {
+    layoutHole(null);
   }
+  layoutHandles(
+    activeTool === 'select'
+    && (state === STATE.SELECTED || state === STATE.MOVING || state === STATE.RESIZING),
+  );
 }
 
 function getHandlePositions() {
@@ -412,57 +488,164 @@ function restoreClip(ctx) {
 }
 
 /**
- * 保存当前绘制层的选区快照到历史栈
- * @description 仅存储选区范围内的 ImageData，避免在高分辨率屏幕下整屏快照导致内存暴涨
+ * 历史栈：仅存储选区范围内的 ImageData 快照，避免高分屏整屏快照导致内存暴涨。
+ * 采用 historyIndex + historyStack 的线性模型：commit 时截断后续分支，
+ * undo/redo 通过移动 historyIndex 并在绘制层重绘对应快照实现。
  */
-function pushHistory() {
+/** 当前历史状态索引，-1 表示空白画布 */
+let historyIndex = -1;
+
+/**
+ * 提交一次标注后的状态到历史栈（截断 redo 分支），并受 MAX_HISTORY 上限约束
+ */
+function commitHistory() {
   if (selW < 1 || selH < 1) return;
-  historyStack.push({
-    data: drawCtx.getImageData(selX, selY, selW, selH),
+  const dpr = canvasDpr;
+  const snap = {
+    data: drawCtx.getImageData(Math.round(selX * dpr), Math.round(selY * dpr), Math.round(selW * dpr), Math.round(selH * dpr)),
     x: selX,
     y: selY,
     w: selW,
     h: selH,
-  });
-  if (historyStack.length > MAX_HISTORY) historyStack.shift();
+  };
+  historyStack.length = historyIndex + 1;
+  historyStack.push(snap);
+  if (historyStack.length > MAX_HISTORY) {
+    historyStack.shift();
+  }
+  historyIndex = historyStack.length - 1;
 }
 
-function redrawFromHistoryTop() {
+/** 将 historyIndex 指向的快照重绘到绘制层（-1 表示清空为空白画布） */
+function restoreHistoryTop() {
   drawCtx.clearRect(0, 0, W, H);
-  if (historyStack.length > 0) {
-    const snap = historyStack[historyStack.length - 1];
-    drawCtx.putImageData(snap.data, snap.x, snap.y);
+  if (historyIndex >= 0) {
+    const snap = historyStack[historyIndex];
+    if (snap) {
+      const dpr = canvasDpr;
+      drawCtx.putImageData(snap.data, Math.round(snap.x * dpr), Math.round(snap.y * dpr));
+    }
   }
 }
 
 function undoLast() {
-  if (historyStack.length === 0) {
-    drawCtx.clearRect(0, 0, W, H);
-    return;
-  }
-  const snap = historyStack.pop();
-  drawCtx.clearRect(0, 0, W, H);
-  if (snap) {
-    drawCtx.putImageData(snap.data, snap.x, snap.y);
-  }
+  if (historyIndex < 0) return;
+  historyIndex -= 1;
+  restoreHistoryTop();
+}
+
+function redoLast() {
+  if (historyIndex >= historyStack.length - 1) return;
+  historyIndex += 1;
+  restoreHistoryTop();
+}
+
+/** 物理像素化：CSS 坐标 × scaleFactor（≈DPR），与 Snipaste 显示真实屏幕像素一致 */
+function physPx(css) {
+  const sf = scaleFactor && scaleFactor > 0 ? scaleFactor : 1;
+  return Math.round(css * sf);
 }
 
 function updateSizeInfo(mx, my) {
   if (state === STATE.IDLE) {
-    sizeInfo.style.display = 'none';
-    return;
-  }
-  if (state === STATE.SELECTED || state === STATE.MOVING || state === STATE.RESIZING || state === STATE.ANNOTATING) {
+    // 空闲跟随：显示光标物理坐标（Snipaste 风格信息条）
     sizeInfo.style.display = 'block';
-    sizeInfo.textContent = `${Math.round(selW * scaleFactor)} × ${Math.round(selH * scaleFactor)}`;
-    sizeInfo.style.left = `${selX}px`;
-    sizeInfo.style.top = `${Math.max(selY - 24, 0)}px`;
+    sizeInfo.textContent = `${physPx(mx)}, ${physPx(my)}`;
+    sizeInfo.style.left = `${Math.min(mx + 12, W - 90)}px`;
+    sizeInfo.style.top = `${Math.min(my + 12, H - 28)}px`;
     return;
   }
-  sizeInfo.style.display = 'block';
-  sizeInfo.textContent = `${mx}, ${my}`;
-  sizeInfo.style.left = `${Math.min(mx + 12, W - 80)}px`;
-  sizeInfo.style.top = `${Math.min(my + 12, H - 28)}px`;
+  if (state === STATE.SELECTED || state === STATE.MOVING || state === STATE.RESIZING || state === STATE.ANNOTATING || state === STATE.DRAWING) {
+    sizeInfo.style.display = 'block';
+    sizeInfo.textContent = `${physPx(selW)} × ${physPx(selH)}  (${physPx(selX)}, ${physPx(selY)})`;
+    sizeInfo.style.left = `${selX}px`;
+    sizeInfo.style.top = `${Math.max(selY - 26, 0)}px`;
+    return;
+  }
+}
+
+/**
+ * Snipaste 式像素放大镜：固定倍数、像素网格、整数像素对齐采样。
+ * @description 采样源为 bgCanvas（物理分辨率 backing，1:1 还原各显示器）；
+ * 以光标所在物理像素为中心，取整数个源像素放大，避免亚像素插值产生的模糊。
+ * @param mx - 鼠标 CSS x（窗口内）
+ * @param my - 鼠标 CSS y（窗口内）
+ */
+function updateMagnifier(mx, my) {
+  if (!magnifier || !magnifierCanvas || !magnifierCtx || !bgImage) return;
+  const dpr = window.devicePixelRatio || 1;
+  const css = MAGNIFIER_SIZE;
+  const zoom = MAGNIFIER_ZOOM;
+  const physical = Math.round(css * dpr);
+
+  if (magnifierCanvas.width !== physical) {
+    magnifierCanvas.width = physical;
+    magnifierCanvas.height = physical;
+  }
+  magnifierCtx.setTransform(1, 0, 0, 1, 0, 0);
+  magnifierCtx.imageSmoothingEnabled = false;
+  magnifierCtx.clearRect(0, 0, physical, physical);
+
+  // 光标所在物理像素（对齐到整数）
+  const cxPhys = Math.round(mx * dpr);
+  const cyPhys = Math.round(my * dpr);
+  // 每边源像素数 = MAGNIFIER_SIZE / zoom（整数），源跨度物理像素 = 每边源像素 × dpr
+  const srcPixels = MAGNIFIER_SIZE / MAGNIFIER_ZOOM;
+  const srcSpan = Math.round(srcPixels * dpr);
+  const srcHalf = Math.floor(srcSpan / 2);
+  const sx = cxPhys - srcHalf;
+  const sy = cyPhys - srcHalf;
+
+  // 从 bgCanvas（物理 backing）采样 → 目标物理画布（每源像素正好 zoom×dpr 物理像素），最近邻放大
+  magnifierCtx.drawImage(bgCanvas, sx, sy, srcSpan, srcSpan, 0, 0, physical, physical);
+
+  // 像素网格：按每个源像素 = zoom*dpr 物理像素的位置画线（Snipaste 风格）
+  const cell = zoom * dpr;
+  magnifierCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+  magnifierCtx.lineWidth = 1;
+  magnifierCtx.beginPath();
+  for (let i = 1; i < zoom; i++) {
+    const p = Math.round(i * cell) + 0.5;
+    magnifierCtx.moveTo(p, 0);
+    magnifierCtx.lineTo(p, physical);
+    magnifierCtx.moveTo(0, p);
+    magnifierCtx.lineTo(physical, p);
+  }
+  magnifierCtx.stroke();
+
+  // 中心十字线（定位当前光标像素）
+  magnifierCtx.strokeStyle = 'rgba(255,255,255,.95)';
+  magnifierCtx.lineWidth = 1;
+  const hcx = physical / 2 + 0.5;
+  const hcy = physical / 2 + 0.5;
+  magnifierCtx.beginPath();
+  magnifierCtx.moveTo(hcx, 0);
+  magnifierCtx.lineTo(hcx, physical);
+  magnifierCtx.moveTo(0, hcy);
+  magnifierCtx.lineTo(physical, hcy);
+  magnifierCtx.stroke();
+
+  // 定位：默认显示在光标右下，越界自动翻转到左侧/上方
+  const boxW = magnifier.offsetWidth || css;
+  const boxH = magnifier.offsetHeight || css;
+  let left = mx + 18;
+  let top = my + 18;
+  if (left + boxW > window.innerWidth - 4) left = mx - boxW - 18;
+  if (top + boxH > window.innerHeight - 4) top = my - boxH - 18;
+  left = Math.max(4, Math.min(left, window.innerWidth - boxW - 4));
+  top = Math.max(4, Math.min(top, window.innerHeight - boxH - 4));
+  magnifier.style.left = `${Math.round(left)}px`;
+  magnifier.style.top = `${Math.round(top)}px`;
+}
+
+function showMagnifier(mx, my) {
+  if (!magnifier || !bgImage) return;
+  magnifier.style.display = 'block';
+  updateMagnifier(mx, my);
+}
+
+function hideMagnifier() {
+  if (magnifier) magnifier.style.display = 'none';
 }
 
 function setCaptureSource(source) {
@@ -653,8 +836,18 @@ function loadImage(src) {
 
 async function renderSelectionImage(dataUrl) {
   const image = await loadImage(dataUrl);
+  const dpr = canvasDpr;
   drawCtx.clearRect(selX, selY, selW, selH);
-  drawCtx.drawImage(image, selX, selY, selW, selH);
+  // 译文图可能与选区物理尺寸相同（本地服务）或逻辑尺寸（旧服务端）。
+  // 以选区物理尺寸为基准，让图片在高分屏下 1:1 绘制而不被额外拉伸。
+  const expectedPhysW = Math.round(selW * dpr);
+  const expectedPhysH = Math.round(selH * dpr);
+  if (Math.abs(image.naturalWidth - expectedPhysW) <= 2 && Math.abs(image.naturalHeight - expectedPhysH) <= 2) {
+    drawCtx.drawImage(image, selX, selY, selW, selH);
+  } else {
+    // 非高清图：直接按物理像素铺满选区（牺牲一点锐利度，但保证覆盖完整）
+    drawCtx.drawImage(image, selX * dpr, selY * dpr, expectedPhysW, expectedPhysH);
+  }
   activeTool = 'select';
   Array.from(document.querySelectorAll('button.tool')).forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tool === 'select');
@@ -684,9 +877,12 @@ function setTool(tool) {
 
 function getMergedCanvas() {
   const merged = document.createElement('canvas');
-  merged.width = W;
-  merged.height = H;
+  const dpr = canvasDpr;
+  merged.width = Math.round(W * dpr);
+  merged.height = Math.round(H * dpr);
   const mctx = merged.getContext('2d');
+  mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  mctx.imageSmoothingEnabled = false;
   mctx.drawImage(bgCanvas, 0, 0);
   mctx.drawImage(drawCanvas, 0, 0);
   return merged;
@@ -718,7 +914,8 @@ function applyMosaic(x1, y1, x2, y2) {
 
   const merged = getMergedCanvas();
   const srcCtx = merged.getContext('2d');
-  const imageData = srcCtx.getImageData(rx, ry, rw, rh);
+  const dpr = canvasDpr;
+  const imageData = srcCtx.getImageData(Math.round(rx * dpr), Math.round(ry * dpr), Math.round(rw * dpr), Math.round(rh * dpr));
   const data = imageData.data;
 
   for (let yy = 0; yy < rh; yy += block) {
@@ -742,7 +939,7 @@ function applyMosaic(x1, y1, x2, y2) {
     }
   }
 
-  drawCtx.putImageData(imageData, rx, ry);
+  drawCtx.putImageData(imageData, Math.round(rx * dpr), Math.round(ry * dpr));
 }
 
 function drawLine(ctx, x1, y1, x2, y2) {
@@ -764,6 +961,75 @@ function drawRect(ctx, x1, y1, x2, y2) {
   ctx.strokeStyle = drawingColor;
   ctx.lineWidth = drawingSize;
   ctx.strokeRect(x, y, w, h);
+}
+
+/** 箭头：直线 + 末端双斜线箭头 */
+function drawArrow(ctx, x1, y1, x2, y2) {
+  drawLine(ctx, x1, y1, x2, y2);
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const head = Math.max(10, drawingSize * 3);
+  const a1 = angle + Math.PI * 0.75;
+  const a2 = angle - Math.PI * 0.75;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 + head * Math.cos(a1), y2 + head * Math.sin(a1));
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 + head * Math.cos(a2), y2 + head * Math.sin(a2));
+  ctx.stroke();
+}
+
+/** 椭圆描边 */
+function drawEllipse(ctx, x1, y1, x2, y2) {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const rx = Math.abs(x2 - x1) / 2;
+  const ry = Math.abs(y2 - y1) / 2;
+  ctx.strokeStyle = drawingColor;
+  ctx.lineWidth = drawingSize;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+/** 高斯模糊：对选区区域应用模糊（替代/补充马赛克） */
+function applyBlur(x1, y1, x2, y2) {
+  const x = Math.min(x1, x2);
+  const y = Math.min(y1, y2);
+  const w = Math.abs(x2 - x1);
+  const h = Math.abs(y2 - y1);
+  if (w < 2 || h < 2) return;
+  const rx = Math.max(selX, x);
+  const ry = Math.max(selY, y);
+  const rr = Math.min(selX + selW, x + w);
+  const rb = Math.min(selY + selH, y + h);
+  if (rr - rx < 2 || rb - ry < 2) return;
+  const rw = rr - rx;
+  const rh = rb - ry;
+  const merged = getMergedCanvas();
+  const dpr = canvasDpr;
+  const tmp = document.createElement('canvas');
+  tmp.width = Math.round(rw * dpr);
+  tmp.height = Math.round(rh * dpr);
+  const tctx = tmp.getContext('2d');
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tctx.filter = `blur(${Math.max(2, drawingSize)}px)`;
+  tctx.drawImage(merged, rx, ry, rw, rh, 0, 0, rw, rh);
+  tctx.filter = 'none';
+  drawCtx.drawImage(tmp, rx, ry);
+}
+
+/** 取色：返回点击位置的颜色 hex（#RRGGBB） */
+function pickColorAt(mx, my) {
+  const merged = getMergedCanvas();
+  const ctx = merged.getContext('2d');
+  const dpr = canvasDpr;
+  const px = Math.max(0, Math.min(Math.round(mx * dpr), merged.width - 1));
+  const py = Math.max(0, Math.min(Math.round(my * dpr), merged.height - 1));
+  const d = ctx.getImageData(px, py, 1, 1).data;
+  const r = d[0].toString(16).padStart(2, '0');
+  const g = d[1].toString(16).padStart(2, '0');
+  const b = d[2].toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`.toUpperCase();
 }
 
 function finishSelection(mx, my) {
@@ -795,13 +1061,15 @@ function finishSelection(mx, my) {
  */
 function cropSelectionWithAnnotations() {
   if (!bgImage || selW < 2 || selH < 2) return null;
+  const dpr = canvasDpr;
 
   const usesCompositedBackground = Boolean(
     captureVirtualScreen && capturePhysicalScreen && captureDisplays.length > 0,
   );
   const sourceCanvas = usesCompositedBackground ? bgCanvas : bgImage;
-  const scaleX = usesCompositedBackground ? 1 : bgImage.naturalWidth / W;
-  const scaleY = usesCompositedBackground ? 1 : bgImage.naturalHeight / H;
+  // 输出采用物理分辨率：保存/复制的截图与屏幕原始清晰度一致
+  const scaleX = usesCompositedBackground ? dpr : bgImage.naturalWidth / (W * dpr);
+  const scaleY = usesCompositedBackground ? dpr : bgImage.naturalHeight / (H * dpr);
 
   const sx = Math.round(selX * scaleX);
   const sy = Math.round(selY * scaleY);
@@ -812,6 +1080,7 @@ function cropSelectionWithAnnotations() {
   outCanvas.width = sw;
   outCanvas.height = sh;
   const outCtx = outCanvas.getContext('2d');
+  outCtx.imageSmoothingEnabled = false;
 
   outCtx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
 
@@ -819,7 +1088,7 @@ function cropSelectionWithAnnotations() {
   scaledDraw.width = sw;
   scaledDraw.height = sh;
   const sctx = scaledDraw.getContext('2d');
-  sctx.drawImage(drawCanvas, selX, selY, selW, selH, 0, 0, sw, sh);
+  sctx.drawImage(drawCanvas, Math.round(selX * dpr), Math.round(selY * dpr), sw, sh, 0, 0, sw, sh);
   outCtx.drawImage(scaledDraw, 0, 0);
 
   return outCanvas.toDataURL('image/png');
@@ -841,10 +1110,12 @@ function releaseCaptureResources() {
   captureVirtualScreen = null;
   capturePhysicalScreen = null;
 
-  [bgCanvas, drawCanvas, tempCanvas, maskCanvas].forEach((cv) => {
+  [bgCanvas, drawCanvas, tempCanvas].forEach((cv) => {
     cv.width = 0;
     cv.height = 0;
   });
+  if (captureHole) captureHole.style.display = 'none';
+  if (captureHandles) captureHandles.style.display = 'none';
 }
 
 ipcRenderer.on('capture-image', (_e, data) => {
@@ -855,6 +1126,7 @@ ipcRenderer.on('capture-image', (_e, data) => {
   capturePhysicalScreen = data.physicalScreen || null;
   setCaptureSource(data.captureSource);
   setVisibleWindowRects(data.visibleWindows, captureVirtualScreen);
+  const isExternal = data.externalCapture === true;
 
   if (currentCaptureObjectUrl) {
     URL.revokeObjectURL(currentCaptureObjectUrl);
@@ -876,6 +1148,18 @@ ipcRenderer.on('capture-image', (_e, data) => {
   img.onload = () => {
     bgImage = img;
     initCanvases();
+
+    if (isExternal) {
+      // 外调 Snipaste 返回的已是裁剪图：直接作为全图选区进入后处理态，复用 OCR/翻译/保存
+      selX = 0;
+      selY = 0;
+      selW = W;
+      selH = H;
+      state = STATE.SELECTED;
+      showToolbar();
+      drawMask();
+      updateSizeInfo(0, 0);
+    }
 
     if (currentCaptureObjectUrl) {
       URL.revokeObjectURL(currentCaptureObjectUrl);
@@ -946,12 +1230,37 @@ tempCanvas.addEventListener('mousedown', (e) => {
 
   if (state === STATE.SELECTED && activeTool !== 'select' && isInsideSelection(mx, my)) {
     resetTranslationCache();
+    if (activeTool === 'text') {
+      const text = window.prompt(tCapture('captureInputText') || '输入文字');
+      if (text) {
+        drawCtx.save();
+        drawCtx.fillStyle = drawingColor;
+        drawCtx.font = `${Math.max(14, drawingSize * 4)}px sans-serif`;
+        drawCtx.textBaseline = 'top';
+        drawCtx.fillText(text, mx, my);
+        drawCtx.restore();
+        commitHistory();
+      }
+      // 保留工具栏可见，便于连续添加文字（与取色器等单击工具一致）
+      return;
+    }
+    if (activeTool === 'picker') {
+      const color = pickColorAt(mx, my);
+      if (color) {
+        clipboard.writeText(color);
+        sizeInfo.textContent = color;
+        sizeInfo.style.display = 'block';
+        sizeInfo.style.left = `${mx}px`;
+        sizeInfo.style.top = `${Math.max(my - 24, 0)}px`;
+        window.setTimeout(() => { sizeInfo.style.display = 'none'; }, 1200);
+      }
+      return;
+    }
     state = STATE.ANNOTATING;
     annotStartX = mx;
     annotStartY = my;
     penLastX = mx;
     penLastY = my;
-    pushHistory();
     hideToolbar();
     if (activeTool === 'pen') {
       clipToSelection(drawCtx);
@@ -961,11 +1270,28 @@ tempCanvas.addEventListener('mousedown', (e) => {
   }
 });
 
-tempCanvas.addEventListener('mousemove', (e) => {
-  if (isCaptureBusy()) return;
-  const mx = e.clientX;
-  const my = e.clientY;
+/**
+ * mousemove 的 RAF 节流调度器
+ * @description mousemove 事件可达 125~500Hz，直接处理会反复全屏重绘/放大镜采样导致卡顿。
+ * 统一缓存最新坐标，在下一帧（~60Hz）合并处理一次；同一帧内多次移动只消费一次。
+ */
+let pendingMouseX = 0;
+let pendingMouseY = 0;
+let hasScheduledMouseFrame = false;
 
+function scheduleMouseMove(mx, my) {
+  pendingMouseX = mx;
+  pendingMouseY = my;
+  if (hasScheduledMouseFrame) return;
+  hasScheduledMouseFrame = true;
+  requestAnimationFrame(() => {
+    hasScheduledMouseFrame = false;
+    if (isCaptureBusy()) return;
+    handleMouseMove(pendingMouseX, pendingMouseY);
+  });
+}
+
+function handleMouseMove(mx, my) {
   if (state === STATE.IDLE) {
     const nextHoverWindow = findWindowRectAt(mx, my);
     if (nextHoverWindow !== hoverWindowRect) {
@@ -973,6 +1299,8 @@ tempCanvas.addEventListener('mousemove', (e) => {
       drawMask();
     }
     document.body.style.cursor = 'crosshair';
+    updateSizeInfo(mx, my);
+    showMagnifier(mx, my);
     return;
   }
 
@@ -983,6 +1311,7 @@ tempCanvas.addEventListener('mousemove', (e) => {
     selH = Math.abs(my - startY);
     drawMask();
     updateSizeInfo(mx, my);
+    showMagnifier(mx, my);
     return;
   }
 
@@ -991,6 +1320,7 @@ tempCanvas.addEventListener('mousemove', (e) => {
     selY = Math.max(0, Math.min(my - moveOffY, H - selH));
     drawMask();
     updateSizeInfo(mx, my);
+    showMagnifier(mx, my);
     return;
   }
 
@@ -1013,6 +1343,7 @@ tempCanvas.addEventListener('mousemove', (e) => {
     selH = newH;
     drawMask();
     updateSizeInfo(mx, my);
+    showMagnifier(mx, my);
     return;
   }
 
@@ -1030,7 +1361,11 @@ tempCanvas.addEventListener('mousemove', (e) => {
         drawLine(tempCtx, annotStartX, annotStartY, mx, my);
       } else if (activeTool === 'rect') {
         drawRect(tempCtx, annotStartX, annotStartY, mx, my);
-      } else if (activeTool === 'mosaic') {
+      } else if (activeTool === 'arrow') {
+        drawArrow(tempCtx, annotStartX, annotStartY, mx, my);
+      } else if (activeTool === 'ellipse') {
+        drawEllipse(tempCtx, annotStartX, annotStartY, mx, my);
+      } else if (activeTool === 'mosaic' || activeTool === 'blur') {
         tempCtx.strokeStyle = '#ffffff';
         tempCtx.setLineDash([6, 3]);
         tempCtx.lineWidth = 1;
@@ -1058,6 +1393,10 @@ tempCanvas.addEventListener('mousemove', (e) => {
   }
 
   updateSizeInfo(mx, my);
+}
+
+tempCanvas.addEventListener('mousemove', (e) => {
+  scheduleMouseMove(e.clientX, e.clientY);
 });
 
 tempCanvas.addEventListener('mouseup', (e) => {
@@ -1066,6 +1405,7 @@ tempCanvas.addEventListener('mouseup', (e) => {
   const my = e.clientY;
 
   if (state === STATE.DRAWING) {
+    hideMagnifier();
     const moved = Math.abs(mx - startX) >= 3 || Math.abs(my - startY) >= 3;
     if (!moved && pendingWindowClickRect) {
       selectWindowRect(pendingWindowClickRect);
@@ -1092,16 +1432,17 @@ tempCanvas.addEventListener('mouseup', (e) => {
       drawLine(drawCtx, annotStartX, annotStartY, mx, my);
     } else if (activeTool === 'rect') {
       drawRect(drawCtx, annotStartX, annotStartY, mx, my);
+    } else if (activeTool === 'arrow') {
+      drawArrow(drawCtx, annotStartX, annotStartY, mx, my);
+    } else if (activeTool === 'ellipse') {
+      drawEllipse(drawCtx, annotStartX, annotStartY, mx, my);
+    } else if (activeTool === 'blur') {
+      applyBlur(annotStartX, annotStartY, mx, my);
     } else if (activeTool === 'mosaic') {
-      restoreClip(drawCtx);
       applyMosaic(annotStartX, annotStartY, mx, my);
-      state = STATE.SELECTED;
-      showToolbar();
-      drawMask();
-      updateSizeInfo(mx, my);
-      return;
     }
     restoreClip(drawCtx);
+    commitHistory();
     state = STATE.SELECTED;
     showToolbar();
     drawMask();
@@ -1125,6 +1466,26 @@ btnUndo.addEventListener('click', () => {
   undoLast();
 });
 
+const btnRedo = document.getElementById('btnRedo');
+if (btnRedo) {
+  btnRedo.addEventListener('click', () => {
+    if (state !== STATE.SELECTED) return;
+    resetTranslationCache();
+    redoLast();
+    drawMask();
+  });
+}
+
+// Snipaste 式双击：选区就绪后，双击选区内部 = 完成（复制到剪贴板并关闭）
+tempCanvas.addEventListener('dblclick', (e) => {
+  if (isCaptureBusy() || state !== STATE.SELECTED) return;
+  const mx = e.clientX;
+  const my = e.clientY;
+  if (!isInsideSelection(mx, my)) return;
+  const dataURL = cropSelectionWithAnnotations();
+  if (dataURL) ipcRenderer.send('capture-complete', { dataURL });
+});
+
 document.getElementById('btnCopy').addEventListener('click', () => {
   const dataURL = cropSelectionWithAnnotations();
   if (dataURL) ipcRenderer.send('capture-complete', { dataURL });
@@ -1144,14 +1505,15 @@ btnOcr.addEventListener('click', async () => {
 
   try {
     let result;
-    if (ocrEngine === 'local') {
-      result = await ipcRenderer.invoke('capture-ocr-local', { dataURL: image });
-    } else {
+    if (ocrEngine === 'server') {
       const token = await ipcRenderer.invoke('store:read', 'user-account-token');
       if (typeof token !== 'string' || !token.trim()) {
         throw new Error(tCapture('ocrLoginRequired'));
       }
       result = await ipcRenderer.invoke('capture-ocr', { dataURL: image, token });
+    } else {
+      // 本机 OCR：local=Tesseract.js / paddleocr=本机 PaddleOCR（均由主进程按配置分流）
+      result = await ipcRenderer.invoke('capture-ocr-local', { dataURL: image });
     }
     if (!result?.success) {
       const errorCode = result?.code;
@@ -1212,22 +1574,32 @@ btnTranslate.addEventListener('click', async () => {
   showTranslateOverlay(tCapture('translating'));
 
   try {
-    const token = await ipcRenderer.invoke('store:read', 'user-account-token');
-    if (typeof token !== 'string' || !token.trim()) {
-      throw new Error(tCapture('loginRequired'));
-    }
     const [storedSourceLang, storedTargetLang] = await Promise.all([
       ipcRenderer.invoke('store:read', 'screenshot-translate-source-lang'),
       ipcRenderer.invoke('store:read', 'screenshot-translate-target-lang'),
     ]);
     const sourceLanguage = typeof storedSourceLang === 'string' && storedSourceLang ? storedSourceLang : 'auto';
     const targetLanguage = typeof storedTargetLang === 'string' && storedTargetLang ? storedTargetLang : 'en';
-    const result = await ipcRenderer.invoke('capture-translate', {
-      dataURL: originalImage,
-      token,
-      sourceLanguage,
-      targetLanguage,
-    });
+
+    let result;
+    if (translateEngine === 'local') {
+      // 本机 Hy-MT2 图片内翻译：无需账号 / 验证码
+      result = await ipcRenderer.invoke('capture-translate-local', {
+        dataURL: originalImage,
+        targetLanguage,
+      });
+    } else {
+      const token = await ipcRenderer.invoke('store:read', 'user-account-token');
+      if (typeof token !== 'string' || !token.trim()) {
+        throw new Error(tCapture('loginRequired'));
+      }
+      result = await ipcRenderer.invoke('capture-translate', {
+        dataURL: originalImage,
+        token,
+        sourceLanguage,
+        targetLanguage,
+      });
+    }
     if (!result?.success || !result.translatedImage) {
       const errorCode = result?.code;
       const fallbackMsg = errorCode && tCapture(errorCode) !== errorCode
@@ -1235,7 +1607,9 @@ btnTranslate.addEventListener('click', async () => {
         : tCapture('translateFailed');
       throw new Error(result?.message || fallbackMsg);
     }
-    pushHistory();
+    // 先把「原文」状态快照入历史栈（旧代码误调未定义的 pushHistory()，会导致
+    // 翻译成功也抛 ReferenceError 走 catch → 永远提示失败），随后绘制译文。
+    commitHistory();
     await renderSelectionImage(result.translatedImage);
     translationCache = {
       originalImage,

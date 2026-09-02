@@ -29,9 +29,29 @@
 <canvas class="capture-canvas capture-bg-canvas" id="bg-canvas"></canvas>
 <canvas class="capture-canvas capture-draw-canvas" id="draw-canvas"></canvas>
 <canvas class="capture-canvas capture-temp-canvas" id="temp-canvas"></canvas>
-<canvas class="capture-canvas capture-mask-canvas" id="mask-canvas"></canvas>
+
+<!-- 遮罩：单 div 挖洞（选区为洞）+ 超大 box-shadow 形成四周遮罩；兼作选区高亮边框 -->
+<div class="capture-hole" id="captureHole"></div>
+
+<!-- 选区 8 方向 resize 手柄（纯 DOM，GPU 合成，不参与 canvas 重绘） -->
+<div class="capture-handles" id="captureHandles">
+  <span class="capture-handle" data-pos="tl"></span>
+  <span class="capture-handle" data-pos="t"></span>
+  <span class="capture-handle" data-pos="tr"></span>
+  <span class="capture-handle" data-pos="r"></span>
+  <span class="capture-handle" data-pos="br"></span>
+  <span class="capture-handle" data-pos="b"></span>
+  <span class="capture-handle" data-pos="bl"></span>
+  <span class="capture-handle" data-pos="l"></span>
+</div>
 
 <div class="capture-size-info" id="size-info"></div>
+
+<div class="capture-magnifier" id="magnifier">
+  <canvas class="capture-magnifier-canvas" id="magnifier-canvas"></canvas>
+</div>
+
+<div class="capture-hint" id="captureHint" data-i18n="captureHint">拖拽框选截图区域 · 悬停窗口可快速选中 · Enter 完成 · Esc 取消</div>
 
 <div class="capture-translate-overlay" id="translateOverlay" role="status" aria-live="polite">
   <span class="capture-translate-spinner" aria-hidden="true"></span>
@@ -70,6 +90,24 @@
   <button class="tool" data-tool="pen" data-i18n-title="pen" data-i18n-aria-label="pen" title="画笔" aria-label="画笔">
     <img class="capture-btn-icon" src="./svg/PAINTBRUSH.svg" alt="" aria-hidden="true">
   </button>
+  <button class="tool" data-tool="arrow" title="箭头" aria-label="箭头">
+    <img class="capture-btn-icon" src="./svg/ARROW.svg" alt="" aria-hidden="true">
+  </button>
+  <button class="tool" data-tool="ellipse" title="椭圆" aria-label="椭圆">
+    <img class="capture-btn-icon" src="./svg/ELLIPSE.svg" alt="" aria-hidden="true">
+  </button>
+  <button class="tool" data-tool="text" title="文字" aria-label="文字">
+    <img class="capture-btn-icon" src="./svg/TEXT.svg" alt="" aria-hidden="true">
+  </button>
+  <button class="tool" data-tool="blur" title="模糊" aria-label="模糊">
+    <img class="capture-btn-icon" src="./svg/BLUR.svg" alt="" aria-hidden="true">
+  </button>
+  <button class="tool" data-tool="picker" title="取色" aria-label="取色">
+    <img class="capture-btn-icon" src="./svg/PICKER.svg" alt="" aria-hidden="true">
+  </button>
+  <button class="capture-btn-undo" id="btnRedo" title="重做" aria-label="重做">
+    <img class="capture-btn-icon" src="./svg/REDO.svg" alt="" aria-hidden="true">
+  </button>
   <button class="capture-btn-undo" id="btnUndo" data-i18n-title="undo" data-i18n-aria-label="undo" title="撤销" aria-label="撤销">
     <img class="capture-btn-icon" src="./svg/UNDO.svg" alt="" aria-hidden="true">
   </button>
@@ -94,7 +132,7 @@
   </button>
   <button id="btnTranslate">
     <img class="capture-btn-icon" src="./svg/TRANSLATION.svg" alt="" aria-hidden="true">
-    <img class="capture-btn-icon capture-pro-icon" src="./svg/PRO.svg" alt="Pro">
+    <img class="capture-btn-icon capture-pro-icon capture-translate-pro-icon" src="./svg/PRO.svg" alt="Pro">
     <span id="btnTranslateLabel" data-i18n="translate">图片翻译</span>
   </button>
   <button id="btnSave" data-i18n-title="save" data-i18n-aria-label="save" title="保存" aria-label="保存">

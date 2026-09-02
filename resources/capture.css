@@ -52,10 +52,53 @@ body {
   z-index: 2;
 }
 
-.capture-mask-canvas {
+/* 遮罩：挖洞 div（洞区域透明）+ 超大 box-shadow 形成四周半透明遮罩 */
+.capture-hole {
+  position: fixed;
   z-index: 3;
+  display: none;
+  pointer-events: none;
+  background: transparent;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .35);
+  outline: 1.5px solid #409cff;
+}
+
+.capture-hole.is-full {
+  background: rgba(0, 0, 0, .35);
+  box-shadow: none;
+  outline: none;
+}
+
+.capture-hole.is-deep {
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .46);
+  outline: 1.5px solid #409cff;
+}
+
+/* 选区 8 方向手柄（随 captureHandles 容器定位自动分布到角/边中点） */
+.capture-handles {
+  position: fixed;
+  z-index: 4;
+  display: none;
   pointer-events: none;
 }
+
+.capture-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1.5px solid #fff;
+  background: #409cff;
+}
+
+.capture-handle[data-pos="tl"] { left: 0; top: 0; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="t"]  { left: 50%; top: 0; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="tr"] { left: 100%; top: 0; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="r"]  { left: 100%; top: 50%; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="br"] { left: 100%; top: 100%; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="b"]  { left: 50%; top: 100%; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="bl"] { left: 0; top: 100%; transform: translate(-50%, -50%); }
+.capture-handle[data-pos="l"]  { left: 0; top: 50%; transform: translate(-50%, -50%); }
 
 .capture-size-info {
   position: fixed;
@@ -302,4 +345,47 @@ body {
 .capture-pro-icon {
   filter: none;
   opacity: 1;
+}
+
+/* Snipaste 式像素放大镜：拖动框选时跟随鼠标，固定放大倍数 */
+.capture-magnifier {
+  position: fixed;
+  z-index: 25;
+  display: none;
+  width: 184px; /* border-box：内容区 182px + 1px 边框 */
+  height: 184px;
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: 6px;
+  pointer-events: none;
+  background: rgba(0, 0, 0, .88);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .55);
+}
+
+.capture-magnifier-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  background: #111;
+}
+
+/* 初始选区引导提示（IDLE 状态显示） */
+.capture-hint {
+  position: fixed;
+  z-index: 22;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font: 12px/1.4 system-ui, sans-serif;
+  color: rgba(255, 255, 255, .92);
+  white-space: nowrap;
+  pointer-events: none;
+  background: rgba(0, 0, 0, .55);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .3);
 }

@@ -134,8 +134,24 @@ export const DEFAULT_QUIT_HOTKEY = 'Alt+C';
 
 /** 默认截图快捷键 */
 export const DEFAULT_SCREENSHOT_HOTKEY = 'Alt+A';
-import { SCREENSHOT_ENGINE_STORE_KEY, type ScreenshotEngine } from '../../shared/storeKeys';
-export { SCREENSHOT_ENGINE_STORE_KEY, type ScreenshotEngine };
+import {
+  SCREENSHOT_ENGINE_STORE_KEY,
+  SCREENSHOT_OCR_ENGINE_STORE_KEY,
+  SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY,
+  SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY,
+  type ScreenshotEngine,
+  type ScreenshotOcrEngine,
+  type ScreenshotTranslateEngine,
+} from '../../shared/storeKeys';
+export {
+  SCREENSHOT_ENGINE_STORE_KEY,
+  SCREENSHOT_OCR_ENGINE_STORE_KEY,
+  SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY,
+  SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY,
+  type ScreenshotEngine,
+  type ScreenshotOcrEngine,
+  type ScreenshotTranslateEngine,
+};
 
 /** 默认切歌快捷键（空表示默认不设置） */
 export const DEFAULT_NEXT_SONG_HOTKEY = '';
@@ -400,6 +416,37 @@ export function readScreenshotHotkeyConfig(): string {
 export function readScreenshotEngineConfig(): ScreenshotEngine {
   const data = readJsonFile(SCREENSHOT_ENGINE_STORE_KEY);
   return data === 'js' ? 'js' : 'plugin';
+}
+
+/** 本地 OCR 服务目录默认值（local_capture_service.py 所在目录） */
+export const DEFAULT_LOCAL_OCR_DIR = 'F:\\Work\\Create\\OCR';
+
+/**
+ * 读取 OCR 引擎偏好：local=Tesseract.js(秒开) / paddleocr=本机 PaddleOCR(高精度) / server=服务端
+ * @returns 默认 'local'（本机 Tesseract 秒开，PaddleOCR 作为可选高精度档）
+ */
+export function readScreenshotOcrEngineConfig(): ScreenshotOcrEngine {
+  const data = readJsonFile(SCREENSHOT_OCR_ENGINE_STORE_KEY);
+  if (data === 'paddleocr' || data === 'server' || data === 'local') return data;
+  return 'local';
+}
+
+/**
+ * 读取截图翻译引擎偏好：local=本机 Hy-MT2 / server=服务端
+ * @returns 默认 'local'（本机免费翻译，无需账号）
+ */
+export function readScreenshotTranslateEngineConfig(): ScreenshotTranslateEngine {
+  const data = readJsonFile(SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY);
+  return data === 'server' ? 'server' : 'local';
+}
+
+/**
+ * 读取本地 OCR/翻译服务目录（local_capture_service.py 所在目录）
+ * @returns 路径字符串，留空表示使用 DEFAULT_LOCAL_OCR_DIR
+ */
+export function readScreenshotLocalOcrDirConfig(): string {
+  const data = readJsonFile(SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY);
+  return typeof data === 'string' && data.trim() ? data.trim() : DEFAULT_LOCAL_OCR_DIR;
 }
 
 /**

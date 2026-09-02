@@ -32,11 +32,19 @@ import { capturePrimaryDisplayPng } from '../../window/screenshotHelper';
 import { recognizeCaptureTextLocally } from '../../services/captureLocalOcrService';
 import { recognizeCaptureText } from '../../services/captureOcrService';
 import { translateCaptureImage } from '../../services/imageTranslationService';
+import {
+  recognizeWithPaddleOcr,
+  translateWithLocalMt,
+} from '../../services/localOcrMtService';
+import {
+  readScreenshotOcrEngineConfig,
+  readScreenshotTranslateEngineConfig,
+} from '../../config/storeConfig';
 
 interface RegisterCaptureIpcHandlersOptions {
   getCaptureWindow: () => BrowserWindow | null;
   closeCaptureWindow: () => void;
-  startRegionScreenshot: () => Promise<void>;
+  triggerScreenshot: () => Promise<void>;
 }
 
 /**
@@ -47,7 +55,7 @@ interface RegisterCaptureIpcHandlersOptions {
 export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOptions): void {
   ipcMain.handle('system:screenshot:region:start', async () => {
     try {
-      await options.startRegionScreenshot();
+      await options.triggerScreenshot();
       return true;
     } catch (err) {
       console.error('[System] start region screenshot error:', err);
@@ -98,6 +106,13 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
     const abort = (): void => controller.abort();
     event.sender.once('destroyed', abort);
     try {
+      // 本机 OCR：local=Tesseract.js(秒开) / paddleocr=本机 PaddleOCR(高精度)
+      if (readScreenshotOcrEngineConfig() === 'paddleocr') {
+        return await recognizeWithPaddleOcr(
+          typeof payload?.dataURL === 'string' ? payload.dataURL : '',
+          controller.signal,
+        );
+      }
       return await recognizeCaptureTextLocally(
         typeof payload?.dataURL === 'string' ? payload.dataURL : '',
         controller.signal,
@@ -149,6 +164,29 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
         typeof payload?.token === 'string' ? payload.token : '',
         typeof payload?.dataURL === 'string' ? payload.dataURL : '',
         typeof payload?.sourceLanguage === 'string' && payload.sourceLanguage ? payload.sourceLanguage : 'auto',
+        typeof payload?.targetLanguage === 'string' && payload.targetLanguage ? payload.targetLanguage : 'zh',
+        controller.signal,
+      );
+    } finally {
+      event.sender.removeListener('destroyed', abort);
+    }
+  });
+
+  ipcMain.handle('capture-translate-local', async (event, payload: {
+    dataURL: string;
+    targetLanguage: string;
+  }) => {
+    const captureWindow = options.getCaptureWindow();
+    if (!captureWindow || captureWindow.isDestroyed() || event.sender.id !== captureWindow.webContents.id) {
+      return { success: false, code: 'captureWindowClosed' };
+    }
+
+    const controller = new AbortController();
+    const abort = (): void => controller.abort();
+    event.sender.once('destroyed', abort);
+    try {
+      return await translateWithLocalMt(
+        typeof payload?.dataURL === 'string' ? payload.dataURL : '',
         typeof payload?.targetLanguage === 'string' && payload.targetLanguage ? payload.targetLanguage : 'zh',
         controller.signal,
       );

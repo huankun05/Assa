@@ -25,7 +25,7 @@
  * @author 鸡哥
  */
 
-import { app, BrowserWindow, desktopCapturer, screen } from 'electron';
+import { app, BrowserWindow, desktopCapturer, nativeImage, screen } from 'electron';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { is } from '@electron-toolkit/utils';
@@ -39,7 +39,8 @@ interface CreateCaptureWindowServiceOptions {
 interface CaptureWindowService {
   getCaptureWindow: () => BrowserWindow | null;
   closeCaptureWindow: () => void;
-  startRegionScreenshot: () => Promise<void>;
+  startRegionScreenshot: (externalImage?: Buffer) => Promise<void>;
+  triggerScreenshot: () => Promise<void>;
 }
 
 /**
@@ -176,7 +177,7 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
 
   interface CaptureResult {
     imageBytes: Buffer;
-    captureSource: 'plugin' | 'js';
+    captureSource: 'plugin' | 'js' | 'external';
     winBounds: { x: number; y: number; width: number; height: number };
     virtualScreen: { x: number; y: number; width: number; height: number };
     scaleFactor: number;
@@ -230,28 +231,59 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
     };
   }
 
-  async function startRegionScreenshot(): Promise<void> {
+  async function startRegionScreenshot(externalImage?: Buffer): Promise<void> {
     if (captureWindow || isStartingCaptureWindow) return;
     isStartingCaptureWindow = true;
 
     try {
-      const vs = getVirtualScreenBounds();
-      const isMultiMonitor = screen.getAllDisplays().length > 1;
-      const { displayLayouts, physicalScreen } = getDisplayLayouts();
+      let capture: CaptureResult;
+      let displayLayouts: DisplayLayout[] = [];
+      let physicalScreen: { x: number; y: number; width: number; height: number } | null = null;
 
-      await waitForMainWindowHidden();
-
-      const visibleWindows = getVisibleWindows();
-      const capture = await tryCaptureScreenshot(vs, isMultiMonitor);
-
-      if (!capture) {
-        closeCaptureWindow();
-        const mainWindow = options.getMainWindow();
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show();
-          mainWindow.setAlwaysOnTop(true, 'screen-saver');
+      if (externalImage) {
+        // 外调 Snipaste 返回的裁剪图：窗口尺寸=图尺寸（1:1），居中显示
+        const img = nativeImage.createFromBuffer(externalImage);
+        const size = img.getSize();
+        if (img.isEmpty() || size.width <= 0 || size.height <= 0) {
+          // 图无效（可能读到半截文件）→ 抛错走外层 catch，恢复主窗并清理窗口，
+          // 避免建出 1×1 不可见空窗导致「截图后没反应 + 灵动岛消失」。
+          console.error('[Screenshot] external image invalid, size =', size);
+          throw new Error('Invalid external screenshot image');
         }
-        return;
+        const primary = screen.getPrimaryDisplay();
+        const sf = primary.scaleFactor || 1;
+        const cssW = Math.max(1, Math.round(size.width / sf));
+        const cssH = Math.max(1, Math.round(size.height / sf));
+        const x = Math.round(primary.bounds.x + (primary.size.width - cssW) / 2);
+        const y = Math.round(primary.bounds.y + (primary.size.height - cssH) / 2);
+        capture = {
+          imageBytes: externalImage,
+          captureSource: 'external',
+          winBounds: { x, y, width: cssW, height: cssH },
+          virtualScreen: { x, y, width: cssW, height: cssH },
+          scaleFactor: sf,
+        };
+      } else {
+        const vs = getVirtualScreenBounds();
+        const isMultiMonitor = screen.getAllDisplays().length > 1;
+        const dl = getDisplayLayouts();
+        displayLayouts = dl.displayLayouts;
+        physicalScreen = dl.physicalScreen;
+
+        await waitForMainWindowHidden();
+
+        const visibleWindows = getVisibleWindows();
+        const c = await tryCaptureScreenshot(vs, isMultiMonitor);
+        if (!c) {
+          closeCaptureWindow();
+          const mainWindow = options.getMainWindow();
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.setAlwaysOnTop(true, 'screen-saver');
+          }
+          return;
+        }
+        capture = c;
       }
 
       const { imageBytes, captureSource, winBounds, virtualScreen, scaleFactor } = capture;
@@ -296,6 +328,9 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
       await pageLoadPromise;
 
       if (captureWindow && !captureWindow.isDestroyed()) {
+        console.error(
+          `[Screenshot] capture editor shown, mode=${captureSource} window=${winBounds.width}x${winBounds.height}`,
+        );
         captureWindow.webContents.send('capture-image', {
           imageBytes,
           virtualScreen,
@@ -303,7 +338,8 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
           physicalScreen: captureSource === 'plugin' ? physicalScreen : null,
           scaleFactor,
           captureSource,
-          visibleWindows,
+          visibleWindows: externalImage ? [] : getVisibleWindows(),
+          externalCapture: Boolean(externalImage),
         });
         captureWindow.setIgnoreMouseEvents(false);
         captureWindow.setOpacity(1);
@@ -325,9 +361,19 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
     }
   }
 
+  /**
+   * 统一截图入口：自包含内置截图（选区 + 标注 + OCR/翻译），不再外调 Snipaste。
+   * 链路：隐藏主窗 → 截全屏 → 打开内置编辑器完成框选/标注/识别/翻译；
+   * 取消、完成、异常均由内置流程负责恢复主窗。
+   */
+  async function triggerScreenshot(): Promise<void> {
+    await startRegionScreenshot();
+  }
+
   return {
     getCaptureWindow: () => captureWindow,
     closeCaptureWindow,
     startRegionScreenshot,
+    triggerScreenshot,
   };
 }

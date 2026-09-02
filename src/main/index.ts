@@ -42,6 +42,7 @@ import { startXiyueAgent, stopXiyueAgent } from './services/xiyueAgentService';
 import { registerClipboardIpcHandlers } from './ipc/settings/clipboard';
 import { registerCaptureIpcHandlers } from './ipc/window/capture';
 import { disposeLocalOcrWorker } from './services/captureLocalOcrService';
+import { stopLocalOcrMtService } from './services/localOcrMtService';
 import { registerScreenshotHotkeyIpcHandlers } from './ipc/system/screenshotHotkey';
 import { registerAppIpcHandlers } from './ipc/app/app';
 import { registerSystemIpcHandlers, stopSystemLevelMonitors } from './ipc/system/system';
@@ -767,7 +768,7 @@ function registerIpcHandlers(): void {
   registerCaptureIpcHandlers({
     getCaptureWindow: captureWindowService.getCaptureWindow,
     closeCaptureWindow: captureWindowService.closeCaptureWindow,
-    startRegionScreenshot: captureWindowService.startRegionScreenshot,
+    triggerScreenshot: captureWindowService.triggerScreenshot,
   });
 
   registerWallpaperIpcHandlers();
@@ -847,6 +848,7 @@ registerAppLifecycleHandlers({
     titleFallbackService.stop();
     smtcService.cleanupWorker();
     void disposeLocalOcrWorker();
+    stopLocalOcrMtService();
     destroyTray();
     globalShortcut.unregisterAll();
   },

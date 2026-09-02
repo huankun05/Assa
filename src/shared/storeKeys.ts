@@ -33,8 +33,17 @@ export const SCREENSHOT_ENGINE_STORE_KEY = 'screenshot-engine';
 /** OCR 引擎配置键 */
 export const SCREENSHOT_OCR_ENGINE_STORE_KEY = 'screenshot-ocr-engine';
 
+/** 截图翻译引擎配置键（'local' 本机 Hy-MT2 / 'server' 服务端） */
+export const SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY = 'screenshot-translate-engine';
+
+/** 本地 OCR/翻译服务目录（local_capture_service.py 所在目录，留空用默认值） */
+export const SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY = 'screenshot-local-ocr-dir';
+
 /** 截图引擎类型 */
 export type ScreenshotEngine = 'plugin' | 'js';
 
-/** OCR 引擎类型 */
-export type ScreenshotOcrEngine = 'local' | 'server';
+/** OCR 引擎类型：local=Tesseract.js(秒开) / paddleocr=本机 PaddleOCR(高精度) / server=服务端 */
+export type ScreenshotOcrEngine = 'local' | 'paddleocr' | 'server';
+
+/** 截图翻译引擎类型：local=本机 Hy-MT2 / server=服务端 */
+export type ScreenshotTranslateEngine = 'local' | 'server';
