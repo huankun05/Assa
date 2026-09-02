@@ -584,15 +584,28 @@ export function stopSystemLevelMonitors(): void {
 }
 
 /**
+ * 监控启动延迟（ms）：避开应用启动高峰，让 .NET helper 冷启动落在系统空闲期。
+ */
+const MONITOR_START_DELAY_MS = 4000;
+
+/**
  * 启动系统亮度/音量事件监控（幂等）。
  * 复用常驻 serve 进程的事件推送（onBrightnessChanged/onVolumeChanged），
  * 不再单独 spawn monitor 子进程——serve 进程内部已承担 WMI/CoreAudio 监听。
+ *
+ * 延迟启动：应用启动的头几秒 CPU 被窗口创建、Vite 编译、杀软扫描占满，
+ * 此时拉起 .NET helper 既拖慢启动手感，又容易握手超时被降级；推迟到空闲后
+ * 再启动，冷启动只发生一次且几乎无感。
  */
 export function startSystemLevelMonitors(broadcast?: SystemLevelBroadcast): void {
   if (process.platform !== 'win32' || monitorsStarted) return;
   monitorsStarted = true;
   if (broadcast) levelBroadcast = broadcast;
 
+  setTimeout(subscribeLevelPushes, MONITOR_START_DELAY_MS);
+}
+
+function subscribeLevelPushes(): void {
   try {
     onBrightnessChanged((value: number) => onLevelPush('system:brightness:changed', value));
     // 首推当前值：让渲染端确认推送可用并校准缓存

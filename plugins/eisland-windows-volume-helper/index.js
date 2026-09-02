@@ -73,6 +73,69 @@ function callHelper(args, timeout = 5000) {
 }
 
 /**
+ * 异步调用 helper EXE（不阻塞调用线程）
+ * @description 与 callHelper 的唯一区别是异步。Electron 主进程**必须**用它：
+ * spawnSync 会同步启动整个 .NET 运行时（实测 80-380ms），期间主线程消息循环
+ * 完全停摆 → 表现为「鼠标拖不动、界面卡死」。serve 常驻进程不可用时的回退路径
+ * 一律走这里，绝不退回 spawnSync。
+ * @param {string[]} args
+ * @param {number} timeout
+ * @returns {Promise<any | null>}
+ */
+function callHelperAsync(args, timeout = 8000) {
+  const helperPath = findHelper();
+  if (!helperPath) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(helperPath, args, {
+        windowsHide: true,
+        // stderr 用 ignore：避免子进程写满管道缓冲被卡住
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+    } catch {
+      resolve(null);
+      return;
+    }
+
+    let stdout = '';
+    let settled = false;
+    const done = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {
+        // ignore
+      }
+      done(null);
+    }, timeout);
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.on('error', () => done(null));
+    child.on('close', (code) => {
+      if (code !== 0 || !stdout) {
+        done(null);
+        return;
+      }
+      try {
+        done(JSON.parse(stdout.trim()));
+      } catch {
+        done(null);
+      }
+    });
+  });
+}
+
+/**
  * 获取当前默认播放设备的静音状态
  * @returns {boolean | null} 静音状态，失败时返回 null
  */
@@ -134,14 +197,9 @@ async function getVolumeAsync() {
     if (typeof result === 'number') return result;
     return typeof result?.level === 'number' ? result.level : null;
   } catch (error) {
-    if (daemon.isSupported()) {
-      try {
-        return await Promise.resolve(getVolume());
-      } catch {
-        return null;
-      }
-    }
-    return getVolume();
+    // serve 不可用 → 回退一次性 spawn。回退**必须**异步：
+    // getVolume() 是 spawnSync，会同步阻塞 Electron 主线程（鼠标拖不动的元凶）。
+    return callHelperAsync(['get']);
   }
 }
 
@@ -156,14 +214,9 @@ async function setVolumeAsync(level) {
     const result = await daemon.request('set', value);
     return result?.success === true;
   } catch (error) {
-    if (daemon.isSupported()) {
-      try {
-        return await Promise.resolve(setVolume(value));
-      } catch {
-        return false;
-      }
-    }
-    return setVolume(value);
+    // 同上：回退走异步 spawn，绝不阻塞主线程
+    const result = await callHelperAsync(['set', String(value)]);
+    return result?.success === true;
   }
 }
 
@@ -185,7 +238,9 @@ async function getMuteAsync() {
     const result = await daemon.request('get-mute');
     return typeof result === 'boolean' ? result : null;
   } catch (error) {
-    return getMute();
+    // 回退**必须**异步：getMute() 是 spawnSync，会同步阻塞 Electron 主线程（鼠标拖不动的元凶）。
+    const r = await callHelperAsync(['get-mute']);
+    return typeof r?.muted === 'boolean' ? r.muted : null;
   }
 }
 
@@ -200,7 +255,9 @@ async function setMuteAsync(muted) {
     const result = await daemon.request('set-mute', muted);
     return result?.success === true;
   } catch (error) {
-    return setMute(muted);
+    // 回退**必须**异步：setMute() 是 spawnSync，会同步阻塞 Electron 主线程（鼠标拖不动的元凶）。
+    const r = await callHelperAsync(['set-mute', String(muted)]);
+    return r?.success === true;
   }
 }
 

@@ -116,6 +116,19 @@ catch (Exception exception)
  */
 static void Serve(JsonSerializerOptions jsonOptions)
 {
+    // 冷启动时 JIT 编译会瞬间吃满一个核（实测约 300ms），与 Electron 主线程抢 CPU
+    // 表现为「启动后鼠标发涩」。降为低优先级后，JIT 只在系统空闲时推进，
+    // 常驻期间几乎不占 CPU，因此没有任何副作用。
+    try
+    {
+        System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
+            System.Diagnostics.ProcessPriorityClass.BelowNormal;
+    }
+    catch
+    {
+        // 优先级设置失败不影响功能
+    }
+
     var commandQueue = new ConcurrentQueue<string>();
     var commandEvent = new AutoResetEvent(false);
     var stopEvent = new ManualResetEvent(false);

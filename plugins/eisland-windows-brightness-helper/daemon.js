@@ -35,11 +35,24 @@
 
 const { spawn } = require('node:child_process');
 
-/** serve 握手超时（ms）：超时即认为该 EXE 不支持 serve */
-const SERVE_HANDSHAKE_TIMEOUT_MS = 4000;
+/**
+ * serve 握手超时（ms）：超时即认为该 EXE 暂不可用。
+ *
+ * 为什么给到 15s：helper 是 .NET 程序，冷启动要 JIT + 加载运行时，在开机高峰、
+ * 杀毒扫描新 EXE、磁盘繁忙时可达数秒。早期设 4s，导致启动期必然握手超时 →
+ * 被**永久**标记 unsupported → 之后每次 get/set 都退回同步 spawnSync
+ * （实测阻塞 Electron 主线程 126-380ms，表现为「启动后鼠标拖不动」）。
+ */
+const SERVE_HANDSHAKE_TIMEOUT_MS = 15000;
 
 /** 单个命令的响应超时（ms） */
 const REQUEST_TIMEOUT_MS = 4000;
+
+/**
+ * 标记 unsupported 后的冷却时间（ms）。
+ * 握手超时多为环境抖动（冷启动慢），不应一棍子打死 —— 冷却结束后允许再试一次。
+ */
+const UNSUPPORTED_RETRY_COOLDOWN_MS = 60_000;
 
 class HelperDaemon {
   /**
@@ -62,13 +75,20 @@ class HelperDaemon {
     this._listeners = new Set();
     this._startPromise = null;
     this._readyResolve = null;
-    /** 旧版 EXE 不支持 serve：不再重试，直接走回退路径 */
+    /** 旧版 EXE / 握手超时：走回退路径。冷却结束后会再试一次（非永久降级） */
     this._unsupported = false;
+    this._unsupportedAt = 0;
   }
 
   /** 该 EXE 是否支持 serve 模式（启动握手后确定） */
   isSupported() {
     return !this._unsupported;
+  }
+
+  /** 标记 serve 暂不可用（冷却结束后自动恢复重试） */
+  _markUnsupported() {
+    this._unsupported = true;
+    this._unsupportedAt = Date.now();
   }
 
   /** 进程是否在运行 */
@@ -147,7 +167,14 @@ class HelperDaemon {
   /** 启动常驻进程（幂等，返回同一个 Promise） */
   start() {
     if (this._process) return Promise.resolve();
-    if (this._unsupported) return Promise.reject(new Error(`${this._name} serve unsupported`));
+    if (this._unsupported) {
+      // 冷却期内保持降级；冷却结束则再给 serve 一次机会（握手超时多为冷启动抖动）
+      if (Date.now() - this._unsupportedAt < UNSUPPORTED_RETRY_COOLDOWN_MS) {
+        return Promise.reject(new Error(`${this._name} serve unsupported`));
+      }
+      this._unsupported = false;
+      this._unsupportedAt = 0;
+    }
     if (this._startPromise) return this._startPromise;
 
     this._startPromise = new Promise((resolve, reject) => {
@@ -180,8 +207,8 @@ class HelperDaemon {
       };
 
       const handshakeTimer = setTimeout(() => {
-        // 握手超时：多半是旧版 EXE 不支持 serve，标记后走回退
-        this._unsupported = true;
+        // 握手超时：可能是旧版 EXE，也可能只是 .NET 冷启动慢 → 标记后走回退，冷却结束再试
+        this._markUnsupported();
         try {
           child.kill();
         } catch {
@@ -214,7 +241,7 @@ class HelperDaemon {
         }
         // 还没收到 ready 就退出 = 旧版 EXE（不认识 serve 命令）
         if (!settled) {
-          this._unsupported = true;
+          this._markUnsupported();
           finish(new Error(`${this._name} exited before ready (serve unsupported)`));
         }
       });
