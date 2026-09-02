@@ -1,4 +1,4 @@
-# 汐月 Xiyue —— Electron 版现状（2026-08-31）
+# 汐月 Xiyue —— Electron 版现状（基线 2026-08-31，更新至 2026-09-02）
 
 > 本文档为当前实现的事实记录，取代 Tauri 时代的设计文档作为架构现状参考。
 > 旧文档（`AI管家设计方案.md` v1.2 等）基于 Tauri2+Rust 方案，因 2026-08-30 战略转向
@@ -89,7 +89,36 @@ Electron 主进程（src/main）
 `window.api.openSettingsWindow()` 打开独立设置窗口（子页意图经 store 广播，原本地 `settings-open-tab-intent` 事件已废弃）；
 **设置入口**：托盘「设置」菜单项（始终显示，直接弹出设置面板）、hover 态导航点底部齿轮按钮、启动动画设置按钮、快捷键；
 **鼠标卡顿修复**：`externalAgentWatcher` 由每 4s 对 9 个 Agent 进程名各 spawn 一次 `tasklist`（即每 4s 9 次全进程枚举，
-频繁打断主进程事件循环导致鼠标卡顿）改为一次枚举 + 内存匹配；剪贴板 URL 监听同步 `readText()` 轮询 1s → 2s 并加异常兜底。
+频繁打断主进程事件循环导致鼠标卡顿）改为一次枚举 + 内存匹配；剪贴板 URL 监听同步 `readText()` 轮询 1s → 2s 并加异常兜底；
+**控制中心“隐藏灵动岛”修复**：控制中心与托盘隐藏后无法再次显示（托盘菜单无响应、控制中心按钮无显示动作）。
+根因是 `tray.ts` 缓存 `BrowserWindow` 实例且 `toggleTray()` 直接销毁托盘，同时 IPC 层只注册了 `window:hide`，
+没有对应的 `window:show` / `window:toggle-visibility`，导致“显示”链路断裂。
+修复为：托盘改为实时 `getMainWindowRef` getter；新增 `window:show`、`window:toggle-visibility`；
+预加载层新增 `showWindow`；`ActionButtons` 隐藏按钮改为显示/隐藏切换；
+**进程枚举失败修复**：`runningProcesses.ts` 的 `tasklist /fo csv /nh` 失败后不再直接返回空列表，
+而是自动降级到 PowerShell `Get-Process`，恢复自动隐藏进程名单匹配和任务管理器进程列表；
+**TitleFallback worker CLIXML 噪音修复**：`titleFallback.ts` 的 PowerShell worker 在创建 `HashSet[uint32]` 时
+因类型转换产生可恢复错误并被序列化为 `#< CLIXML` 输出到 stderr。
+修复为：改为显式 `New-Object HashSet[uint32]` 逐个添加 uint32 pid；同时过滤掉纯 CLIXML 噪音日志，
+不再把可恢复包装错误当异常上报；
+**SMTC 播放状态稳定抓取修复**：网易云等音乐软件开启 SMTC 后，仅在切歌时触发 `session-media-changed`，
+播放/暂停状态变化时不会主动上报，导致灵动岛状态栏无法实时更新。
+修复为：`smtcWorker.ts` 的 `detect-sources` 返回完整媒体/播放/时间线信息；
+`smtcService.ts` 采用**事件驱动 + 看门狗超时轮询**：正常情况完全依赖 SMTC 事件，只有连续 5 秒
+未收到任何事件且当前已锁定音源时，才主动发一次 `detect-sources` 恢复同步，避免常空转。
+**亮度/音量 helper 常驻 serve 模式**（提交 d42c9c4）：早期每次 get/set 都 spawn 新 .NET 进程要 126~380ms，
+拖动滑条滞后 + 渲染端 180ms 读真值读到旧值造成「闪动」（回声）。两个 helper 的 C# 新增 `serve` 子命令——
+常驻进程，stdin 逐行 JSON 命令（get/set/get-mute/set-mute/ping，带 id）→ stdout 逐行 JSON 响应 +
+`ready`/`*-changed` 事件；Node 端 `daemon.js` 单例客户端负责 id 匹配、事件分发、崩溃重启。
+效果：get 3.1ms / 2.3ms，set 9.4ms / 8.1ms（约提速 40 倍）。改 helper C# 后须 `dotnet build -c Release`。
+**启动后鼠标卡死修复**（提交 5a87a8c）：根因**不是轮询**（轮询早改为事件驱动、零轮询），而是 daemon 握手超时仅 4s，
+.NET 冷启动在开机/杀软扫描时常超 4s → 被**永久**标记 unsupported → 之后每次 get/set 退回 `spawnSync`
+**同步**阻塞主线程（实测 660/603ms 每次）→ 启动期渲染预热/挂载/校准触发大量 get → 鼠标拖不动、界面发涩。
+修复：握手超时 4s→15s；`_markUnsupported()` 改为带 60s 冷却的重试（不再一棍子打死，冷却结束自动再试）；
+serve 不可用时回退一律走**异步** `callHelperAsync`，**绝不**回退同步 `spawnSync`；音量 `getMuteAsync`/`setMuteAsync`
+原本仍调同步 API，一并改为异步；C# `Serve()` 启动即降为 `BelowNormal` 低优先级避免 JIT 抢 CPU；
+`system.ts` 把 monitor 订阅延迟 4s 避开启动高峰。量化验证（心跳探针）：单次 get 主线程阻塞 660ms→13ms，
+常驻 serve 路径 9ms，并发 10×get 无重复冷启动。
 
 **遗留**：
 - 4 个 node-gyp 插件（fullscreen/processes/toast/perfmon）本机 `npm run plugins:build`（见第五节，需 VS2022 + Python）；
