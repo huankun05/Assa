@@ -3,6 +3,7 @@
   <p><strong>本地常驻 AI 管家 · Dynamic Island 风格（基于 eIsland 衍生）</strong></p>
   <p>Built with Electron + React + TypeScript</p>
   <p>Supports real-time weather, synced lyrics, timers, and quick system utility actions</p>
+  <p>NetEase Cloud Music login integration for accurate like status and precise lyrics matching</p>
 
   [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
   [![Electron](https://img.shields.io/badge/Electron-35-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
@@ -103,10 +104,11 @@ For full terms (including the standard GPLv3 text and additional clauses), see t
 
 本仓库是 **eIsland**（[JNTMTMTM/eIsland](https://github.com/JNTMTMTM/eIsland)，GPL-3.0-or-later + 附加条款）的衍生版本，用于「汐月」本地常驻 AI 管家：
 
-- **保留**：eIsland 全部功能（灵动岛形态、音乐/SMTC、天气、Agent、语音输入、截图、OCR 等）与 13 个原生插件。
-- **添加（规划中）**：
-  1. Agent 指向本地 Ollama（`qwen3-4b-32k` / `MiniCPM-V 4.6`）；
-  2. 汐月人设 / system prompt 与能力边界；
-  3. 本地 TTS / STT 语音管线（复用 `agentVoiceInput` 录音，替换或保留其识别源）；
-  4. Python 侧车（记忆 / 技能 / 定时任务），经 `child_process` 拉起并桥接。
+- **保留**：eIsland 全部功能（灵动岛形态、音乐/SMTC、天气、截图、OCR 等）与 13 个原生插件。
+- **已完成（汐月换芯）**：
+  1. **原生 Agent 换芯**：`useAgentRunner` 与 `useChatSend`（岛内紧凑条 + 完整对话页）只跑汐月 Hermes，移除 mihtnelis 云平台（含登录）、Ollama 直连、自定义 API 三路由；
+  2. **Python 侧车**：`agent/server.py`（HTTP 127.0.0.1:8765）由 Electron `child_process` 拉起，`/health` `/chat` `/voice` `/transcribe` 四端点，走本地 Ollama（`qwen3-4b-32k`）+ faster-whisper + kokoro TTS，数据不出本机；
+  3. **语音全本地化**：语音输入球录音 → PCM → 侧车 `/transcribe`（faster-whisper），腾讯实时 STT 已移除；回答自动 TTS 朗读（base64 直放）；
+  4. **入口**：hover 灵动岛 →「汐月」导航点 → 原生 Agent 面板。
+- **环境**：Python 3.12 venv（`.venv/`，含全部依赖）；whisper 模型在 `data/models/faster-whisper-base/`（gitignored，需自行放入或从备份复制）；4 个 node-gyp 插件需本机 `npm run plugins:build` 编译（fullscreen/processes/toast/perfmon）。
 - **合规**：保留全部上游署名（JNTMTMTM / pyisland.com）与 Windows-only 限制声明，见 `LICENSE`。
