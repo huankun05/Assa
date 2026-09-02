@@ -51,17 +51,16 @@ export const WEATHER_LOCATION_PRIORITY_OPTIONS: Array<{ value: WeatherLocationPr
   { value: 'custom', label: '自定义位置优先' },
 ];
 
-export const SETTINGS_TABS = ['index', 'app', 'network', 'mail', 'weather', 'music', 'ai', 'shortcut', 'user', 'update', 'pluginMarket', 'about'] as const;
+export const SETTINGS_TABS = ['index', 'app', 'network', 'mail', 'weather', 'music', 'shortcut', 'update', 'pluginMarket', 'about'] as const;
 export type SettingsSidebarTabKey = (typeof SETTINGS_TABS)[number];
-export type AppSettingsPageKey = 'layout-preview' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings';
+export type AppSettingsPageKey = 'layout-preview' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
 export type WeatherSettingsPageKey = 'location' | 'provider';
 export type MailSettingsPageKey = 'account' | 'imap' | 'preferences';
-export type AiSettingsPageKey = 'general' | 'r1pxc' | 'ollama' | 'orb-style';
-export type MusicSettingsPageKey = 'whitelist' | 'lyrics' | 'smtc' | 'providers';
-export type MusicNavCardKey = 'music-whitelist' | 'music-lyrics' | 'music-smtc' | 'music-providers';
+export type MusicSettingsPageKey = 'whitelist' | 'lyrics' | 'smtc' | 'providers' | 'like';
+export type MusicNavCardKey = 'music-whitelist' | 'music-lyrics' | 'music-smtc' | 'music-providers' | 'music-like';
 export type NetworkSettingsPageKey = 'timeout' | 'data-center';
 export type UpdateSettingsPageKey = 'update-check' | 'info-sync';
-export type SettingsTabLabelKey = SettingsSidebarTabKey | AppSettingsPageKey | AiSettingsPageKey | MusicNavCardKey | UpdateSettingsPageKey;
+export type SettingsTabLabelKey = SettingsSidebarTabKey | AppSettingsPageKey | MusicNavCardKey | UpdateSettingsPageKey;
 
 export const SETTINGS_TAB_LABELS: Record<SettingsTabLabelKey, string> = {
   index: '快速导航',
@@ -80,6 +79,7 @@ export const SETTINGS_TAB_LABELS: Record<SettingsTabLabelKey, string> = {
   'clipboard-history': '剪贴板历史',
   alarm: '闹钟配置',
   'break-reminder': '休息提醒',
+  'control-center': '控制中心按钮',
   autostart: '实用工具',
   sound: '声音设置',
   notification: '通知设置',
@@ -94,13 +94,7 @@ export const SETTINGS_TAB_LABELS: Record<SettingsTabLabelKey, string> = {
   'music-lyrics': '歌词源',
   'music-smtc': 'SMTC',
   'music-providers': '歌词提供源',
-  ai: 'AI Agent',
-  general: '通用配置',
-  r1pxc: 'r1pxc Agent',
-  ollama: 'Ollama 本地',
-  'orb-style': 'Orb 样式',
   shortcut: '快捷键',
-  user: '用户中心',
   update: '更新设置',
   'update-check': '检查更新',
   'info-sync': '信息同步',
@@ -124,6 +118,7 @@ export const SETTINGS_TAB_DESCRIPTIONS: Record<Exclude<SettingsTabLabelKey, 'ind
   'clipboard-history': '配置剪贴板历史记录能力与条数。',
   alarm: '配置闹钟提醒音、贪睡与通知行为。',
   'break-reminder': '定时休息与喝水提醒。',
+  'control-center': '配置 Hover 控制中心（时间页）按钮的显示与顺序。',
   autostart: '应用控制、日志与开机启动配置。',
   sound: '音效、通知声音与音频输出配置。',
   notification: '配置灵动岛通知提醒与展示行为。',
@@ -138,13 +133,8 @@ export const SETTINGS_TAB_DESCRIPTIONS: Record<Exclude<SettingsTabLabelKey, 'ind
   'music-lyrics': '选择歌词来源与显示模式。',
   'music-smtc': '系统媒体传输控制相关配置。',
   'music-providers': '配置歌词获取来源与优先级。',
-  ai: 'AI 服务与 Prompt 配置',
-  general: '模型凭据与工作区配置。',
-  r1pxc: 'r1pxc Agent 头像与个性化配置。',
-  ollama: '本地 Ollama 模型与连接配置。',
-  'orb-style': 'Agent 液态 Orb 样式配置。',
+  'music-like': '网易云登录态与本地喜欢同步配置。',
   shortcut: '隐藏、关闭、截图快捷键',
-  user: '登录、资料、注销等账号操作',
   update: '检查与下载软件更新',
   'update-check': '检查与下载软件更新',
   'info-sync': '信息同步配置',
@@ -167,11 +157,10 @@ export const SETTINGS_TAB_ICONS: Partial<Record<SettingsTabLabelKey, string>> = 
   'music-lyrics': SvgIcon.LRC,
   'music-smtc': SvgIcon.SMTC,
   'music-providers': SvgIcon.LRC,
-  ai: SvgIcon.AI,
+  'music-like': SvgIcon.STAR,
   shortcut: SvgIcon.SHORTCUT_KEY,
   update: SvgIcon.UPDATE_TIME,
   about: SvgIcon.ABOUT,
-  user: SvgIcon.USER,
   theme: SvgIcon.THEME,
   language: SvgIcon.LANGUAGE,
   behavior: SvgIcon.INTERACTION,
@@ -180,6 +169,7 @@ export const SETTINGS_TAB_ICONS: Partial<Record<SettingsTabLabelKey, string>> = 
   'clipboard-history': SvgIcon.COPY,
   alarm: SvgIcon.TIMER,
   'break-reminder': SvgIcon.BREAK,
+  'control-center': SvgIcon.INTERACTION,
   autostart: SvgIcon.CONTINUE,
   sound: SvgIcon.SOUND,
   notification: SvgIcon.NOTIFICATION,
@@ -220,13 +210,11 @@ export interface ExpandNavItem {
 
 export type ExpandNavLayoutConfig = ExpandNavItem[];
 
-export const EXPAND_CONFIGURABLE_TABS: string[] = ['overview', 'song', 'tools', 'translation', 'performanceMonitor'];
+export const EXPAND_CONFIGURABLE_TABS: string[] = ['tools', 'translation', 'performanceMonitor'];
 
-export const EXPAND_ALWAYS_VISIBLE_TABS: Set<string> = new Set<string>(['overview']);
+export const EXPAND_ALWAYS_VISIBLE_TABS: Set<string> = new Set<string>();
 
 export const EXPAND_TAB_LABELS: Record<string, string> = {
-  overview: '总览',
-  song: '歌曲',
   tools: '工具',
   translation: '翻译',
   performanceMonitor: '性能监控',
@@ -281,7 +269,7 @@ export interface MaxExpandNavItem {
 
 export type MaxExpandNavLayoutConfig = MaxExpandNavItem[];
 
-export const MAXEXPAND_CONFIGURABLE_TABS: string[] = ['todo', 'urlFavorites', 'album', 'mail', 'localFileSearch', 'clipboardHistory', 'aiChat', 'memo', 'countdown', 'alarm', 'toolbox', 'miniGame', 'stock', 'cli', 'calculator'];
+export const MAXEXPAND_CONFIGURABLE_TABS: string[] = ['todo', 'urlFavorites', 'album', 'mail', 'localFileSearch', 'clipboardHistory', 'memo', 'countdown', 'alarm', 'toolbox', 'cli', 'calculator'];
 
 export const MAXEXPAND_ALWAYS_VISIBLE_TABS: Set<string> = new Set<string>();
 
@@ -292,13 +280,10 @@ export const MAXEXPAND_TAB_LABELS: Record<string, string> = {
   mail: '邮箱',
   localFileSearch: '文件查找',
   clipboardHistory: '剪贴板',
-  aiChat: 'AI 对话',
   memo: '备忘录',
   countdown: '倒数日',
   alarm: '闹钟',
   toolbox: '工具箱',
-  miniGame: '小游戏',
-  stock: '股票行情',
   cli: 'CLI 控制台',
   calculator: '计算器',
 };
@@ -345,7 +330,7 @@ export function normalizeMaxExpandNavLayoutConfig(raw: unknown): MaxExpandNavLay
   return ordered;
 }
 
-export const APP_SETTINGS_PAGES: AppSettingsPageKey[] = ['layout-preview', 'expand-layout', 'maxexpand-layout', 'album', 'hide-process-list', 'position', 'theme', 'language', 'behavior', 'animation', 'url-parser', 'clipboard-history', 'alarm', 'break-reminder', 'autostart', 'sound', 'notification', 'performance', 'performance-monitor', 'screenshot-settings'];
+export const APP_SETTINGS_PAGES: AppSettingsPageKey[] = ['layout-preview', 'expand-layout', 'maxexpand-layout', 'album', 'hide-process-list', 'position', 'theme', 'language', 'behavior', 'animation', 'url-parser', 'clipboard-history', 'alarm', 'break-reminder', 'autostart', 'sound', 'notification', 'performance', 'performance-monitor', 'screenshot-settings', 'control-center'];
 export const WEATHER_SETTINGS_PAGES: WeatherSettingsPageKey[] = ['location', 'provider'];
 export const WEATHER_SETTINGS_PAGE_LABELS: Record<WeatherSettingsPageKey, string> = {
   location: '定位配置',
@@ -357,13 +342,6 @@ export const MAIL_SETTINGS_PAGE_LABELS: Record<MailSettingsPageKey, string> = {
   imap: 'IMAP',
   preferences: '收信设置',
 };
-export const AI_SETTINGS_PAGES: AiSettingsPageKey[] = ['general', 'r1pxc', 'ollama', 'orb-style'];
-export const AI_SETTINGS_PAGE_LABELS: Record<AiSettingsPageKey, string> = {
-  general: '通用配置',
-  r1pxc: 'r1pxc Agent',
-  ollama: 'Ollama 本地',
-  'orb-style': 'Orb 样式',
-};
 export const NETWORK_SETTINGS_PAGES: NetworkSettingsPageKey[] = ['timeout', 'data-center'];
 export const NETWORK_SETTINGS_PAGE_LABELS: Record<NetworkSettingsPageKey, string> = {
   timeout: '请求超时',
@@ -374,12 +352,13 @@ export const UPDATE_SETTINGS_PAGE_LABELS: Record<UpdateSettingsPageKey, string> 
   'update-check': '检查更新',
   'info-sync': '信息同步',
 };
-export const MUSIC_SETTINGS_PAGES: MusicSettingsPageKey[] = ['whitelist', 'lyrics', 'smtc', 'providers'];
+export const MUSIC_SETTINGS_PAGES: MusicSettingsPageKey[] = ['whitelist', 'lyrics', 'smtc', 'providers', 'like'];
 export const MUSIC_SETTINGS_PAGE_LABELS: Record<MusicSettingsPageKey, string> = {
   whitelist: '白名单',
   lyrics: '歌词源',
   smtc: 'SMTC',
   providers: '歌词提供源',
+  like: '喜欢同步',
 };
 
 export interface NavCardDef {
@@ -394,9 +373,6 @@ export interface NavCardDef {
 }
 
 export const NAV_CARDS: NavCardDef[] = [
-  { id: 'user-pro', label: 'PRO功能', desc: '查看 Free 与 Pro 计划权益及当前订阅价格', icon: SvgIcon.PRO, tab: 'user', actionId: 'user-pro' },
-  { id: 'user-recharge', label: '余额充值', desc: '为 AI 助手对话余额充值', icon: SvgIcon.RECHARGE, tab: 'user', actionId: 'user-recharge' },
-  { id: 'user', label: SETTINGS_TAB_LABELS.user, desc: SETTINGS_TAB_DESCRIPTIONS.user, icon: SETTINGS_TAB_ICONS.user, tab: 'user' },
   { id: 'layout-preview', label: SETTINGS_TAB_LABELS['layout-preview'], desc: SETTINGS_TAB_DESCRIPTIONS['layout-preview'], icon: SETTINGS_TAB_ICONS['layout-preview'], tab: 'app', appPage: 'layout-preview' },
   { id: 'expand-layout', label: SETTINGS_TAB_LABELS['expand-layout'], desc: SETTINGS_TAB_DESCRIPTIONS['expand-layout'], icon: SETTINGS_TAB_ICONS['expand-layout'], tab: 'app', appPage: 'expand-layout' },
   { id: 'maxexpand-layout', label: SETTINGS_TAB_LABELS['maxexpand-layout'], desc: SETTINGS_TAB_DESCRIPTIONS['maxexpand-layout'], icon: SETTINGS_TAB_ICONS['maxexpand-layout'], tab: 'app', appPage: 'maxexpand-layout' },
@@ -411,6 +387,7 @@ export const NAV_CARDS: NavCardDef[] = [
   { id: 'clipboard-history', label: SETTINGS_TAB_LABELS['clipboard-history'], desc: SETTINGS_TAB_DESCRIPTIONS['clipboard-history'], icon: SETTINGS_TAB_ICONS['clipboard-history'], tab: 'app', appPage: 'clipboard-history' },
   { id: 'alarm', label: SETTINGS_TAB_LABELS.alarm, desc: SETTINGS_TAB_DESCRIPTIONS.alarm, icon: SETTINGS_TAB_ICONS.alarm, tab: 'app', appPage: 'alarm' },
   { id: 'break-reminder', label: SETTINGS_TAB_LABELS['break-reminder'], desc: SETTINGS_TAB_DESCRIPTIONS['break-reminder'], icon: SETTINGS_TAB_ICONS['break-reminder'], tab: 'app', appPage: 'break-reminder' },
+  { id: 'control-center', label: SETTINGS_TAB_LABELS['control-center'], desc: SETTINGS_TAB_DESCRIPTIONS['control-center'], icon: SETTINGS_TAB_ICONS['control-center'], tab: 'app', appPage: 'control-center' },
   { id: 'autostart', label: SETTINGS_TAB_LABELS.autostart, desc: SETTINGS_TAB_DESCRIPTIONS.autostart, icon: SETTINGS_TAB_ICONS.autostart, tab: 'app', appPage: 'autostart' },
   { id: 'sound', label: SETTINGS_TAB_LABELS.sound, desc: SETTINGS_TAB_DESCRIPTIONS.sound, icon: SETTINGS_TAB_ICONS.sound, tab: 'app', appPage: 'sound' },
   { id: 'notification', label: SETTINGS_TAB_LABELS.notification, desc: SETTINGS_TAB_DESCRIPTIONS.notification, icon: SETTINGS_TAB_ICONS.notification, tab: 'app', appPage: 'notification' },
@@ -420,7 +397,6 @@ export const NAV_CARDS: NavCardDef[] = [
   { id: 'network', label: SETTINGS_TAB_LABELS.network, desc: SETTINGS_TAB_DESCRIPTIONS.network, icon: SETTINGS_TAB_ICONS.network, tab: 'network' },
   { id: 'mail', label: SETTINGS_TAB_LABELS.mail, desc: SETTINGS_TAB_DESCRIPTIONS.mail, icon: SETTINGS_TAB_ICONS.mail, tab: 'mail' },
   { id: 'weather', label: SETTINGS_TAB_LABELS.weather, desc: SETTINGS_TAB_DESCRIPTIONS.weather, icon: SETTINGS_TAB_ICONS.weather, tab: 'weather' },
-  { id: 'ai', label: SETTINGS_TAB_LABELS.ai, desc: SETTINGS_TAB_DESCRIPTIONS.ai, icon: SETTINGS_TAB_ICONS.ai, tab: 'ai' },
   { id: 'shortcut', label: SETTINGS_TAB_LABELS.shortcut, desc: SETTINGS_TAB_DESCRIPTIONS.shortcut, icon: SETTINGS_TAB_ICONS.shortcut, tab: 'shortcut' },
   { id: 'update', label: SETTINGS_TAB_LABELS.update, desc: SETTINGS_TAB_DESCRIPTIONS.update, icon: SETTINGS_TAB_ICONS.update, tab: 'update' },
   { id: 'pluginMarket', label: SETTINGS_TAB_LABELS.pluginMarket, desc: SETTINGS_TAB_DESCRIPTIONS.pluginMarket, icon: SETTINGS_TAB_ICONS.pluginMarket, tab: 'pluginMarket' },
@@ -429,6 +405,7 @@ export const NAV_CARDS: NavCardDef[] = [
   { id: 'music-lyrics', label: SETTINGS_TAB_LABELS['music-lyrics'], desc: SETTINGS_TAB_DESCRIPTIONS['music-lyrics'], icon: SETTINGS_TAB_ICONS['music-lyrics'], tab: 'music', musicPage: 'lyrics' },
   { id: 'music-smtc', label: SETTINGS_TAB_LABELS['music-smtc'], desc: SETTINGS_TAB_DESCRIPTIONS['music-smtc'], icon: SETTINGS_TAB_ICONS['music-smtc'], tab: 'music', musicPage: 'smtc' },
   { id: 'music-providers', label: SETTINGS_TAB_LABELS['music-providers'], desc: SETTINGS_TAB_DESCRIPTIONS['music-providers'], icon: SETTINGS_TAB_ICONS['music-providers'], tab: 'music', musicPage: 'providers' },
+  { id: 'music-like', label: '喜欢同步', desc: '网易云登录态与本地喜欢同步配置。', icon: SETTINGS_TAB_ICONS['music-like'], tab: 'music', musicPage: 'like' },
 ];
 
 export const DEFAULT_NAV_ORDER: string[] = NAV_CARDS.map((c) => c.id);
@@ -442,7 +419,6 @@ export interface SearchableSettingItem {
   tab: SettingsSidebarTabKey;
   appPage?: AppSettingsPageKey;
   musicPage?: MusicSettingsPageKey;
-  aiPage?: AiSettingsPageKey;
   networkPage?: NetworkSettingsPageKey;
   actionId?: string;
 }
@@ -490,7 +466,7 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   { label: '岛屿形态', desc: '切换灵动岛的外观形态，刘海屏贴于屏幕顶部，灵动岛为胶囊形状', labelKey: 'settings.app.behavior.shapeModeTitle', descKey: 'settings.app.behavior.shapeModeHint', tab: 'app', appPage: 'behavior' },
   { label: '鼠标移开自动收回', desc: '启用后，鼠标离开灵动岛时将自动回到空闲状态（若正在播放音乐则切到歌词态）', labelKey: 'settings.app.behavior.mouseLeaveTitle', descKey: 'settings.app.behavior.mouseLeaveHint', tab: 'app', appPage: 'behavior' },
   { label: '空闲态点击展开', desc: '启用后，鼠标悬停在灵动岛上不会自动展开，需要点击才能展开，后续交互不受影响', labelKey: 'settings.app.behavior.idleClickExpandTitle', descKey: 'settings.app.behavior.idleClickExpandHint', tab: 'app', appPage: 'behavior' },
-  { label: '是否显示启动动画', desc: '开启后每次启动显示启动动画，关闭后不显示', labelKey: 'settings.app.animation.startupAnimationTitle', descKey: 'settings.app.animation.startupAnimationHint', tab: 'app', appPage: 'animation' },
+  { label: '是否显示启动动画', desc: '开启后仅首次启动显示启动动画（画面右下角可直接进设置），关闭后永不显示', labelKey: 'settings.app.animation.startupAnimationTitle', descKey: 'settings.app.animation.startupAnimationHint', tab: 'app', appPage: 'animation' },
   { label: '独立窗口模式', desc: '启用后，待办事项、倒数日、设置将在独立窗口中打开，而非灵动岛内', labelKey: 'settings.app.behavior.windowModeTitle', descKey: 'settings.app.behavior.windowModeHint', tab: 'app', appPage: 'behavior' },
   { label: '悬停界面截图按钮模式', desc: '配置 hover 界面的截图按钮触发选区截图或显示器截图', labelKey: 'settings.app.behavior.hoverScreenshotModeTitle', descKey: 'settings.app.behavior.hoverScreenshotModeHint', tab: 'app', appPage: 'behavior' },
   // ── 软件设置 > 动画 ──
@@ -518,6 +494,7 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   // ── 软件设置 > 实用工具 ──
   { label: '实用工具', desc: '常用应用操作与日志工具', labelKey: 'settings.labels.autostart', descKey: 'settings.app.autostart.toolsHint', tab: 'app', appPage: 'autostart' },
   { label: '开机自启', desc: '设置系统启动时是否自动运行灵动岛', labelKey: 'settings.app.autostart.title', descKey: 'settings.app.autostart.hint', tab: 'app', appPage: 'autostart' },
+  { label: '控制中心按钮', desc: '配置 Hover 控制中心（时间页）按钮的显示与顺序。', labelKey: 'settings.app.controlCenter.title', descKey: 'settings.app.controlCenter.hint', tab: 'app', appPage: 'control-center' },
   // ── 软件设置 > 声音设置 ──
   { label: '全局音量', desc: '影响闹钟与音效的整体输出音量。', labelKey: 'settings.sound.global.title', descKey: 'settings.sound.global.hint', tab: 'app', appPage: 'sound' },
   { label: '闹钟音量', desc: '仅影响闹钟响铃与试听音量。', labelKey: 'settings.sound.alarmVolume.title', descKey: 'settings.sound.alarmVolume.hint', tab: 'app', appPage: 'sound' },
@@ -560,11 +537,6 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   { label: '歌词校准', desc: '歌词获取后延迟读取 SMTC 时间戳，修正歌词时间偏移', labelKey: 'settings.music.lyrics.calibrateTitle', descKey: 'settings.music.lyrics.calibrateHint', tab: 'music', musicPage: 'lyrics' },
   // ── 歌曲设置 > SMTC ──
   { label: 'SMTC 自动取消订阅', desc: '用于清理长时间无更新的播放会话，默认永不取消订阅', labelKey: 'settings.music.smtc.title', descKey: 'settings.music.smtc.hint', tab: 'music', musicPage: 'smtc' },
-  // ── AI Agent ──
-  { label: '模型凭据', desc: '用于 Agent 中转调用的自定义 API 凭据（可选）', labelKey: 'settings.ai.credentialsTitle', descKey: 'settings.ai.credentialsHint', tab: 'ai', aiPage: 'general' },
-  { label: 'Agent 工作区', desc: '配置 Agent 可操作的文件目录,所有文件读写、搜索、命令执行仅限于工作区内', labelKey: 'settings.ai.workspaceTitle', descKey: 'settings.ai.workspaceHint', tab: 'ai', aiPage: 'general' },
-  { label: 'r1pxc Agent 头像配置', desc: '支持拖入图片或从文件资源管理器选择，不支持 URL', labelKey: 'settings.ai.r1pxcConfigTitle', descKey: 'settings.ai.r1pxcConfigHint', tab: 'ai', aiPage: 'r1pxc' },
-  { label: 'Ollama 本地模型', desc: '配置本地 Ollama 服务地址与默认模型，在模型下拉中选择 ollama 即可使用', labelKey: 'settings.ai.ollamaTitle', descKey: 'settings.ai.ollamaHint', tab: 'ai', aiPage: 'ollama' },
   // ── 快捷键 > 窗口操作 ──
   { label: '隐藏/显示快捷键', desc: '点击"修改"后按下组合键（如 Alt+X、Ctrl+Shift+H）', labelKey: 'settings.shortcut.window.toggleIsland.title', descKey: 'settings.shortcut.window.toggleIsland.hint', tab: 'shortcut' },
   { label: '关闭灵动岛快捷键', desc: '按下此快捷键将立即关闭灵动岛应用（如 Alt+Q、Ctrl+Shift+Q）', labelKey: 'settings.shortcut.window.quitApp.title', descKey: 'settings.shortcut.window.quitApp.hint', tab: 'shortcut' },
@@ -582,8 +554,6 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   // ── 快捷键 > 媒体 ──
   { label: '快速切换歌曲快捷键', desc: '按下后触发系统下一曲媒体按键（仅白名单播放器生效）', labelKey: 'settings.shortcut.media.nextSong.title', descKey: 'settings.shortcut.media.nextSong.hint', tab: 'shortcut' },
   { label: '暂停/播放歌曲快捷键', desc: '按下后触发系统播放/暂停媒体按键（仅白名单播放器生效）', labelKey: 'settings.shortcut.media.playPause.title', descKey: 'settings.shortcut.media.playPause.hint', tab: 'shortcut' },
-  // ── 用户中心 ──
-  { label: '问卷记录', desc: '查看历史问卷填写记录', labelKey: 'settings.user.pages.questionnaire', descKey: 'settings.user.questionnaire.subtitle', tab: 'user', actionId: 'user-questionnaire' },
   // ── 更新设置 ──
   { label: '版本信息', desc: '查看当前版本信息，更新源可在网络配置中设置', labelKey: 'settings.update.versionCardTitle', descKey: 'settings.update.versionCardHint', tab: 'update' },
   { label: '检查与安装', desc: '手动触发检查,有新版本时可下载安装;下载完成后点击"安装并重启"应用更新', labelKey: 'settings.update.actionCardTitle', descKey: 'settings.update.actionCardHint', tab: 'update' },

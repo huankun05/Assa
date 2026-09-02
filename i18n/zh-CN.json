@@ -1,9 +1,13 @@
 {
   "common": {
-    "appName": "eIsland",
+    "appName": "汐月",
     "errors": {
       "rootMountNotFound": "未找到 #root 挂载节点"
     }
+  },
+  "splash": {
+    "settings": "设置",
+    "settingsTooltip": "打开设置，可管理所有页面与功能"
   },
   "standalone": {
     "tabs": {
@@ -17,7 +21,11 @@
       "memo": "备忘录",
       "alarm": "闹钟",
       "toolbox": "工具箱",
-      "settings": "设置"
+      "chat": "聊天",
+      "calculator": "计算器",
+      "translate": "翻译",
+      "settings": "设置",
+      "customPages": "页面管理"
     },
     "controls": {
       "minimize": "最小化",
@@ -126,7 +134,7 @@
     },
     "github": {
       "title": "开源信息",
-      "subtitle": "eIsland 是一个开源项目",
+      "subtitle": "汐月是一个开源项目",
       "links": {
         "repo": "GitHub",
         "website": "官网",
@@ -402,6 +410,9 @@
       "brightness": "亮度",
       "volume": "音量"
     },
+    "controlCenter": {
+      "back": "返回控制中心"
+    },
     "brightness": {
       "title": "屏幕亮度",
       "hint": "拖动调节",
@@ -427,10 +438,13 @@
     "music": {
       "unknownArtist": "未知艺术家",
       "unknownTitle": "未知歌曲",
+      "notPlaying": "未在播放",
       "prev": "上一曲",
       "pause": "暂停",
       "play": "播放",
-      "next": "下一曲"
+      "next": "下一曲",
+      "like": "喜欢",
+      "unlike": "取消喜欢"
     },
     "time": {
       "lunarPrefix": "农历"
@@ -2133,7 +2147,38 @@
       "whitelist": "白名单",
       "lyrics": "歌词源",
       "smtc": "SMTC",
-      "providers": "提供源"
+      "providers": "提供源",
+      "like": "喜欢同步"
+    },
+    "music": {
+      "like": {
+        "neteaseTitle": "网易云音乐登录态",
+        "neteaseHint": "登录后可获取真实的喜欢状态，并同步到本地收藏",
+        "statusLabel": "登录状态：",
+        "statusLoading": "加载中…",
+        "statusLoggedIn": "已登录",
+        "statusLoggedOut": "未登录",
+        "statusError": "读取登录态失败",
+        "login": "登录",
+        "logout": "退出登录",
+        "loginFailed": "登录失败，请重试",
+        "logoutFailed": "退出登录失败",
+        "refresh": "刷新状态",
+        "hotkeyTitle": "喜欢快捷键",
+        "hotkeyHint": "点击喜欢按钮时，会向当前播放器发送此快捷键",
+        "hotkeyLabel": "快捷键",
+        "hotkeyPlaceholder": "例如 Ctrl+Alt+L",
+        "localTitle": "本地收藏",
+        "localHint": "已收藏到本地的歌曲数量，登录后可与网易云真实喜欢状态同步",
+        "localCountLabel": "已收藏歌曲：",
+        "localCountLoading": "加载中…",
+        "localCountError": "读取本地收藏失败",
+        "localCountRefresh": "刷新",
+        "promptTitle": "登录网易云音乐，让喜欢状态更准确",
+        "promptDesc": "未登录时，eIsland 只能记录本地快捷收藏，无法读取网易云真实喜欢状态。登录后，红心会与网易云「我喜欢的音乐」同步，避免两边状态不一致。",
+        "saveSuccess": "已保存",
+        "saveFailed": "保存失败，请检查快捷键格式"
+      }
     },
     "networkPages": {
       "timeout": "请求超时",
@@ -2222,6 +2267,17 @@
         "ocrEngineServer": "服务端 OCR",
         "translateTitle": "截图翻译语言",
         "translateHint": "配置截图翻译的源语言和目标语言。"
+      },
+      "controlCenter": {
+        "title": "控制中心按钮",
+        "hint": "勾选要在 Hover 控制中心（时间页）显示的按钮，拖拽或上下调整顺序。当前显示 {{count}} / {{total}} 个按钮。",
+        "moveUp": "上移",
+        "moveDown": "下移",
+        "hideBtn": "隐藏此按钮",
+        "showBtn": "显示此按钮",
+        "shownLabel": "显示",
+        "hiddenLabel": "隐藏",
+        "resetDefault": "恢复默认"
       },
       "notifications": {
         "configChanged": {
@@ -2495,8 +2551,10 @@
         "maxExpandTabSwitchHint": "启用后，最大展开态切换页面时将播放左右滑动过渡动画",
         "maxExpandTabSwitchToggle": "启用切换动画",
         "startupAnimationTitle": "是否显示启动动画",
-        "startupAnimationHint": "开启后每次启动显示启动动画，关闭后不显示",
+        "startupAnimationHint": "开启后仅首次启动显示启动动画（画面右下角可直接进设置），关闭后永不显示",
         "startupAnimationToggle": "显示启动动画",
+        "resetStartupExperience": "重置为首次启动",
+        "resetStartupExperienceHint": "已重置，下次启动将重新播放启动动画并进入首次引导",
         "splashBgColorTitle": "启动画面背景颜色",
         "splashBgColorHint": "自定义启动画面的背景颜色",
         "resetDefault": "恢复默认",
@@ -2925,7 +2983,7 @@
         },
         "showConfig": {
           "title": "显示配置窗口快捷键",
-          "hint": "仅在独立窗口模式下生效：按下后将打开独立配置窗口并切换到设置页"
+          "hint": "任何窗口模式下都生效：按下后打开独立配置窗口并切换到设置页"
         },
         "openClipboardHistory": {
           "title": "打开剪贴板历史快捷键",

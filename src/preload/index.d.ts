@@ -76,6 +76,7 @@ import type {
   QishuiSongsResult,
   QishuiSongUrlResult,
   ExternalAgentData,
+  SourceSwitchRequestData,
   RunningProcessInfo,
   RunningWindowInfo,
   PerformanceHardwareSelection,
@@ -84,6 +85,8 @@ import type {
   ClaudeCodeHookMutationResult,
   CodexStatusSnapshot,
   CodexMonitorMutationResult,
+  MusicLikeSyncResult,
+  MusicLikeToggleResult,
 } from './types';
 
 declare global {
@@ -250,8 +253,10 @@ declare global {
       musicWhitelistSet: (list: string[]) => Promise<boolean>;
       musicLikeCheck: (title: string, artist: string) => Promise<boolean>;
       musicLikeToggle: (title: string, artist: string) => Promise<{ liked: boolean; synced: boolean }>;
+      musicLikeSync: (title: string, artist: string) => Promise<{ liked: boolean }>;
       musicLikeHotkeyGet: () => Promise<string>;
       musicLikeHotkeySet: (hotkey: string) => Promise<boolean>;
+      musicLikeCount: () => Promise<number>;
       musicProviderAuthStatus: (provider: MusicProviderId) => Promise<MusicProviderAuthStatus>;
       musicProviderAuthCreateQr: (provider: MusicProviderId) => Promise<MusicProviderQrCodeResult>;
       musicProviderAuthCheckQr: (provider: MusicProviderId, token: string) => Promise<MusicProviderAuthStatus>;

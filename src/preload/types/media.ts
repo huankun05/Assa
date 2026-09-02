@@ -93,3 +93,14 @@ export interface SourceSwitchRequestData {
   title: string;
   artist: string;
 }
+
+/** 喜欢同步结果 */
+export interface MusicLikeSyncResult {
+  liked: boolean;
+}
+
+/** 喜欢切换结果 */
+export interface MusicLikeToggleResult {
+  liked: boolean;
+  synced: boolean;
+}

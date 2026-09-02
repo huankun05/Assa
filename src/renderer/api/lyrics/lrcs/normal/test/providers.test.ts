@@ -36,7 +36,7 @@ const mockQishuiLyrics = vi.hoisted(() => vi.fn());
 const mockCleanTitle = vi.hoisted(() => vi.fn((t: string) => t));
 const mockCleanArtist = vi.hoisted(() => vi.fn((a: string) => a));
 const mockParseSyncedLrc = vi.hoisted(() => vi.fn((): Array<{ time_ms: number; text: string }> => []));
-const mockParseYrc = vi.hoisted(() => vi.fn(() => []));
+const mockParseYrc = vi.hoisted(() => vi.fn((): Array<{ time_ms: number; text: string }> => []));
 const mockParseKrc = vi.hoisted(() => vi.fn(() => []));
 const mockExtractSyncedFromArray = vi.hoisted(() => vi.fn(() => null));
 const mockExtractSyncedFromObject = vi.hoisted(() => vi.fn(() => null));
@@ -299,6 +299,16 @@ describe('fetchLyricsFromNetease', () => {
     vi.clearAllMocks();
     mockCleanTitle.mockImplementation((t: string) => t);
     mockCleanArtist.mockImplementation((a: string) => a);
+    // netease provider 通过 searchWithScoring 评分选曲：透传实现取首个候选，
+    // 使搜索请求仍发生在 mockRequestJsonWithLog 上
+    mockSearchWithScoring.mockImplementation(
+      async (input: unknown, searchFn: unknown) => {
+        const queryInput = input as { title: string; artist: string };
+        const search = searchFn as (query: string) => Promise<Array<Record<string, unknown>>>;
+        const candidates = await search(`${queryInput.title} ${queryInput.artist}`);
+        return candidates[0] ?? null;
+      },
+    );
   });
 
   function searchResponse(songs: unknown[]) {
@@ -419,8 +429,56 @@ describe('fetchLyricsFromNetease', () => {
 
     expect(mockCleanTitle).toHaveBeenCalledWith('Song ');
     expect(mockCleanArtist).toHaveBeenCalledWith(' Artist');
-    // 2 search calls (raw + cleaned), each stops at null search
-    expect(mockRequestJsonWithLog).toHaveBeenCalledTimes(2);
+    // 4 calls: raw direct search, raw searchNetease, cleaned direct search, cleaned searchNetease
+    expect(mockRequestJsonWithLog).toHaveBeenCalledTimes(4);
+  });
+
+  it('routes search results through searchWithScoring instead of taking the first one', async () => {
+    // direct match returns null, so fallback to searchWithScoring
+    mockRequestJsonWithLog
+      .mockResolvedValueOnce(null) // direct search returns null
+      .mockResolvedValueOnce(searchResponse([{ id: 1 }, { id: 2 }]))
+      .mockResolvedValueOnce(lyricsResponse(undefined, '[00:01.00]lrc-line'));
+    mockParseSyncedLrc.mockReturnValueOnce(okLines('lrc-line'));
+
+    await fetchLyricsFromNetease('t', 'a');
+
+    expect(mockSearchWithScoring).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns null when LRC lyrics are instrumental placeholder text', async () => {
+    mockRequestJsonWithLog
+      .mockResolvedValueOnce(searchResponse([{ id: 111 }]))
+      .mockResolvedValueOnce(lyricsResponse(undefined, '[00:05.00]纯音乐，请欣赏'));
+    mockParseSyncedLrc.mockReturnValueOnce(okLines('纯音乐，请欣赏'));
+
+    expect(await fetchLyricsFromNetease('t', 'a')).toBeNull();
+  });
+
+  it('returns null when YRC lyrics are instrumental placeholder text', async () => {
+    mockRequestJsonWithLog
+      .mockResolvedValueOnce(searchResponse([{ id: 112 }]))
+      .mockResolvedValueOnce(lyricsResponse('[00:05.00]纯音乐，请欣赏'));
+    mockParseYrc.mockReturnValueOnce(okLines('纯音乐，请欣赏'));
+
+    expect(await fetchLyricsFromNetease('t', 'a')).toBeNull();
+  });
+
+  it('returns placeholder-filtered lyrics from the next candidate via fallback', async () => {
+    // 占位歌词被过滤后，会依次尝试 exact match -> searchNetease -> cleaned exact match -> cleaned searchNetease
+    mockCleanTitle.mockImplementation((t: string) => t.trim());
+    mockCleanArtist.mockImplementation((a: string) => a.trim());
+    mockRequestJsonWithLog
+      .mockResolvedValueOnce(searchResponse([{ id: 201 }])) // raw direct search
+      .mockResolvedValueOnce(lyricsResponse(undefined, '[00:05.00]纯音乐，请欣赏')) // raw direct lyric
+      .mockResolvedValueOnce(searchResponse([{ id: 201 }])) // raw searchNetease
+      .mockResolvedValueOnce(lyricsResponse(undefined, '[00:05.00]纯音乐，请欣赏')) // raw searchNetease lyric
+      .mockResolvedValueOnce(searchResponse([{ id: 202 }])) // cleaned direct search
+      .mockResolvedValueOnce(lyricsResponse(undefined, '[00:01.00]real-line')); // cleaned direct lyric
+    mockParseSyncedLrc.mockReturnValueOnce(okLines('纯音乐，请欣赏')).mockReturnValueOnce(okLines('纯音乐，请欣赏')).mockReturnValueOnce(okLines('real-line'));
+
+    expect(await fetchLyricsFromNetease('Song ', ' Artist')).toEqual(okLines('real-line'));
+    expect(mockRequestJsonWithLog).toHaveBeenCalledTimes(6);
   });
 });
 

@@ -29,6 +29,17 @@ import { ipcMain } from 'electron';
 import { join } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { broadcastSettingChange } from '../../utils/broadcast';
+import {
+  buildTrackKey,
+  dispatchLikeHotkey,
+  parseHotkeyCombo,
+  readLikedSongs,
+  readMusicLikeHotkey,
+  writeLikedSongs,
+  writeMusicLikeHotkey,
+} from '../../music/mediaLike';
+import { isNeteaseFallbackActive, NETEASE_FALLBACK_DEVICE_ID, readNeteaseLikeState } from '../../music/titleFallback';
+import { checkNeteaseLikeState, searchNeteaseTrack } from '../../music/providers/neteaseBusinessService';
 
 interface RegisterMusicIpcHandlersOptions {
   storeDir: string;
@@ -53,6 +64,8 @@ interface RegisterMusicIpcHandlersOptions {
   setSmtcUnsubscribeMs: (value: number) => void;
   sanitizeSmtcUnsubscribeMs: (value: unknown) => number;
   detectAllSources: () => Promise<Array<{ sourceAppId: string; isPlaying: boolean; hasTitle: boolean; thumbnail: string | null }>>;
+  /** 当前 SMTC 音源标识，用于判断是否为网易云音乐 */
+  getCurrentDeviceId: () => string;
 }
 
 /**
@@ -284,4 +297,86 @@ export function registerMusicIpcHandlers(options: RegisterMusicIpcHandlersOption
       return { ok: false, sources: [], message: '读取会话异常' };
     }
   });
+
+  // ===== 喜欢（收藏） =====
+
+  ipcMain.handle('music:like:check', (_event, title: string, artist: string) => {
+    const key = buildTrackKey(title, artist);
+    if (!key) return false;
+    return readLikedSongs(options.storeDir).includes(key);
+  });
+
+  ipcMain.handle('music:like:list', () => readLikedSongs(options.storeDir));
+
+  ipcMain.handle('music:like:toggle', async (_event, title: string, artist: string) => {
+    const key = buildTrackKey(title, artist);
+    if (!key) return { liked: false, synced: false };
+
+    const liked = readLikedSongs(options.storeDir);
+    const wasLiked = liked.includes(key);
+    const nextLiked = !wasLiked;
+    const nextList = nextLiked ? [...liked, key] : liked.filter((item) => item !== key);
+    writeLikedSongs(options.storeDir, nextList);
+
+    const deviceId = isNeteaseFallbackActive() ? NETEASE_FALLBACK_DEVICE_ID : options.getCurrentDeviceId();
+    const synced = dispatchLikeHotkey(
+      readMusicLikeHotkey(options.storeDir),
+      deviceId,
+    );
+
+    // 不再读本地文件做“自我修正”——它无法反映网易云真实状态。
+    // 以本次本地预期作为最终状态回传，前端据此更新 UI。
+    return { liked: nextLiked, synced };
+  });
+
+  ipcMain.handle('music:like:sync', async (_event, title: string, artist: string) => {
+    const key = buildTrackKey(title, artist);
+    if (!key) return { liked: false, source: 'none' };
+
+    let realLiked: boolean | null = null;
+    let source: string = 'none';
+
+    if (title && artist) {
+      try {
+        const track = await searchNeteaseTrack(title, artist);
+        if (track) {
+          const liked = await checkNeteaseLikeState(track.id);
+          if (liked !== null) {
+            realLiked = liked;
+            source = 'netease-api';
+          }
+        }
+      } catch {
+        // API 查询失败，回退到 UI Automation
+      }
+    }
+
+    if (realLiked === null) {
+      try {
+        realLiked = await readNeteaseLikeState();
+        source = 'netease-ui';
+      } catch {
+        realLiked = false;
+        source = 'none';
+      }
+    }
+
+    const liked = readLikedSongs(options.storeDir);
+    const nextList = realLiked ? [...new Set([...liked, key])] : liked.filter((item) => item !== key);
+    writeLikedSongs(options.storeDir, nextList);
+
+    return { liked: Boolean(realLiked), source };
+  });
+
+  ipcMain.handle('music:like:hotkey:get', () => readMusicLikeHotkey(options.storeDir));
+
+  ipcMain.handle('music:like:hotkey:set', (event, hotkey: string) => {
+    const value = String(hotkey ?? '');
+    if (parseHotkeyCombo(value).length === 0) return false;
+    const ok = writeMusicLikeHotkey(options.storeDir, value);
+    if (ok) broadcastSettingChange(event.sender.id, 'store:music-like-hotkey', value);
+    return ok;
+  });
+
+  ipcMain.handle('music:like:count', () => readLikedSongs(options.storeDir).length);
 }

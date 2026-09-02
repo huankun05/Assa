@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MusicSettingsPageKey } from '../../utils/settingsConfig';
@@ -230,7 +230,7 @@ export function MusicSettingsSection(props: MusicSettingsSectionProps): ReactEle
                       {playerIcon && <img className="settings-whitelist-icon" src={playerIcon} alt="" />}
                       <span className="settings-whitelist-name">{item}</span>
                       <button
-                        className="settings-whitelist-remove"
+                        className="settings-lyrics-source-btn"
                         type="button"
                         title={t('settings.common.remove', { defaultValue: '移除' })}
                         onClick={() => {
@@ -267,11 +267,11 @@ export function MusicSettingsSection(props: MusicSettingsSectionProps): ReactEle
                       if (e.key === 'Enter') handleAddWhitelist();
                     }}
                   />
-                  <button className="settings-whitelist-add-btn" type="button" onClick={() => { handleAddWhitelist(); }}>{t('settings.common.add', { defaultValue: '添加' })}</button>
+                  <button className="settings-card-action-btn" type="button" onClick={() => { handleAddWhitelist(); }}>{t('settings.common.add', { defaultValue: '添加' })}</button>
                 </div>
                 <div className="settings-whitelist-add-row" style={{ display: 'flex', alignItems: 'center' }}>
                   <button
-                    className="settings-whitelist-add-btn"
+                    className="settings-card-action-btn"
                     type="button"
                     onClick={() => {
                       if (whitelistInputError) setWhitelistInputError('');
@@ -304,7 +304,7 @@ export function MusicSettingsSection(props: MusicSettingsSectionProps): ReactEle
                               <span className="settings-whitelist-detected-badge">{t('settings.music.whitelist.added', { defaultValue: '已添加' })}</span>
                             ) : (
                               <button
-                                className="settings-whitelist-add-btn"
+                                className="settings-card-action-btn"
                                 type="button"
                                 onClick={() => {
                                   const next = [...whitelist, source.sourceAppId];
@@ -592,6 +592,34 @@ export function MusicSettingsSection(props: MusicSettingsSectionProps): ReactEle
 
             </div>
           )}
+
+          {musicSettingsPage === 'like' && (
+            <div className="settings-cards">
+              <div className="settings-card">
+                <div className="settings-card-header">
+                  <div className="settings-card-title">{t('settings.music.like.neteaseTitle', { defaultValue: '网易云音乐登录态' })}</div>
+                  <div className="settings-card-subtitle">{t('settings.music.like.neteaseHint', { defaultValue: '登录后可获取真实的喜欢状态，并同步到本地收藏' })}</div>
+                </div>
+                <NeteaseLikeSection />
+              </div>
+
+              <div className="settings-card">
+                <div className="settings-card-header">
+                  <div className="settings-card-title">{t('settings.music.like.hotkeyTitle', { defaultValue: '喜欢快捷键' })}</div>
+                  <div className="settings-card-subtitle">{t('settings.music.like.hotkeyHint', { defaultValue: '点击喜欢按钮时，会向当前播放器发送此快捷键' })}</div>
+                </div>
+                <LikeHotkeySection />
+              </div>
+
+              <div className="settings-card">
+                <div className="settings-card-header">
+                  <div className="settings-card-title">{t('settings.music.like.localTitle', { defaultValue: '本地收藏' })}</div>
+                  <div className="settings-card-subtitle">{t('settings.music.like.localHint', { defaultValue: '已收藏到本地的歌曲数量，登录后可与网易云真实喜欢状态同步' })}</div>
+                </div>
+                <LikedSongsCountSection />
+              </div>
+            </div>
+          )}
         </div>
 
         <SettingsPageNavigation
@@ -602,6 +630,247 @@ export function MusicSettingsSection(props: MusicSettingsSectionProps): ReactEle
           navigationLabel={t('settings.music.pagination')}
           onSelectPage={setMusicSettingsPage}
         />
+      </div>
+    </div>
+  );
+}
+
+/** 网易云登录态区块 */
+function NeteaseLikeSection(): ReactElement {
+  const { t } = useTranslation();
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const status = await window.api.invoke('netease-auth:status');
+      setLoggedIn(Boolean(status.loggedIn));
+    } catch {
+      setLoggedIn(false);
+      setMessage(t('settings.music.like.statusError', { defaultValue: '读取登录态失败' }));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const handleLogin = async (): Promise<void> => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      await window.api.invoke('netease-auth:login');
+      await refresh();
+    } catch {
+      setMessage(t('settings.music.like.loginFailed', { defaultValue: '登录失败，请重试' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async (): Promise<void> => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      await window.api.invoke('netease-auth:clear');
+      await refresh();
+    } catch {
+      setMessage(t('settings.music.like.logoutFailed', { defaultValue: '退出登录失败' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="settings-like-section">
+      {!loggedIn && !loading && (
+        <div className="settings-like-prompt">
+          <div className="settings-like-prompt-title">
+            {t('settings.music.like.promptTitle', { defaultValue: '登录网易云音乐，让喜欢状态更准确' })}
+          </div>
+          <div className="settings-like-prompt-desc">
+            {t('settings.music.like.promptDesc', { defaultValue: '未登录时，eIsland 只能记录本地快捷收藏，无法读取网易云真实喜欢状态。登录后，红心会与网易云「我喜欢的音乐」同步，避免两边状态不一致。' })}
+          </div>
+        </div>
+      )}
+
+      <div className="settings-like-status-row">
+        <span className="settings-like-status-label">
+          {t('settings.music.like.statusLabel', { defaultValue: '登录状态：' })}
+        </span>
+        <span className={`settings-like-status-value ${loggedIn ? 'is-logged-in' : 'is-logged-out'}`}>
+          {loading
+            ? t('settings.music.like.statusLoading', { defaultValue: '加载中…' })
+            : loggedIn
+              ? t('settings.music.like.statusLoggedIn', { defaultValue: '已登录' })
+              : t('settings.music.like.statusLoggedOut', { defaultValue: '未登录' })}
+        </span>
+      </div>
+
+      <div className="settings-hotkey-row" style={{ alignItems: 'center' }}>
+        <button
+          className="settings-card-action-btn settings-card-action-btn-primary"
+          type="button"
+          disabled={loading}
+          onClick={handleLogin}
+        >
+          {t('settings.music.like.login', { defaultValue: '登录' })}
+        </button>
+        <button
+          className={`settings-card-action-btn${loggedIn ? ' settings-hotkey-btn-danger' : ''}`}
+          type="button"
+          disabled={loading || !loggedIn}
+          onClick={handleLogout}
+        >
+          {t('settings.music.like.logout', { defaultValue: '退出登录' })}
+        </button>
+        <button
+          className="settings-card-action-btn"
+          type="button"
+          disabled={loading}
+          onClick={refresh}
+        >
+          {t('settings.music.like.refresh', { defaultValue: '刷新状态' })}
+        </button>
+      </div>
+
+      {message && (
+        <div className="settings-music-hint" style={{ color: message.includes('失败') ? '#ff8b8b' : '#7df2a0' }}>
+          {message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 喜欢快捷键区块 */
+function LikeHotkeySection(): ReactElement {
+  const { t } = useTranslation();
+  const [hotkey, setHotkey] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    window.api.musicLikeHotkeyGet()
+      .then((value) => {
+        if (!cancelled) setHotkey(value);
+      })
+      .catch(() => {
+        if (!cancelled) setHotkey('');
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSave = async (): Promise<void> => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const ok = await window.api.musicLikeHotkeySet(hotkey);
+      setMessage(
+        ok
+          ? t('settings.music.like.saveSuccess', { defaultValue: '已保存' })
+          : t('settings.music.like.saveFailed', { defaultValue: '保存失败，请检查快捷键格式' }),
+      );
+    } catch {
+      setMessage(t('settings.music.like.saveFailed', { defaultValue: '保存失败，请检查快捷键格式' }));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="settings-like-section">
+      <div className="settings-hotkey-row" style={{ alignItems: 'center' }}>
+        <label className="settings-field" style={{ flex: 1 }}>
+          <span className="settings-field-label">
+            {t('settings.music.like.hotkeyLabel', { defaultValue: '快捷键' })}
+          </span>
+          <input
+            className="settings-field-input"
+            type="text"
+            value={hotkey}
+            onChange={(e) => {
+              setHotkey(e.target.value);
+              if (message) setMessage(null);
+            }}
+            placeholder={t('settings.music.like.hotkeyPlaceholder', { defaultValue: '例如 Ctrl+Alt+L' })}
+          />
+        </label>
+        <button
+          className="settings-hotkey-btn"
+          type="button"
+          disabled={saving}
+          onClick={handleSave}
+        >
+          {t('settings.common.save', { defaultValue: '保存' })}
+        </button>
+      </div>
+
+      {message && (
+        <div className="settings-music-hint" style={{ color: message.includes('失败') ? '#ff8b8b' : '#7df2a0' }}>
+          {message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 本地收藏数量区块 */
+function LikedSongsCountSection(): ReactElement {
+  const { t } = useTranslation();
+  const [count, setCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const value = await window.api.musicLikeCount();
+      setCount(typeof value === 'number' ? value : null);
+    } catch {
+      setCount(null);
+      setError(t('settings.music.like.localCountError', { defaultValue: '读取本地收藏失败' }));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return (
+    <div className="settings-like-section">
+      <div className="settings-like-count-row">
+        <span className="settings-like-count-label">
+          {t('settings.music.like.localCountLabel', { defaultValue: '已收藏歌曲：' })}
+        </span>
+        <span className="settings-like-count-value">
+          {loading
+            ? t('settings.music.like.localCountLoading', { defaultValue: '加载中…' })
+            : error
+              ? error
+              : count !== null
+                ? String(count)
+                : '0'}
+        </span>
+      </div>
+      <div className="settings-hotkey-row" style={{ alignItems: 'center' }}>
+        <button
+          className="settings-card-action-btn"
+          type="button"
+          disabled={loading}
+          onClick={refresh}
+        >
+          {t('settings.music.like.localCountRefresh', { defaultValue: '刷新' })}
+        </button>
       </div>
     </div>
   );

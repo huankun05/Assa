@@ -453,7 +453,7 @@ describe('registerMusicIpcHandlers', () => {
   describe('channel registration', () => {
     it('registers exactly 19 IPC channels', () => {
       register();
-      expect(handleMock).toHaveBeenCalledTimes(21);
+      expect(handleMock).toHaveBeenCalledTimes(28);
     });
 
     it('registers all expected channels', () => {
@@ -473,6 +473,13 @@ describe('registerMusicIpcHandlers', () => {
         'music:smtc-unsubscribe-ms:get',
         'music:smtc-unsubscribe-ms:set',
         'music:detect-source-app-id',
+        'music:like:check',
+        'music:like:list',
+        'music:like:toggle',
+        'music:like:sync',
+        'music:like:hotkey:get',
+        'music:like:hotkey:set',
+        'music:like:count',
       ];
       register();
       expectedChannels.forEach((ch) => {

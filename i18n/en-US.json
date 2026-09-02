@@ -1,9 +1,13 @@
 {
   "common": {
-    "appName": "eIsland",
+    "appName": "Xiyue",
     "errors": {
       "rootMountNotFound": "#root mount node not found"
     }
+  },
+  "splash": {
+    "settings": "Settings",
+    "settingsTooltip": "Open settings to manage every page and feature"
   },
   "standalone": {
     "tabs": {
@@ -126,7 +130,7 @@
     },
     "github": {
       "title": "Open Source",
-      "subtitle": "eIsland is an open source project",
+      "subtitle": "Xiyue is an open source project",
       "links": {
         "repo": "GitHub",
         "website": "Website",
@@ -402,6 +406,9 @@
       "brightness": "Brightness",
       "volume": "Volume"
     },
+    "controlCenter": {
+      "back": "Back to control center"
+    },
     "brightness": {
       "title": "Screen brightness",
       "hint": "Drag to adjust",
@@ -427,10 +434,13 @@
     "music": {
       "unknownArtist": "Unknown artist",
       "unknownTitle": "Unknown title",
+      "notPlaying": "Not playing",
       "prev": "Previous",
       "pause": "Pause",
       "play": "Play",
-      "next": "Next"
+      "next": "Next",
+      "like": "Like",
+      "unlike": "Unlike"
     },
     "time": {
       "lunarPrefix": "Lunar"
@@ -2133,7 +2143,38 @@
       "whitelist": "Whitelist",
       "lyrics": "Lyrics",
       "smtc": "SMTC",
-      "providers": "Providers"
+      "providers": "Providers",
+      "like": "Like Sync"
+    },
+    "music": {
+      "like": {
+        "neteaseTitle": "NetEase Cloud Music Login",
+        "neteaseHint": "After login, real like status can be fetched and synced to local favorites",
+        "statusLabel": "Status: ",
+        "statusLoading": "Loading...",
+        "statusLoggedIn": "Logged in",
+        "statusLoggedOut": "Not logged in",
+        "statusError": "Failed to read login status",
+        "login": "Login",
+        "logout": "Logout",
+        "loginFailed": "Login failed, please retry",
+        "logoutFailed": "Logout failed",
+        "refresh": "Refresh",
+        "hotkeyTitle": "Like Hotkey",
+        "hotkeyHint": "When clicking like, this hotkey will be sent to the current player",
+        "hotkeyLabel": "Hotkey",
+        "hotkeyPlaceholder": "e.g. Ctrl+Alt+L",
+        "localTitle": "Local Favorites",
+        "localHint": "Songs saved locally; after login, can sync with real NetEase liked status",
+        "localCountLabel": "Liked songs: ",
+        "localCountLoading": "Loading...",
+        "localCountError": "Failed to load local favorites",
+        "localCountRefresh": "Refresh",
+        "promptTitle": "Login to NetEase Cloud Music for accurate like status",
+        "promptDesc": "Without login, eIsland can only save favorites locally and cannot read real NetEase liked status. After login, the heart icon will sync with NetEase 'My Liked Songs' to avoid inconsistent states.",
+        "saveSuccess": "Saved",
+        "saveFailed": "Save failed, check hotkey format"
+      }
     },
     "networkPages": {
       "timeout": "Timeout",
@@ -2222,6 +2263,17 @@
         "ocrEngineServer": "Server OCR",
         "translateTitle": "Screenshot Translation Language",
         "translateHint": "Configure source and target languages for screenshot translation."
+      },
+      "controlCenter": {
+        "title": "Control Center Buttons",
+        "hint": "Toggle which buttons appear in the Hover control center (time page), and drag or use up/down to reorder. Showing {{count}} / {{total}} buttons.",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "hideBtn": "Hide this button",
+        "showBtn": "Show this button",
+        "shownLabel": "Show",
+        "hiddenLabel": "Hide",
+        "resetDefault": "Restore defaults"
       },
       "notifications": {
         "configChanged": {
@@ -2495,8 +2547,10 @@
         "maxExpandTabSwitchHint": "Enable slide transition when switching pages in MaxExpand mode",
         "maxExpandTabSwitchToggle": "Enable tab switch animation",
         "startupAnimationTitle": "Show startup animation",
-        "startupAnimationHint": "When enabled, the startup animation is shown every time the app starts. When disabled, it is skipped.",
+        "startupAnimationHint": "When enabled, the startup animation plays only on first launch (a Settings shortcut sits at the bottom-right). When disabled, it never plays.",
         "startupAnimationToggle": "Show startup animation",
+        "resetStartupExperience": "Reset to first launch",
+        "resetStartupExperienceHint": "Reset: the next launch replays the startup animation and shows the setup guide",
         "splashBgColorTitle": "Splash background color",
         "splashBgColorHint": "Customize the background color of the splash screen",
         "resetDefault": "Restore Defaults",
@@ -2925,7 +2979,7 @@
         },
         "showConfig": {
           "title": "Show Settings Window Shortcut",
-          "hint": "Only works in standalone mode: press to open the standalone settings window and switch to the Settings page"
+          "hint": "Works in any window mode: press to open the standalone settings window and switch to the Settings page"
         },
         "openClipboardHistory": {
           "title": "Open Clipboard History Shortcut",

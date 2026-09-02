@@ -1191,6 +1191,13 @@ const api = {
     return ipcRenderer.invoke('music:like:toggle', title, artist);
   },
   /**
+   * 深度同步：读取网易云真实喜欢状态并回写本地收藏
+   * @description 以播放器真实状态为准，不修改播放器数据
+   */
+  musicLikeSync: (title: string, artist: string): Promise<{ liked: boolean }> => {
+    return ipcRenderer.invoke('music:like:sync', title, artist);
+  },
+  /**
    * 获取「喜欢」快捷键配置
    * @returns 快捷键字符串，如 Ctrl+Alt+L
    */
@@ -1204,6 +1211,10 @@ const api = {
    */
   musicLikeHotkeySet: (hotkey: string): Promise<boolean> => {
     return ipcRenderer.invoke('music:like:hotkey:set', hotkey);
+  },
+  /** 获取本地收藏歌曲数量 */
+  musicLikeCount: (): Promise<number> => {
+    return ipcRenderer.invoke('music:like:count');
   },
   /**
    * 获取音乐提供商登录状态
@@ -1237,6 +1248,15 @@ const api = {
    */
   musicProviderAuthClear: (provider: MusicProviderId): Promise<MusicProviderAuthStatus> => {
     return ipcRenderer.invoke('music-provider-auth:clear', provider);
+  },
+  neteaseLogin: (): Promise<{ success: boolean; message: string }> => {
+    return ipcRenderer.invoke('netease-auth:login');
+  },
+  neteaseStatus: (): Promise<{ loggedIn: boolean }> => {
+    return ipcRenderer.invoke('netease-auth:status');
+  },
+  neteaseClear: (): Promise<boolean> => {
+    return ipcRenderer.invoke('netease-auth:clear');
   },
   qishuiStatus: (): Promise<QishuiBusinessStatus> => ipcRenderer.invoke('qishui:status'),
   qishuiSearch: (keyword: string, options?: QishuiBusinessRequestOptions): Promise<QishuiSongsResult> => {

@@ -5,8 +5,6 @@
  * Copyright (C) 2026 JNTMTMTM
  * Copyright (C) 2026 pyisland.com
  *
- * Original author: JNTMTMTM[](https://github.com/JNTMTMTM)
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +25,12 @@ import {
   createQishuiQrCode,
   getQishuiAuthStatus,
 } from '../../music/providers/qishuiAuthService';
+import {
+  clearNeteaseSession,
+  isNeteaseLoggedIn,
+  openNeteaseLoginWindow,
+  readNeteaseSession,
+} from '../../music/providers/neteaseAuthService';
 
 const PROVIDER_HANDLERS = {
   qishui: {
@@ -34,6 +38,15 @@ const PROVIDER_HANDLERS = {
     checkQrCode: checkQishuiQrCode,
     getStatus: getQishuiAuthStatus,
     clear: clearQishuiAuth,
+  },
+  netease: {
+    createQrCode: async () => ({ provider: 'netease', loggedIn: false, state: 'waiting', retryAfterMs: 0, message: '请在弹窗中登录网易云音乐' }),
+    checkQrCode: async () => ({ provider: 'netease', loggedIn: isNeteaseLoggedIn(), state: 'confirmed', retryAfterMs: 0, message: '' }),
+    getStatus: () => {
+      const { cookie } = readNeteaseSession();
+      return { provider: 'netease', loggedIn: Boolean(cookie), state: 'confirmed', retryAfterMs: 0, message: '' };
+    },
+    clear: clearNeteaseSession,
   },
 } satisfies Record<MusicProviderId, {
   createQrCode: () => Promise<unknown>;
@@ -61,5 +74,17 @@ export function registerMusicProviderAuthIpcHandlers(): void {
   });
   ipcMain.handle('music-provider-auth:clear', (_event, provider: MusicProviderId) => {
     return providerHandler(provider).clear();
+  });
+
+  ipcMain.handle('netease-auth:login', async () => {
+    return openNeteaseLoginWindow();
+  });
+  ipcMain.handle('netease-auth:status', () => {
+    const { cookie } = readNeteaseSession();
+    return { loggedIn: Boolean(cookie) };
+  });
+  ipcMain.handle('netease-auth:clear', () => {
+    clearNeteaseSession();
+    return true;
   });
 }
