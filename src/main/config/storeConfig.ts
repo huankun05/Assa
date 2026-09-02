@@ -139,6 +139,8 @@ import {
   SCREENSHOT_OCR_ENGINE_STORE_KEY,
   SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY,
   SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY,
+  SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY,
+  SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY,
   type ScreenshotEngine,
   type ScreenshotOcrEngine,
   type ScreenshotTranslateEngine,
@@ -148,6 +150,8 @@ export {
   SCREENSHOT_OCR_ENGINE_STORE_KEY,
   SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY,
   SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY,
+  SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY,
+  SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY,
   type ScreenshotEngine,
   type ScreenshotOcrEngine,
   type ScreenshotTranslateEngine,
@@ -432,12 +436,26 @@ export function readScreenshotOcrEngineConfig(): ScreenshotOcrEngine {
 }
 
 /**
- * 读取截图翻译引擎偏好：local=本机 Hy-MT2 / server=服务端
+ * 读取截图翻译引擎偏好：local=本机 Hy-MT2 / cloud=云端百度翻译 / server=服务端
  * @returns 默认 'local'（本机免费翻译，无需账号）
  */
 export function readScreenshotTranslateEngineConfig(): ScreenshotTranslateEngine {
   const data = readJsonFile(SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY);
-  return data === 'server' ? 'server' : 'local';
+  return data === 'server' || data === 'cloud' ? data : 'local';
+}
+
+export type ScreenshotCloudTranslateConfig = { appId: string; secretKey: string };
+
+/**
+ * 读取云端翻译（百度翻译通用版）凭据；任一为空返回 null（走本地引擎）
+ */
+export function readScreenshotCloudTranslateConfig(): ScreenshotCloudTranslateConfig | null {
+  const appId = readJsonFile(SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY);
+  const secretKey = readJsonFile(SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY);
+  if (typeof appId === 'string' && appId.trim() && typeof secretKey === 'string' && secretKey.trim()) {
+    return { appId: appId.trim(), secretKey: secretKey.trim() };
+  }
+  return null;
 }
 
 /**

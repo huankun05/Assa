@@ -31,6 +31,7 @@ import { existsSync } from 'fs';
 import { is } from '@electron-toolkit/utils';
 import { capturePrimaryDisplayPng, captureAllDisplaysPng, getVisibleWindows } from './screenshotHelper';
 import { readScreenshotEngineConfig } from '../config/storeConfig';
+import { ensureLocalOcrMtService } from '../services/localOcrMtService';
 
 interface CreateCaptureWindowServiceOptions {
   getMainWindow: () => BrowserWindow | null;
@@ -235,6 +236,14 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
     if (captureWindow || isStartingCaptureWindow) return;
     isStartingCaptureWindow = true;
 
+    // 预热本地 OCR/翻译服务（后台 fire-and-forget，不阻塞截图流程）：
+    // 用户框选/标注期间 PaddleOCR 模型在后台加载，点 OCR/翻译时已就绪，避免首调等 ~11s。
+    // 服务为应用级单例（启动后常驻、退出时由 will-quit 回收）；预热失败不阻塞，
+    // 真正首次点击 OCR/翻译时会重试并给出明确错误。
+    void ensureLocalOcrMtService().catch(() => {
+      /* 预热失败静默，不打断截图 */
+    });
+
     try {
       let capture: CaptureResult;
       let displayLayouts: DisplayLayout[] = [];
@@ -272,7 +281,6 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
 
         await waitForMainWindowHidden();
 
-        const visibleWindows = getVisibleWindows();
         const c = await tryCaptureScreenshot(vs, isMultiMonitor);
         if (!c) {
           closeCaptureWindow();

@@ -212,7 +212,7 @@ body {
   border: 0;
   outline: 0;
   color: #fff;
-  font: 13px/1.65 system-ui, sans-serif;
+  font: 13px/1.65 system-ui, "Microsoft YaHei", "Microsoft YaHei UI", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
   background: rgba(0, 0, 0, .2);
   user-select: text;
 }
@@ -228,6 +228,38 @@ body {
 
 .capture-ocr-text::-webkit-scrollbar-track {
   background: transparent;
+}
+
+.capture-ocr-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.capture-ocr-section[hidden] {
+  display: none !important;
+}
+
+.capture-ocr-divider {
+  margin: 4px 0 0 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+
+.capture-ocr-section-title {
+  display: block;
+  padding: 10px 14px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .85);
+}
+
+.capture-translate-text {
+  /* 翻译区高度低于 OCR 原文区，便于同时浏览两种语言 */
+  min-height: 80px;
+  flex: 0 1 auto;
+  max-height: 40%;
 }
 
 .capture-ocr-actions {

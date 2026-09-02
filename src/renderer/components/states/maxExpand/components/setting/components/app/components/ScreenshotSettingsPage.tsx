@@ -36,6 +36,8 @@ import {
   SCREENSHOT_OCR_ENGINE_STORE_KEY,
   SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY,
   SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY,
+  SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY,
+  SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY,
 } from '../../../config/settingsTabConfig';
 
 /** 翻译语言选项 */
@@ -144,7 +146,9 @@ export function ScreenshotSettingsPage(): ReactElement {
   const [targetLang, setTargetLang] = useState('en');
   const [screenshotEngine, setScreenshotEngine] = useState<'plugin' | 'js'>('plugin');
   const [ocrEngine, setOcrEngine] = useState<'local' | 'paddleocr' | 'server'>('local');
-  const [translateEngine, setTranslateEngine] = useState<'local' | 'server'>('local');
+  const [translateEngine, setTranslateEngine] = useState<'local' | 'cloud' | 'server'>('local');
+  const [cloudTranslateAppId, setCloudTranslateAppId] = useState('');
+  const [cloudTranslateSecret, setCloudTranslateSecret] = useState('');
   const [localOcrDir, setLocalOcrDir] = useState('');
 
   useEffect(() => {
@@ -167,7 +171,15 @@ export function ScreenshotSettingsPage(): ReactElement {
     }).catch(() => {});
     window.api.storeRead(SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY).then((value) => {
       if (cancelled) return;
-      setTranslateEngine(value === 'server' ? 'server' : 'local');
+      setTranslateEngine(value === 'server' || value === 'cloud' ? value : 'local');
+    }).catch(() => {});
+    window.api.storeRead(SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY).then((value) => {
+      if (cancelled || typeof value !== 'string') return;
+      setCloudTranslateAppId(value);
+    }).catch(() => {});
+    window.api.storeRead(SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY).then((value) => {
+      if (cancelled || typeof value !== 'string') return;
+      setCloudTranslateSecret(value);
     }).catch(() => {});
     window.api.storeRead(SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY).then((value) => {
       if (cancelled || typeof value !== 'string') return;
@@ -198,9 +210,19 @@ export function ScreenshotSettingsPage(): ReactElement {
     void window.api.storeWrite(SCREENSHOT_OCR_ENGINE_STORE_KEY, engine);
   };
 
-  const handleTranslateEngineChange = (engine: 'local' | 'server'): void => {
+  const handleTranslateEngineChange = (engine: 'local' | 'cloud' | 'server'): void => {
     setTranslateEngine(engine);
     void window.api.storeWrite(SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY, engine);
+  };
+
+  const handleCloudTranslateAppIdChange = (value: string): void => {
+    setCloudTranslateAppId(value);
+    void window.api.storeWrite(SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY, value);
+  };
+
+  const handleCloudTranslateSecretChange = (value: string): void => {
+    setCloudTranslateSecret(value);
+    void window.api.storeWrite(SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY, value);
   };
 
   const handleLocalOcrDirChange = (path: string): void => {
@@ -288,7 +310,7 @@ export function ScreenshotSettingsPage(): ReactElement {
               {t('settings.app.screenshotSettings.translateEngineTitle', { defaultValue: '截图翻译引擎' })}
             </div>
             <div className="settings-card-subtitle">
-              {t('settings.app.screenshotSettings.translateEngineHint', { defaultValue: '本机 Hy-MT2：免费、离线、无需账号；服务端：需作者 Pro 账号。' })}
+              {t('settings.app.screenshotSettings.translateEngineHint', { defaultValue: '本机 Hy-MT2：免费、离线、无需账号；云端百度翻译：免费额度、速度快；服务端：需作者 Pro 账号。' })}
             </div>
           </div>
           <div className="settings-card-inline-row">
@@ -305,6 +327,16 @@ export function ScreenshotSettingsPage(): ReactElement {
               <input
                 type="radio"
                 name="screenshot-translate-engine"
+                checked={translateEngine === 'cloud'}
+                onChange={() => { handleTranslateEngineChange('cloud'); }}
+              />
+              <img className="settings-inline-icon" src={ServiceIcon.ALIBABACLOUD} alt="" />
+              {t('settings.app.screenshotSettings.translateEngineCloud', { defaultValue: '云端百度翻译（免费额度）' })}
+            </label>
+            <label className="settings-card-check" style={{ whiteSpace: 'nowrap' }}>
+              <input
+                type="radio"
+                name="screenshot-translate-engine"
                 checked={translateEngine === 'server'}
                 onChange={() => { handleTranslateEngineChange('server'); }}
               />
@@ -313,6 +345,27 @@ export function ScreenshotSettingsPage(): ReactElement {
               {t('settings.app.screenshotSettings.translateEngineServer', { defaultValue: '服务端（需会员）' })}
             </label>
           </div>
+          {translateEngine === 'cloud' && (
+            <div className="settings-card-body">
+              <input
+                className="settings-card-text-input"
+                type="text"
+                placeholder={t('settings.app.screenshotSettings.cloudTranslateAppIdPlaceholder', { defaultValue: '百度翻译 APP ID（fanyi-api.baidu.com 免费申请）' })}
+                value={cloudTranslateAppId}
+                onChange={(e) => { handleCloudTranslateAppIdChange(e.target.value); }}
+              />
+              <input
+                className="settings-card-text-input"
+                type="password"
+                placeholder={t('settings.app.screenshotSettings.cloudTranslateSecretPlaceholder', { defaultValue: '百度翻译密钥' })}
+                value={cloudTranslateSecret}
+                onChange={(e) => { handleCloudTranslateSecretChange(e.target.value); }}
+              />
+              <div className="settings-card-subtitle">
+                {t('settings.app.screenshotSettings.cloudTranslateHint', { defaultValue: '在 fanyi-api.baidu.com 申请「通用翻译」即可免费使用（标准版每月免费额度）；云端失败时自动回退本机引擎。' })}
+              </div>
+            </div>
+          )}
         </div>
         <div className="settings-card">
           <div className="settings-card-header">

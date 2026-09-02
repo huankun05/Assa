@@ -71,6 +71,16 @@
       <span data-i18n="copyText">复制文本</span>
     </button>
   </div>
+  <div class="capture-ocr-section" id="translateSection" hidden>
+    <hr class="capture-ocr-divider" />
+    <strong class="capture-ocr-section-title" data-i18n="translateResult">翻译结果</strong>
+    <textarea class="capture-ocr-text capture-translate-text" id="translateText" readonly></textarea>
+    <div class="capture-ocr-actions">
+      <button class="primary" id="btnTranslateCopy" disabled>
+        <span data-i18n="copyTranslation">复制译文</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="capture-toolbar" id="toolbar">

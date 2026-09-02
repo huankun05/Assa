@@ -39,11 +39,15 @@ export const SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY = 'screenshot-translate-engin
 /** 本地 OCR/翻译服务目录（local_capture_service.py 所在目录，留空用默认值） */
 export const SCREENSHOT_LOCAL_OCR_DIR_STORE_KEY = 'screenshot-local-ocr-dir';
 
+/** 云端翻译（百度翻译通用版）appid 与密钥配置键 */
+export const SCREENSHOT_CLOUD_TRANSLATE_APPID_STORE_KEY = 'screenshot-cloud-translate-appid';
+export const SCREENSHOT_CLOUD_TRANSLATE_SECRET_STORE_KEY = 'screenshot-cloud-translate-secret';
+
 /** 截图引擎类型 */
 export type ScreenshotEngine = 'plugin' | 'js';
 
 /** OCR 引擎类型：local=Tesseract.js(秒开) / paddleocr=本机 PaddleOCR(高精度) / server=服务端 */
 export type ScreenshotOcrEngine = 'local' | 'paddleocr' | 'server';
 
-/** 截图翻译引擎类型：local=本机 Hy-MT2 / server=服务端 */
-export type ScreenshotTranslateEngine = 'local' | 'server';
+/** 截图翻译引擎类型：local=本机 Hy-MT2 / cloud=云端百度翻译(免费额度) / server=服务端 */
+export type ScreenshotTranslateEngine = 'local' | 'cloud' | 'server';

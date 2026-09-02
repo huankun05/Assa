@@ -37,6 +37,7 @@ import {
   translateWithLocalMt,
 } from '../../services/localOcrMtService';
 import {
+  readScreenshotCloudTranslateConfig,
   readScreenshotOcrEngineConfig,
   readScreenshotTranslateEngineConfig,
 } from '../../config/storeConfig';
@@ -189,6 +190,8 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
         typeof payload?.dataURL === 'string' ? payload.dataURL : '',
         typeof payload?.targetLanguage === 'string' && payload.targetLanguage ? payload.targetLanguage : 'zh',
         controller.signal,
+        'fast',
+        readScreenshotTranslateEngineConfig() === 'cloud' ? readScreenshotCloudTranslateConfig() : null,
       );
     } finally {
       event.sender.removeListener('destroyed', abort);

@@ -46,6 +46,9 @@ const ocrProIcon = document.querySelector('.capture-ocr-pro-icon');
 const ocrPanel = document.getElementById('ocrPanel');
 const ocrText = document.getElementById('ocrText');
 const btnOcrCopy = document.getElementById('btnOcrCopy');
+const translateText = document.getElementById('translateText');
+const btnTranslateCopy = document.getElementById('btnTranslateCopy');
+const translateSection = document.getElementById('translateSection');
 const btnOcrClose = document.getElementById('btnOcrClose');
 const btnTranslate = document.getElementById('btnTranslate');
 const btnTranslateLabel = document.getElementById('btnTranslateLabel');
@@ -89,7 +92,14 @@ let penLastY = 0;
 
 const HANDLE_SIZE = 5;
 const HANDLE_HIT = 8;
+/** 撤销历史最大步数（正常选区可达上限） */
 const MAX_HISTORY = 10;
+/**
+ * 历史栈总内存预算（字节）。高分屏全屏选区单快照可达 ~20MB（DPR=2, 2880×1800×4），
+ * 若仍允许 10 步会吃 ~200MB；按快照面积动态收缩上限，把峰值压在预算内。
+ * 典型小选区（几百 KB~2MB）不受影响，仍可撤销 10 步。
+ */
+const HISTORY_BUDGET_BYTES = 128 * 1024 * 1024;
 const historyStack = [];
 let currentCaptureObjectUrl = '';
 let captureLanguage = 'zh-CN';
@@ -101,6 +111,7 @@ let isRecognizing = false;
 let ocrEngine = 'server';
 let translateEngine = 'server';
 let recognizedText = '';
+let translatedText = '';
 let translationCache = null;
 let displayedImageVersion = 'original';
 
@@ -125,6 +136,8 @@ const CAPTURE_I18N = {
       save: '保存',
       ocr: '文字识别',
       ocrResult: '文字识别结果',
+      translateResult: '翻译结果',
+      copyTranslation: '复制译文',
       recognizing: '识别中',
       ocrLoginRequired: '请先登录后再使用文字识别',
       copyText: '复制文本',
@@ -168,6 +181,8 @@ const CAPTURE_I18N = {
       save: 'Save',
       ocr: 'Recognize text',
       ocrResult: 'Recognized text',
+      translateResult: 'Translation',
+      copyTranslation: 'Copy translation',
       recognizing: 'Recognizing',
       ocrLoginRequired: 'Please sign in to use text recognition',
       copyText: 'Copy text',
@@ -238,15 +253,18 @@ void initCaptureLanguage();
 
 async function initOcrEngine() {
   try {
-    // 与 src/shared/storeKeys.ts 中 SCREENSHOT_OCR_ENGINE_STORE_KEY 保持一致
+    // 与 src/shared/storeKeys.ts 中 SCREENSHOT_OCR_ENGINE_STORE_KEY 保持一致。
+    // store:read 未设置时返回 null → 一律落到本机 Tesseract（秒开），与设置页/storeConfig 默认值一致，
+    // 只有用户显式选过 paddleocr/server 才用服务端（避免首装误走需登录的 server OCR）。
     const stored = await ipcRenderer.invoke('store:read', 'screenshot-ocr-engine');
-    ocrEngine = stored === 'paddleocr' || stored === 'local' ? stored : 'server';
-    // 与 src/shared/storeKeys.ts 中 SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY 保持一致
+    ocrEngine = stored === 'paddleocr' || stored === 'server' ? stored : 'local';
+    // 与 src/shared/storeKeys.ts 中 SCREENSHOT_TRANSLATE_ENGINE_STORE_KEY 保持一致。
+    // 未设置/null → 本机 Hy-MT2（免费离线）；'cloud' 也走本地服务 IPC（主进程按配置转发云端百度翻译）。
     const trStored = await ipcRenderer.invoke('store:read', 'screenshot-translate-engine');
-    translateEngine = trStored === 'server' ? 'server' : 'local';
+    translateEngine = trStored === 'server' || trStored === 'cloud' ? trStored : 'local';
   } catch {
-    ocrEngine = 'server';
-    translateEngine = 'server';
+    ocrEngine = 'local';
+    translateEngine = 'local';
   }
   if (ocrProIcon) {
     // 本机引擎（Tesseract / PaddleOCR）都不需要服务端会员标识
@@ -496,7 +514,9 @@ function restoreClip(ctx) {
 let historyIndex = -1;
 
 /**
- * 提交一次标注后的状态到历史栈（截断 redo 分支），并受 MAX_HISTORY 上限约束
+ * 提交一次标注后的状态到历史栈（截断 redo 分支）。
+ * 历史深度按快照字节数动态收缩：小选区允许 MAX_HISTORY 步，
+ * 高分屏大选区（单快照可达 ~20MB）自动降低步数，把总内存压在 HISTORY_BUDGET_BYTES 内。
  */
 function commitHistory() {
   if (selW < 1 || selH < 1) return;
@@ -510,9 +530,9 @@ function commitHistory() {
   };
   historyStack.length = historyIndex + 1;
   historyStack.push(snap);
-  if (historyStack.length > MAX_HISTORY) {
-    historyStack.shift();
-  }
+  const snapBytes = snap.data.data.length;
+  const cap = snapBytes > 0 ? Math.min(MAX_HISTORY, Math.max(1, Math.floor(HISTORY_BUDGET_BYTES / snapBytes))) : MAX_HISTORY;
+  while (historyStack.length > cap) historyStack.shift();
   historyIndex = historyStack.length - 1;
 }
 
@@ -803,6 +823,24 @@ function resetOcrResult() {
   btnOcrCopy.disabled = true;
   ocrPanel.style.display = 'none';
   btnOcrCopy.textContent = tCapture('copyText');
+  // 同步收起翻译区
+  translatedText = '';
+  translateText.value = '';
+  btnTranslateCopy.disabled = true;
+  btnTranslateCopy.textContent = tCapture('copyTranslation');
+  translateSection.hidden = true;
+}
+
+function showTranslateText(text) {
+  translatedText = typeof text === 'string' ? text : '';
+  if (!translatedText) {
+    translateSection.hidden = true;
+    return;
+  }
+  translateText.value = translatedText;
+  btnTranslateCopy.disabled = false;
+  btnTranslateCopy.textContent = tCapture('copyTranslation');
+  translateSection.hidden = false;
 }
 
 function isCaptureBusy() {
@@ -1178,7 +1216,36 @@ ipcRenderer.on('capture-image', (_e, data) => {
 });
 
 tempCanvas.addEventListener('mousedown', (e) => {
-  if (isCaptureBusy() || e.button !== 0) return;
+  if (isCaptureBusy()) return;
+  // 右键：取消当前选区回到 IDLE，再次右键或按 Esc 退出截图
+  if (e.button === 2) {
+    e.preventDefault();
+    if (state === STATE.DRAWING) {
+      // 框选过程中：取消本次框选
+      state = STATE.IDLE;
+      hoverWindowRect = pendingWindowClickRect || null;
+      drawMask();
+      if (hoverWindowRect) showToolbar();
+    } else if (state === STATE.SELECTED) {
+      // 已选区：清掉选区 + 翻译 / OCR 缓存，回到 IDLE
+      resetTranslationCache();
+      selX = 0; selY = 0; selW = 0; selH = 0;
+      resizeHandle = null;
+      state = STATE.IDLE;
+      hideToolbar();
+      drawMask();
+    } else if (state === STATE.RESIZING) {
+      // 拖拽 handle 中：放弃本次 resize
+      resizeHandle = null;
+      state = STATE.SELECTED;
+      drawMask();
+    } else if (state === STATE.IDLE) {
+      // 无选区：右键直接退出截图
+      ipcRenderer.send('capture-cancel');
+    }
+    return;
+  }
+  if (e.button !== 0) return;
   const mx = e.clientX;
   const my = e.clientY;
 
@@ -1401,6 +1468,7 @@ tempCanvas.addEventListener('mousemove', (e) => {
 
 tempCanvas.addEventListener('mouseup', (e) => {
   if (isCaptureBusy()) return;
+  if (e.button === 2) return; // 右键已在 mousedown 处理
   const mx = e.clientX;
   const my = e.clientY;
 
@@ -1582,8 +1650,8 @@ btnTranslate.addEventListener('click', async () => {
     const targetLanguage = typeof storedTargetLang === 'string' && storedTargetLang ? storedTargetLang : 'en';
 
     let result;
-    if (translateEngine === 'local') {
-      // 本机 Hy-MT2 图片内翻译：无需账号 / 验证码
+    if (translateEngine !== 'server') {
+      // 本机 Hy-MT2 / 云端百度翻译：都走本地服务 IPC（主进程按引擎配置决定 provider）
       result = await ipcRenderer.invoke('capture-translate-local', {
         dataURL: originalImage,
         targetLanguage,
@@ -1600,23 +1668,39 @@ btnTranslate.addEventListener('click', async () => {
         targetLanguage,
       });
     }
-    if (!result?.success || !result.translatedImage) {
+    if (!result?.success) {
       const errorCode = result?.code;
       const fallbackMsg = errorCode && tCapture(errorCode) !== errorCode
         ? tCapture(errorCode)
         : tCapture('translateFailed');
       throw new Error(result?.message || fallbackMsg);
     }
+    const translatedImage = typeof result.translatedImage === 'string' ? result.translatedImage : '';
+    const translatedText = typeof result.translatedText === 'string' ? result.translatedText : '';
+    // 两条路径都没数据 → 视为失败
+    if (!translatedImage && !translatedText) {
+      throw new Error(result?.message || tCapture('translateFailed'));
+    }
     // 先把「原文」状态快照入历史栈（旧代码误调未定义的 pushHistory()，会导致
     // 翻译成功也抛 ReferenceError 走 catch → 永远提示失败），随后绘制译文。
     commitHistory();
-    await renderSelectionImage(result.translatedImage);
-    translationCache = {
-      originalImage,
-      translatedImage: result.translatedImage,
-    };
+    if (translatedImage) {
+      // 服务端 / 本地图片覆盖路径：把"原文 + 译文叠图"贴到选区画布
+      await renderSelectionImage(translatedImage);
+      translationCache = { originalImage, translatedImage };
+    } else {
+      // 本地纯文本降级（字体缺失 / 翻译为空）：不覆盖选区，让用户在 OCR 浮窗里看译文
+      translationCache = { originalImage, translatedImage: '' };
+    }
     displayedImageVersion = 'translated';
     updateTranslateButtonLabel();
+    // 始终把译文文本写进 OCR 浮窗的扩展区（即使走了图片覆盖路径也展示，方便复制）
+    showTranslateText(translatedText);
+    if (!translatedImage && translatedText) {
+      // 纯文本路径：主动把 OCR 浮窗拉到前台
+      ocrPanel.style.display = 'flex';
+      positionOcrPanel();
+    }
     hideTranslateOverlay();
   } catch (error) {
     showTranslateOverlay(error instanceof Error ? error.message : tCapture('translateFailed'), true);
@@ -1685,4 +1769,9 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('beforeunload', () => {
   releaseCaptureResources();
+});
+
+// 屏蔽浏览器右键菜单（截图工具全程不弹系统菜单，右键用于退出选区）
+window.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
 });

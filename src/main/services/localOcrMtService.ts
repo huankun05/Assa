@@ -182,27 +182,60 @@ export async function recognizeWithPaddleOcr(
 
 export type LocalTranslateResult = {
   success: boolean;
+  /** 图片覆盖模式：本地服务在字体可用时返回的"原文 + 译文叠加"图（PNG dataURL） */
   translatedImage?: string;
+  /** 纯文本翻译结果（任意模式下都会返回，便于复制 / 浮窗展示） */
+  translatedText?: string;
+  /** OCR 提取的逐行文本，用于前端纯文本浮窗渲染（lines[].text + lines[].box） */
+  lines?: Array<{ text: string; box: [number, number, number, number] }>;
+  /** 图片路径不可用时的降级原因（'no-font' / 'empty-translation' / ...） */
+  fallback?: string;
   code?: string;
   message?: string;
 };
 
-/** 用本机 Hy-MT2 做图片内翻译：OCR 逐行 + 整段一次翻译 + 绘回原图。 */
+/** 用本机 Hy-MT2（或经服务转发的云端百度翻译）做图片内翻译：OCR + 段落翻译 + 绘回原图。 */
 export async function translateWithLocalMt(
   dataUrl: string,
   targetLangCode: string,
   signal: AbortSignal,
   modelTier = 'fast',
+  cloudCfg?: { appId: string; secretKey: string } | null,
 ): Promise<LocalTranslateResult> {
   try {
     const base = await ensureLocalOcrMtService();
-    const r = await postJson(
-      `${base}/translate_image`,
-      { image: dataUrl, target_lang: toTargetName(targetLangCode), model_tier: modelTier },
-      signal,
-      300000,
-    );
-    if (r?.ok && r.image) return { success: true, translatedImage: r.image };
+    const body: Record<string, unknown> = {
+      image: dataUrl,
+      target_lang: toTargetName(targetLangCode),
+      model_tier: modelTier,
+      mt_provider: cloudCfg ? 'cloud' : 'local',
+    };
+    if (cloudCfg) {
+      body.cloud = { app_id: cloudCfg.appId, secret_key: cloudCfg.secretKey };
+    }
+    const r = await postJson(`${base}/translate_image`, body, signal, 300000);
+    if (r?.ok) {
+      const image = typeof r.image === 'string' ? r.image : undefined;
+      const text = typeof r.text === 'string' ? r.text : '';
+      const fallback = typeof r.fallback === 'string' ? r.fallback : undefined;
+      const lines = Array.isArray(r.lines)
+        ? r.lines
+            .map((l: any) => ({
+              text: typeof l?.text === 'string' ? l.text : '',
+              box: Array.isArray(l?.box) && l.box.length === 4
+                ? [l.box[0], l.box[1], l.box[2], l.box[3]] as [number, number, number, number]
+                : [0, 0, 0, 0] as [number, number, number, number],
+            }))
+            .filter((l: { text: string }) => l.text)
+        : undefined;
+      return {
+        success: true,
+        translatedImage: image,
+        translatedText: text,
+        lines,
+        fallback,
+      };
+    }
     return { success: false, code: 'translationFailed', message: r?.message || '本地翻译失败' };
   } catch (error) {
     return {
@@ -218,15 +251,19 @@ export async function translateTextWithLocalMt(
   text: string,
   targetLangCode: string,
   signal: AbortSignal,
+  cloudCfg?: { appId: string; secretKey: string } | null,
 ): Promise<LocalOcrResult> {
   try {
     const base = await ensureLocalOcrMtService();
-    const r = await postJson(
-      `${base}/translate`,
-      { text, target_lang: toTargetName(targetLangCode) },
-      signal,
-      120000,
-    );
+    const body: Record<string, unknown> = {
+      text,
+      target_lang: toTargetName(targetLangCode),
+      mt_provider: cloudCfg ? 'cloud' : 'local',
+    };
+    if (cloudCfg) {
+      body.cloud = { app_id: cloudCfg.appId, secret_key: cloudCfg.secretKey };
+    }
+    const r = await postJson(`${base}/translate`, body, signal, 120000);
     if (r?.ok) return { success: true, text: typeof r.text === 'string' ? r.text : '' };
     return { success: false, code: 'translationFailed', message: r?.message || '本地翻译失败' };
   } catch (error) {
