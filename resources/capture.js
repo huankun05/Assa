@@ -4005,7 +4005,7 @@ const LS_PROBE_MS = 150;           // GDI 通道探针间隔（BitBlt ~10ms；15
 const LS_FULL_COOLDOWN_MS = 100;   // 全分辨率捕获最小间隔（GDI 抓帧 ~10-19ms，仅防同一步滚动重复匹配）
 const LS_SETTLE_MS = 0;            // GDI 通道无沉降窗口：帧越密位移越小、重叠越多、谷越稳
 const LS_AUTO_SETTLE_MS = 220;     // （r22 遗留，r23 步进制下探针不再排程抓帧）自动滚动模式沉降等待
-const LS_AUTO_STEP_GAP_MS = 200;   // r30 提速：停顿从 500ms 缩到 200ms，节奏更快且不影响清晰度（抓帧仍在静止后）
+const LS_AUTO_STEP_GAP_MS = 200;   // r48 回退（r47 曾 100ms 致软帧）；停顿 200ms，抓帧仍在静止后
 const LS_ACTIVE_MS = 45;           // 活跃期全帧连拍节拍（GDI bitblt ~10ms；45ms×滚速1m/s=45px 位移，量程内必拼上）
 const LS_MOTION_HOLD = 300;        // 活跃保持窗口：最近一次变化后持续连拍 300ms 才交还探针巡查
 
@@ -4285,8 +4285,8 @@ async function lsAutoStepLoop(token) {
 }
 
 /** 静止检测：每 100ms 抓 GDI 小图灰度，连续 3 次 diff<=0.05 判静止（r24 收紧）。
- *  旧阈值 0.5+2 次会被平滑滚动最后的亚像素缓动骗过 → 抓到"仍在微动"的帧（文字亚像素渲染发虚，
- *  实测软帧区域 lap_var 778 vs 真静止帧 7000+）。GDI 对静止画面 diff 精确 0.0，任何微动都非零。 */
+ *  r47 曾提速 60ms 轮询致软帧（sharp-gate 重试耗尽仍软），r48 回退 100ms。
+ *  GDI 对静止画面 diff 精确 0.0，任何微动都非零。 */
 async function lsWaitQuiet(timeoutMs) {
   const t0 = Date.now();
   let quietStreak = 0;
@@ -4646,13 +4646,11 @@ function lsMatchScroll(frame, refCanvas) {
   // 方案B 普通下限放宽：比例 0.35→0.22 且硬顶 60→48 行——矮选区(如 fh=540)不再被固定 60 行(=11%)卡成断档，
   // 合理的大位移(重叠偏小)可接受；高帧仍由 48 行硬顶保护不过度要求重叠。
   const isStrong = minErr < e0 * 0.45;
+  // r39 回退方案B：恢复 r38 的 60 行防周期假谷下限（min(60, 35%)）。方案B 放宽到 22%/48 实测在
+  // 周期内容(IDE聊天等)上会让跨周期强伪谷(如 s=66/180)以过大重叠被收进来=重复带，故还原收紧。
+  const normalMinOverlap = Math.max(8, Math.min(60, Math.floor(fh * 0.35)));
   const strongMinOverlap = Math.max(8, Math.floor(fh * 0.03));
-  const baseOverlap = Math.max(8, Math.min(48, Math.floor(fh * 0.22)));
-  const nearOverlap = Math.max(6, Math.floor(fh * 0.04));
-  let minOverlap;
-  if (isSeeding || isStrong) minOverlap = strongMinOverlap;
-  // 速度先验一致(isNear)的候选位移可信，即使重叠偏小也放行，避免"位移落在下限缝隙"被误拒断档。
-  else minOverlap = isNear ? Math.min(baseOverlap, nearOverlap) : baseOverlap;
+  const minOverlap = isSeeding ? strongMinOverlap : (isStrong ? strongMinOverlap : normalMinOverlap);
   if (overlapRows < minOverlap) { lsRejectStreak++; if (lsDiagDue()) console.error(`[LS] diag reject tiny-overlap s=${bestS} rows=${overlapRows} need=${minOverlap} strong=${isStrong} seed=${isSeeding} (重叠不足不可靠，交 prev 桥接)`); return 0; }
   // r25 防静止页污染：自动步进一格滚 ~200 物理 px，真实位移不可能 <15。bestS<15 说明这格滚轮没生效
   // （鼠标停在控制条上/目标忽略小 delta/已滚到底），帧与 accum 底部几乎相同——接受会叠加重复行
@@ -4713,8 +4711,18 @@ function lsMatchScroll(frame, refCanvas) {
     // 相邻独立匹配，不依赖可能陈旧的 accum，对周期内容最不敏感 → 当主链呈极强谷(ratio<0.1，假谷
     // 信号)且副链显著分歧时，前几格易错期优先采信副链，根治"主链锁周期假谷→accum 错位累积→拼接不准"。
     // 该条件不伤 r26 旧会话（其主链 ratio 正常、非矮选区周期假谷），不触发。
-    if (ccM.has && ccDev > 12 && minErr < e0 * 0.1 && (isSeeding || lsAcceptCount < 3)) {
-      if (lsDiagDue()) console.error(`[LS] cross-trust-pf s=${bestS} -> pf=${ccM.sPf} dev=${Math.round(ccDev)} pfErr=${Math.round(ccM.ve)} (副链强对齐，优先采信防周期假谷错拼)`);
+    // r40 副链采信必须通过位移先验一致性 + 重叠充足，否则不采信（防把正确主链覆盖成近整帧伪谷）。
+    // 实测会话 1788844918914：帧1 真位移 365(r=目标 0.5*729)，主链正确 365，副链却锁到周期伪谷 704
+    // (重叠仅25行) 被无条件采信 → 365 被覆盖成 704 → 作为 lsLastGoodS 毒化后续所有帧=大量重复/错拼。
+    // 副链"帧-帧相邻"对周期内容并不免疫(等高行周期同样产生等深伪谷)，只有结果符合位移先验才可信：
+    // 种子期先验≈0.5*帧高(步进目标)，已锚定期先验=lsLastGoodS(匀速)。重叠 <6% 帧高必为近整帧伪谷。
+    const pfPrior = isSeeding ? fh * 0.5 : lsLastGoodS;
+    const pfBound = isSeeding ? fh * 0.35 : Math.max(20, lsLastGoodS * 0.3);
+    const pfOverlap = fh - ccM.sPf;
+    const pfPriorOK = pfPrior > 0 && Math.abs(ccM.sPf - pfPrior) <= pfBound;
+    const pfOverlapOK = pfOverlap >= Math.max(strongMinOverlap, Math.floor(fh * 0.06));
+    if (ccM.has && ccDev > 12 && minErr < e0 * 0.1 && (isSeeding || lsAcceptCount < 3) && pfPriorOK && pfOverlapOK) {
+      if (lsDiagDue()) console.error(`[LS] cross-trust-pf s=${bestS} -> pf=${ccM.sPf} dev=${Math.round(ccDev)} pfErr=${Math.round(ccM.ve)} (副链强对齐且符合位移先验，采信防周期假谷错拼)`);
       lsRejectStreak = 0;
       lsLastMatchRatio = ccM.e0p > 0 ? ccM.ve / ccM.e0p : 1;
       lsLastGoodS = ccM.sPf; lsAcceptCount++;
@@ -4744,6 +4752,25 @@ function lsMatchScroll(frame, refCanvas) {
     const e1 = segErr(0, segRows), e2 = segErr(segRows, 2 * segRows), e3 = segErr(2 * segRows, 3 * segRows);
     const mx = Math.max(e1, e2, e3), mn = Math.min(e1, e2, e3);
     if (mx > 3 * mn + 50 && lsDiagDue()) console.error(`[LS] diag seg-warn s=${bestS} segs=${Math.round(e1)}/${Math.round(e2)}/${Math.round(e3)} (段间不齐，仅诊断不拒帧——真实内容变化会假阳性)`);
+  }
+  // r39 周期强谷防护：等高列表/聊天窗等"跨周期对齐"能得到低比值(isStrong, ratio<0.45)的伪谷，
+  // 且通常落在偏离速度先验的位移上（真滚动匀速→每步位移≈恒定）。这类强伪谷会绕过上方速度闸门
+  // （闸门只对非 strong 拒），实跑在 IDE 聊天上被任意位移(66/180/588/610)收进来=重复带/错位。
+  // 处理：在粗搜候选中寻找"速度一致"(|c.s-lastGoodS|≤velBound)且误差不显著高于伪谷(≤1.5×)的真谷，
+  // 找到则采信它修正错拼；找不到(无歧义强谷)则保留原结果、不额外干预——避免误伤真实强对齐。
+  if (lsLastGoodS > 8 && !isSeeding && isStrong && !isNear && cands && cands.length) {
+    const bound = velBound !== Infinity ? velBound : Math.max(20, lsLastGoodS * 0.3);
+    let alt = null;
+    for (const c of cands) {
+      if (Math.abs(c.s - lsLastGoodS) <= bound && c.e <= minErr * 1.5) { if (!alt || c.e < alt.e) alt = c; }
+    }
+    if (alt) {
+      if (lsDiagDue()) console.error(`[LS] strong-off-vel -> adopt ${alt.s} (周期假谷纠偏, 领速度一致真谷, err ${Math.round(alt.e)} vs ${Math.round(minErr)})`);
+      lsRejectStreak = 0;
+      lsLastMatchRatio = e0 > 0 ? alt.e / e0 : 1;
+      lsLastGoodS = alt.s; lsAcceptCount++;
+      return alt.s;
+    }
   }
   let sExact = bestS;
   const denom = eBefore + eAfter - 2 * minErr;

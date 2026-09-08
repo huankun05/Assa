@@ -92,6 +92,43 @@ function getXiyueWindowHandles(): Set<string> {
 // （约每 400ms），直到成功把焦点交给底层窗口（滚轮才能翻页）。
 let lsFocusTransferOk = false;
 let lsLastFocusAttempt = 0;
+// r47 方案A：滚轮用真实输入 mouse_event（浏览器/网页只响应真实滚轮，PostMessage WM_MOUSEWHEEL
+// 到 Chromium 句柄实测无效）。滚轮按光标所在窗口派发；鼠标放选区洞内即透传到底层页面。
+// 绝不移用户光标（不做 SetCursorPos 锁定位）。
+
+// 模块级选区洞引用（屏幕坐标）：lsHole 是长截图设置函数内的局部变量，模块级 lsWheel
+// 访问不到；active handler 赋值，lsStopPolling 清空。
+let lsWheelHole: Electron.Rectangle | null = null;
+
+/** 真实滚轮输入（mouse_event，方案 A / r47）：
+ *  - 滚轮按「光标所在窗口」派发。截图窗只对选区洞内 click-through 透传，因此只要用户把鼠标放在
+ *    扫描选区洞内，滚轮经洞透传到底层页面；光标移到洞外则恢复可点击、滚轮被截图窗吞（底层不动，
+ *    这是有意行为——鼠标放选区里才能滚）。
+ *  - 完全不做 SetCursorPos 锁定/还原：**绝不移用户光标**（r43~r46 锁光标注入→再还原，实测每次滚轮
+ *    把光标拖到选区中心再丢回，就是用户说的"抢鼠标/鼠标被重置到固定位置"）。方案 A 放弃"鼠标放
+ *    选区外也能滚"，换取零抢鼠标 + 更快（省去锁定/还原 + 不依赖 needLock 判断）。 */
+function lsWheel(delta: number): boolean {
+  try {
+    const koffi = require('koffi');
+    const user32 = koffi.load('user32.dll');
+    const mouseEvent = user32.func('void mouse_event(uint32_t dwFlags, int32_t dx, int32_t dy, uint32_t dwData, uint64_t dwExtraInfo)');
+    const getCursorPos = user32.func('uint32_t GetCursorPos(_Out_ uint8_t *lpPoint)');
+    const pt = Buffer.alloc(8);
+    const havePt = !!getCursorPos(pt);
+    const cx0 = havePt ? pt.readInt32LE(0) : 0;
+    const cy0 = havePt ? pt.readInt32LE(4) : 0;
+    const inHole = lsWheelHole
+      ? (cx0 >= lsWheelHole!.x && cx0 <= lsWheelHole!.x + lsWheelHole!.width && cy0 >= lsWheelHole!.y && cy0 <= lsWheelHole!.y + lsWheelHole!.height)
+      : false;
+    if (inHole) console.error(`[LS-MAIN] wheel delta=${delta} at=(${cx0},${cy0}) inHole`);
+    else console.error(`[LS-MAIN] wheel delta=${delta} at=(${cx0},${cy0}) OUTSIDE-HOLE ${lsWheelHole ? JSON.stringify(lsWheelHole) : 'null'}`);
+    mouseEvent(0x0800, 0, 0, delta, 0); // MOUSEEVENTF_WHEEL，负值向下翻页
+    return true;
+  } catch (err) {
+    console.error('[LS-MAIN] wheel inject failed:', (err as Error)?.message);
+    return false;
+  }
+}
 
 function transferFocusTo(x: number, y: number): void {
   const api = getWin32FocusApi();
@@ -361,15 +398,11 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
   function lsAutoScrollStart(intervalMs: number, delta: number): boolean {
     lsAutoScrollStop('restart');
     try {
-      // mouse_event 虽标记 deprecated 但全 Windows 可用；SendInput 需组 INPUT 结构体，koffi 收益不大
-      const koffi = require('koffi');
-      const user32 = koffi.load('user32.dll');
-      // MOUSEEVENTF_WHEEL = 0x0800；dwData = 滚轮刻度（**负值**向下翻页：正 delta=滚轮前推=向上滚，r21 首版方向反了）
-      const mouseEvent = user32.func('void mouse_event(uint32_t dwFlags, int32_t dx, int32_t dy, uint32_t dwData, uint64_t dwExtraInfo)');
       lsAutoScrollDeadline = Date.now() + 180000; // 安全阀：最多 3 分钟自动停
       lsAutoScrollTimer = setInterval(() => {
         if (Date.now() > lsAutoScrollDeadline) { lsAutoScrollStop('deadline'); return; }
-        try { mouseEvent(0x0800, 0, 0, delta, 0); } catch (_) { lsAutoScrollStop('error'); }
+        // r42：直接对底层窗口 PostMessage WM_MOUSEWHEEL，不依赖光标在洞内
+        if (!lsWheel(delta)) lsAutoScrollStop('error');
       }, Math.max(30, intervalMs));
       console.error(`[LS-MAIN] autoscroll start interval=${intervalMs}ms delta=${delta}`);      return true;
     } catch (err) {
@@ -382,16 +415,8 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
     if (p.action === 'step') {
       // r23 步进制：只发一格滚轮，由渲染端等画面静止抓帧后再发下一格——每帧都是静止帧（锐度拉满），
       // 连续滚动模式页面永远在动画中，沉降等待预算耗尽后照样抓中途帧（亚像素重采样→文字发虚）
-      try {
-        const koffi = require('koffi');
-        const user32 = koffi.load('user32.dll');
-        const mouseEvent = user32.func('void mouse_event(uint32_t dwFlags, int32_t dx, int32_t dy, uint32_t dwData, uint64_t dwExtraInfo)');
-        mouseEvent(0x0800, 0, 0, p.delta ?? -40, 0);
-        return true;
-      } catch (err) {
-        console.error('[LS-MAIN] autoscroll step failed:', (err as Error)?.message);
-        return false;
-      }
+      // r42：直接对底层窗口 PostMessage WM_MOUSEWHEEL，不依赖光标在洞内；鼠标停在图上任何位置都能翻页。
+      return lsWheel(p.delta ?? -40);
     }
     if (p.action === 'start') return lsAutoScrollStart(p.intervalMs ?? 600, p.delta ?? -40);
     lsAutoScrollStop('ipc');
@@ -593,6 +618,7 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
   const lsStopPolling = (): void => {
     if (lsPollTimer) { clearInterval(lsPollTimer); lsPollTimer = null; }
     lsHole = null;
+    lsWheelHole = null; // 清空模块级洞引用，防止下一会话误用旧坐标
     lsLastClickThrough = false;
   };
 
@@ -675,6 +701,7 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
           width: Math.round(payload.sel.w),
           height: Math.round(payload.sel.h),
         };
+        lsWheelHole = lsHole; // 同步到模块级：滚轮注入/光标锁定需要（存在局部 lsHole 作用域不可达）
         // 洞里的活桌面要全亮度透出：窗口底色临时转全透明。
         // 平时 '#47000000'（28% 黑）作为首帧防闪底色；长截图期间它会把透明洞里的活页面再压暗 28%
         //（和 body 的 0.28 背景叠成 0.48 → 实测灰值 133，即"洞里是灰色蒙版"的一半成因）。
