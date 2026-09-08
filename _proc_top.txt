@@ -1,0 +1,23 @@
+=== TOP 15 by CPU ===
+
+   Id ProcessName           CPU  WS_MB
+   -- -----------           ---  -----
+ 7188 WorkBuddy          155.10 732.40
+23864 TRAE SOLO CN        58.90 359.10
+12624 explorer            54.30 503.30
+ 4260 WorkBuddy           43.60 103.70
+18576 WorkBuddy           20.50 395.50
+15608 python              19.50 193.60
+ 9944 WorkBuddy           18.40 275.70
+23836 TRAE SOLO CN        17.50  59.70
+26740 WorkBuddy           15.00 295.30
+27216 WindowsTerminal     12.60 210.90
+21532 mpv                 12.50 142.20
+26396 WorkBuddy           11.20 331.50
+24056 TRAE SOLO CN        10.40 305.50
+ 8124 MSPCManagerService   9.80 183.90
+12100 nvcontainer          7.60  82.90
+
+
+=== helper/electron count ===
+count=0

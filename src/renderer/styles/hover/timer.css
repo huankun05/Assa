@@ -1,0 +1,482 @@
+/*
+ * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
+ * https://github.com/JNTMTMTM/eIsland
+ *
+ * Copyright (C) 2026 JNTMTMTM
+ * Copyright (C) 2026 pyisland.com
+ *
+ * Original author: JNTMTMTM[](https://github.com/JNTMTMTM)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/**
+ * @file timer.css
+ * @description 计时器输入框、显示、开始/暂停/重置控制按钮样式
+ */
+
+/** 时间标签页整体容器 - 控制中心纯按钮栏，占满并水平居中 */
+.time-tab-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  white-space: nowrap;
+}
+
+/** TimeTab 中 action buttons 的尺寸覆盖 */
+.time-tab-wrapper .action-buttons {
+  gap: 2px;
+}
+
+.time-tab-wrapper .action-btn {
+  width: 28px;
+}
+
+.time-tab-wrapper .action-btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/** TimeTab 中时间区与按钮组的分割线 */
+.time-tab-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(var(--color-text-rgb), 0.2);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/** 计时器容器 */
+.timer-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+/** 保留倒计时的实际尺寸，亮度面板仅覆盖其内容 */
+.timer-main-shell {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/** 计时器主体 */
+.timer-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.timer-main-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.brightness-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.brightness-control-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-height: 26px;
+  gap: 8px;
+}
+
+.brightness-slider {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--color-island-text);
+  cursor: pointer;
+}
+
+.brightness-slider:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.brightness-value {
+  min-width: 32px;
+  color: var(--color-island-text);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-main-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+/** 计时器输入框模式 */
+.timer-inputs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+}
+
+.timer-input {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: rgba(var(--color-text-rgb), 0.1);
+  color: var(--color-island-text);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 5px;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-input:focus {
+  background: rgba(var(--color-text-rgb), 0.2);
+  box-shadow: 0 0 8px rgba(var(--color-text-rgb), 0.3);
+}
+
+.timer-input:hover {
+  cursor: ns-resize;
+}
+
+.timer-sep {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(var(--color-text-rgb), 0.5);
+}
+
+/** 计时器显示模式 */
+.timer-display {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+}
+
+.timer-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-island-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/** 计时器控制按钮 */
+.timer-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+/** 媒体调节按钮组（亮度、音量） */
+.media-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.media-buttons .action-btn {
+  width: 28px;
+}
+
+.media-buttons .action-btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/** 工具按钮组（截图、任务管理器） */
+.timer-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/** 工具按钮组内按钮尺寸覆盖（小于默认 action-btn） */
+.timer-tools .action-btn {
+  width: 26px;
+}
+
+.timer-tools .action-btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/** 工具按钮组与计时器之间的垂直分割线 */
+.timer-tools-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(var(--color-text-rgb), 0.2);
+  margin: 0 4px;
+}
+
+.timer-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.timer-btn:hover {
+  background: rgba(var(--color-text-rgb), 0.1);
+}
+
+.timer-btn:active {
+  transform: scale(0.9);
+}
+
+.timer-btn-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: brightness(0) invert(var(--icon-invert));
+}
+
+/** 时间与计时器分割线 */
+.timer-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(var(--color-text-rgb), 0.2);
+  margin: 0 4px;
+}
+
+/** 计时器标题 */
+.timer-title {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.timer-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ========== 控制中心 Popover 浮层状态（整行替换）========== */
+/* 激活时只显示图标 + 紧凑滑条 + 数值，按钮栏已由 TimeTab 条件渲染不输出，
+   此处无需再设 flex-direction/display:none —— 二者互斥切换 */
+
+/* 浮层本体：占满时间标签页整行，水平+垂直居中所有子元素 */
+.control-center-popover {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 0 6px;
+}
+
+/* 浮层左侧图标按钮（点击关闭浮层）—— 微圆角矩形容器，hover 反馈 */
+.control-center-popover-icon-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: rgba(var(--color-text-rgb), 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+.control-center-popover-icon-btn:hover {
+  background: rgba(var(--color-text-rgb), 0.16);
+  transform: scale(1.04);
+}
+.control-center-popover-icon-btn:active {
+  transform: scale(0.96);
+}
+
+/* 浮层左侧图标（主题自适应） */
+.control-center-popover-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: brightness(0) invert(var(--icon-invert));
+}
+
+/* 浮层右侧内容区：flex:1 占满，承载 slider + 数值 */
+.control-center-popover-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* ========== 浮层专属 BrightnessControl / VolumeControl 布局 ========== */
+/* 在 popover 内让 BrightnessControl 退化成单行：slider + value（隐藏 title-row） */
+.control-center-popover .brightness-panel {
+  position: static;
+  inset: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+}
+.control-center-popover .timer-title-row {
+  display: none;
+}
+/* control-row 不再需要 padding/独立高度，交给 .brightness-panel 提供 */
+.control-center-popover .brightness-control-row {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 0;
+}
+
+/* ========== 现代风格 Slider（核心：thumb 严格垂直居中） ========== */
+/* input 高度 = thumb 高度，让 thumb 占满 input 框；但要让 track 居中靠显式 margin-top */
+.control-center-popover .brightness-slider {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  /* total input height = thumb height，让 thumb 完全撑出 input。
+     runnable-track 由 vendor 居中放（height=6，居中于 18px -> 距上下各 6px） */
+  height: 18px;
+  background: transparent;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border: none;
+  accent-color: var(--color-island-text);
+}
+
+/* 禁用态 */
+.control-center-popover .brightness-slider:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+/* WebKit 轨道：6px 高 + 圆角；左半（已填充）用主题色，右半（未填充）用淡色，
+   填充比例由 React 注入的 --slider-val 控制 */
+.control-center-popover .brightness-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-island-text) 0%,
+    var(--color-island-text) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) 100%
+  );
+  border: none;
+}
+
+/* WebKit thumb：margin-top = (18 - 6) / 2 = 6（负值让 thumb 顶部上移 6px，
+   结果 thumb 18px 在 input 18px 框里完美居中，与 6px track 中线对齐） */
+.control-center-popover .brightness-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--color-island-text);
+  border: 3px solid var(--color-island-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--color-text-rgb), 0.08);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.control-center-popover .brightness-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.control-center-popover .brightness-slider:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+/* Firefox 兼容 */
+.control-center-popover .brightness-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-island-text) 0%,
+    var(--color-island-text) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) var(--slider-val, 0%),
+    rgba(var(--color-text-rgb), 0.18) 100%
+  );
+  border: none;
+}
+.control-center-popover .brightness-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-island-text);
+  border: 3px solid var(--color-island-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.control-center-popover .brightness-slider:hover::-moz-range-thumb {
+  transform: scale(1.15);
+}
+.control-center-popover .brightness-slider:active::-moz-range-thumb {
+  transform: scale(1.25);
+}
+
+/* ========== 数值显示 ========== */
+.control-center-popover .brightness-value {
+  flex-shrink: 0;
+  min-width: 42px;
+  color: var(--color-island-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+.control-center-popover .brightness-slider:disabled ~ .brightness-value {
+  color: rgba(var(--color-text-rgb), 0.5);
+  opacity: 0.7;
+}

@@ -1,0 +1,172 @@
+/*
+ * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
+ * https://github.com/JNTMTMTM/eIsland
+ *
+ * Copyright (C) 2026 JNTMTMTM
+ * Copyright (C) 2026 pyisland.com
+ *
+ * Original author: JNTMTMTM[](https://github.com/JNTMTMTM)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/**
+ * @file weather-tab.css
+ * @description 天气 Tab 样式
+ */
+
+/* 主体：flex:1 撑满容器 + justify-content:center 整体居中 */
+.weather-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  color: var(--color-island-text);
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  contain: layout paint;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* --- 左：大图标 + 天气描述（上下） --- */
+.weather-tab-icon-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.weather-tab-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.weather-tab-icon-clickable {
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.weather-tab-icon-clickable:hover {
+  transform: scale(1.1);
+}
+
+.weather-tab-icon-clickable:active {
+  transform: scale(0.95);
+}
+
+.weather-tab-icon-spinning {
+  animation: weather-spin 0.7s linear infinite;
+  cursor: default;
+}
+
+/* spinning 时禁用 hover/active 的 scale，避免与 rotate 冲突 */
+.weather-tab-icon-spinning:hover,
+.weather-tab-icon-spinning:active {
+  transform: none;
+}
+
+@keyframes weather-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.weather-tab-desc {
+  font-size: 10px;
+  opacity: 0.7;
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
+.weather-tab-toast {
+  font-weight: 500;
+  opacity: 1;
+  animation: weather-toast-in 0.25s ease-out both;
+}
+
+.weather-tab-toast-success {
+  color: rgba(76, 217, 100, 0.9); /* 成功绿 */
+}
+
+.weather-tab-toast-error {
+  color: rgba(255, 99, 99, 0.9); /* 错误红 */
+}
+
+@keyframes weather-toast-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 中：温度大字 + 位置块（并排，位置贴温度右侧） --- */
+.weather-tab-mid-block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px; /* 温度与位置块的间隔 */
+}
+
+.weather-tab-temp-big {
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.weather-tab-location {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 居中：北京在经纬度正中间 */
+  gap: 2px;
+}
+
+.weather-tab-city {
+  font-size: 11px;
+  opacity: 0.75;
+  line-height: 1.2;
+}
+
+.weather-tab-coords {
+  font-size: 11px;
+  opacity: 0.5;
+  line-height: 1.2;
+}
+
+/* 分隔线 */
+.weather-tab-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(var(--color-text-rgb), 0.2);
+  flex-shrink: 0;
+}
+
+/* --- 右：未来两天预报 --- */
+.weather-tab-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weather-tab-forecast-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.weather-tab-forecast-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}

@@ -1,0 +1,16 @@
+# 语音输入
+faster-whisper>=1.0.0
+# 音频采集：Phase 0 过渡方案（设计 v1.2：Phase 1 起采集移至 Rust/cpal，此依赖届时移除）
+sounddevice>=0.4.6
+# VAD / 端点检测 / 打断
+silero-vad>=5.0.0
+# 语音输出
+# CosyVoice V3：HTTP 服务模式调纳西妲项目已有部署（不在 pip 上，本项目不装）
+# Phase 0 默认用 kokoro 打通回路；pyttsx3 = Windows SAPI 离线兜底
+kokoro>=0.1.0
+pyttsx3>=2.90
+# 唤醒词（自训 KWS，Phase1）
+# openwakeword 可选
+numpy>=1.26.0
+# 构建工具（生成托盘图标用，非运行时依赖）
+# pillow

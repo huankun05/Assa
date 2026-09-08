@@ -1,0 +1,155 @@
+/*
+ * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
+ * https://github.com/JNTMTMTM/eIsland
+ *
+ * Copyright (C) 2026 JNTMTMTM
+ * Copyright (C) 2026 pyisland.com
+ *
+ * Original author: JNTMTMTM[](https://github.com/JNTMTMTM)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/**
+ * @file splash.css
+ * @description 启动画面样式
+ * @author 鸡哥
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+.splash-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #000000;
+  border-radius: 24px;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+.splash-container.fade-out {
+  opacity: 0;
+}
+
+.splash-wave-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.splash-video {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+  display: block;
+}
+
+/* 启动画面设置入口：玻璃拟态胶囊按钮，仅首次启动出现 */
+.splash-settings-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s ease-out,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.splash-settings-btn.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.splash-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.splash-settings-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.splash-settings-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.splash-settings-icon {
+  display: block;
+  opacity: 0.9;
+  transition: transform 0.35s ease;
+}
+
+.splash-settings-btn:hover .splash-settings-icon {
+  transform: rotate(45deg);
+}
+
+.splash-settings-label {
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-settings-btn {
+    transform: none;
+    transition: opacity 0.2s linear;
+  }
+
+  .splash-settings-btn.visible {
+    transform: none;
+  }
+
+  .splash-settings-btn:hover .splash-settings-icon {
+    transform: none;
+  }
+}
