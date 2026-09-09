@@ -4015,7 +4015,11 @@ const LS_MOTION_HOLD = 300;        // 活跃保持窗口：最近一次变化后
 /** GDI 抓屏（主进程 BitBlt，毫秒级）：物理像素矩形 → BGRA raw → RGBA canvas；失败返回 null（调用方 fallback） */
 async function lsGdiFrame(gx, gy, gw, gh, dst) {
   try {
-    const res = await ipcRenderer.invoke('capture-longshot-gdi', { gx: Math.round(gx), gy: Math.round(gy), gw: Math.round(gw), gh: Math.round(gh) });
+    // r55: 请求高度比选区少 2 物理行——GDI BitBlt 的最后 1~2 行与合成器更新存在竞争
+    // （实测白色瀑布流会话：末行 MAD 29~51 vs 倒数第二行 1.2），撕裂行拼进结果 =
+    // 每条拼接缝上一道贯穿全宽的细线。选区少 2 行对拼接无感知影响。
+    const ghr = Math.max(8, Math.round(gh) - 2);
+    const res = await ipcRenderer.invoke('capture-longshot-gdi', { gx: Math.round(gx), gy: Math.round(gy), gw: Math.round(gw), gh: ghr });
     if (!res || !res.buf || !(res.w > 0) || !(res.h > 0)) return null;
     const src = res.buf instanceof Uint8Array ? res.buf : new Uint8Array(res.buf);
     const n = res.w * res.h;
@@ -4196,15 +4200,20 @@ function lsSendOverlayPreview() {}
 function lsPositionPreview() {
   if (!longShotPreview) return;
   const pad = 12;
-  let left = selX + selW + pad;
-  let top = selY;
   const pw = 180;
-  if (left + pw > window.innerWidth - pad) {
-    left = Math.max(pad, selX - pw - pad);
+  const ph = longShotPreview.offsetHeight || 120;
+  const selR = selX + selW, selB = selY + selH;
+  let left, top;
+  if (selR + pad + pw <= window.innerWidth - pad) {
+    left = selR + pad; top = selY;
+  } else if (selX - pad - pw >= pad) {
+    left = selX - pad - pw; top = selY;
+  } else {
+    // r55: 两侧都放不下 → 选区下方（配合抓帧斗篷，即使与选区重叠也不会进结果）
+    left = Math.max(pad, Math.min(selX, window.innerWidth - pad - pw));
+    top = Math.max(pad, Math.min(selB + pad, window.innerHeight - pad - ph));
   }
-  if (top + longShotPreview.offsetHeight > window.innerHeight - pad) {
-    top = Math.max(pad, window.innerHeight - longShotPreview.offsetHeight - pad);
-  }
+  top = Math.max(pad, Math.min(top, window.innerHeight - ph - pad));
   longShotPreview.style.left = `${left}px`;
   longShotPreview.style.top = `${top}px`;
 }
@@ -5096,7 +5105,23 @@ async function lsFullStep() {
   }
   lsSettleRetries = 0;
   lsFullBusy = true;
+  // r55: 拍摄斗篷——预览面板/控制条若与选区重叠（屏幕空间不足时可能），会被 GDI 帧
+  // 拍进结果（18:5x 白色瀑布流实测：预览面板出现在拼接图左缘）。抓帧瞬间隐藏这两块 UI，
+  // 抓完立即恢复——单次 GDI ~10-20ms，视觉不可感知。
+  let cloaked = false;
+  const overlapsSel = (el) => {
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return r.left < selX + selW && r.right > selX && r.top < selY + selH && r.bottom > selY;
+  };
+  const cloak = (on) => {
+    const need = on && (overlapsSel(longShotPreview) || overlapsSel(longShotControl));
+    if (cloaked === need) return;
+    cloaked = need;
+    for (const el of [longShotPreview, longShotControl]) { if (el) el.style.visibility = need ? 'hidden' : ''; }
+  };
   try {
+    cloak(true);
     const dpr = window.devicePixelRatio || 1;
     const sw = window.screen.width || window.innerWidth;
     const sh = window.screen.height || window.innerHeight;
@@ -5208,6 +5233,7 @@ async function lsFullStep() {
   } catch (e) {
     console.error('[LS] capture step error', e && e.message ? e.message : e);
   } finally {
+    cloak(false); // r55: 无论成败都恢复预览/控制条可见
     lsFullBusy = false;
     // 活跃期自循环：滚动进行中 45ms 连拍（Picsew/录屏拼接的核心：帧率远高于内容变化率，帧间位移永远在量程内）。
     // r22：自动滚动模式不走快拍自循环——由探针在静止点排程沉降抓帧（见 lsFullStep 入口与探针 LS_AUTO_SETTLE_MS）。
@@ -5416,14 +5442,10 @@ async function enterLongShotEditor(dataURL, saveFilename) {
       for (let i = 0; i < d8.length; i += 4) { r8 += d8[i]; g8 += d8[i + 1]; b8 += d8[i + 2]; }
       const n8 = d8.length / 4;
       editorBgCss = `rgb(${Math.round(r8 / n8)},${Math.round(g8 / n8)},${Math.round(b8 / n8)})`;
-      // r52 边界可视化：长图常窄于窗口，露底区域与画布同色时结果边界不可辨——
-      // 17:31 深色会话实测：右侧 638px 死区被当成结果的一部分（"多余"），重复的空背景块
-      // 被读成"遮挡"。编辑态露底区域统一压暗 45% 与画布区分（body 背景与下方 fill 兜底同色）。
-      const m8 = editorBgCss.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (m8) {
-        const dk = (v) => Math.max(0, Math.round(Number(v) * 0.55));
-        editorBgCss = `rgb(${dk(m8[1])},${dk(m8[2])},${dk(m8[3])})`;
-      }
+      // r55 露底区域用固定近黑编辑器底色：此前「主题色 × 0.55」在浅色页面呈现为一整块
+      // 与内容无关的灰色"阴影区"（用户实测反馈）。近黑是图像编辑器的标准画布外 chrome，
+      // 读作"画布之外"而非"内容里的阴影"；导出 PNG 只含画布像素，不受影响。
+      editorBgCss = 'rgb(26, 27, 30)';
       document.body.style.background = editorBgCss;
     } catch (_) { }
     document.documentElement.style.setProperty('--ls-edit-w', `${W}px`);
@@ -5435,7 +5457,7 @@ async function enterLongShotEditor(dataURL, saveFilename) {
     document.body.style.height = `${H + LS_TOOLBAR_RESERVE + LS_BOTTOM_GAP}px`;
     // 背景填充 div 双保险：body 行内背景曾在用户会话静默失效（回落 CSS 类 #14181d 深黑 = "黑色区域"）
     try {
-      if (!editorBgCss) editorBgCss = 'rgb(250,250,250)';
+      if (!editorBgCss) editorBgCss = 'rgb(26, 27, 30)'; // r55: 采样失败也回落到编辑器暗色 chrome
       let fill = document.getElementById('ls-bg-fill');
       if (!fill) {
         fill = document.createElement('div');
