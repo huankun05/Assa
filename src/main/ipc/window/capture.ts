@@ -29,7 +29,7 @@ import { app, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, nativ
 import { join } from 'path';
 import { mkdirSync, writeFileSync } from 'fs';
 
-/* ── koffi FFI 懒加载（只用于长截图焦点让渡）── */
+/* ── koffi FFI 懒加载（长截图焦点让渡 + 方案B PostMessage 滚轮）── */
 type Win32FocusApi = {
   WindowFromPoint: (p: { x: number; y: number }) => number | bigint;
   SetForegroundWindow: (hWnd: number | bigint) => number;
@@ -38,6 +38,11 @@ type Win32FocusApi = {
   GetWindowThreadProcessId: (hWnd: number | bigint, lpdwProcessId: any) => number;
   GetCurrentThreadId: () => number;
   AttachThreadInput: (idAttach: number, idAttachTo: number, fAttach: number) => number;
+  /* 方案B（r49）：PostMessage WM_MOUSEWHEEL 直达目标窗口 */
+  FindWindowExW: (hwndParent: number | bigint, hwndChildAfter: number | bigint, cls: Buffer | null, win: Buffer | null) => number | bigint;
+  GetClassNameW: (hWnd: number | bigint, buf: Buffer, max: number) => number;
+  PostMessageW: (hWnd: number | bigint, msg: number, wParam: number | bigint, lParam: number | bigint) => number;
+  IsWindow: (hWnd: number | bigint) => number;
 };
 let cachedWin32Focus: Win32FocusApi | null | undefined;
 function getWin32FocusApi(): Win32FocusApi | null {
@@ -61,6 +66,10 @@ function getWin32FocusApi(): Win32FocusApi | null {
       GetWindowThreadProcessId: user32.func('uint32_t GetWindowThreadProcessId(uint64_t hWnd, void* lpdwProcessId)'),
       GetCurrentThreadId: kernel32.func('uint32_t GetCurrentThreadId()'),
       AttachThreadInput: user32.func('int AttachThreadInput(uint32_t idAttach, uint32_t idAttachTo, int fAttach)'),
+      FindWindowExW: user32.func('uint64_t FindWindowExW(uint64_t hwndParent, uint64_t hwndChildAfter, const char16_t *lpszClass, const char16_t *lpszWindow)'),
+      GetClassNameW: user32.func('int GetClassNameW(uint64_t hWnd, uint8_t *lpClassName, int32_t nMaxCount)'),
+      PostMessageW: user32.func('int PostMessageW(uint64_t hWnd, uint32_t Msg, uintptr_t wParam, intptr_t lParam)'),
+      IsWindow: user32.func('int IsWindow(uint64_t hWnd)'),
     };
   } catch (err) {
     console.error('[LS-MAIN] koffi user32 load failed:', (err as Error)?.message);
@@ -92,22 +101,169 @@ function getXiyueWindowHandles(): Set<string> {
 // （约每 400ms），直到成功把焦点交给底层窗口（滚轮才能翻页）。
 let lsFocusTransferOk = false;
 let lsLastFocusAttempt = 0;
-// r47 方案A：滚轮用真实输入 mouse_event（浏览器/网页只响应真实滚轮，PostMessage WM_MOUSEWHEEL
-// 到 Chromium 句柄实测无效）。滚轮按光标所在窗口派发；鼠标放选区洞内即透传到底层页面。
-// 绝不移用户光标（不做 SetCursorPos 锁定位）。
+// r49 方案B：滚轮用 PostMessage WM_MOUSEWHEEL 直达选区正下方窗口，彻底摆脱
+// 「鼠标必须在选区洞内」（方案A 的硬伤：用户鼠标移出选区滚轮就被截图窗吞掉）。
+// 实测（_ls_wheel_test12/13，2026-09-08）：
+//  - Chromium 系（Edge/Chrome/Electron）：post 到 Chrome_RenderWidgetHostHWND 子窗口，
+//    delta 与位移线性精准（-120→400px、-60→200px、-10→33px），且**前台/焦点无关**（test12
+//    前台是别的窗口时依然有效）、**鼠标位置无关**（全程未动鼠标）。
+//  - 普通 Win32 应用：post 到 WindowFromPoint 命中的子窗口（大多数在消息循环处理 WM_MOUSEWHEEL）。
+//  - koffi 不可用 / 解析失败 / PostMessage 返回 0：fallback 到 mouse_event（方案A 保底）。
+// 绝不移用户光标（不做 SetCursorPos）。
 
 // 模块级选区洞引用（屏幕坐标）：lsHole 是长截图设置函数内的局部变量，模块级 lsWheel
 // 访问不到；active handler 赋值，lsStopPolling 清空。
 let lsWheelHole: Electron.Rectangle | null = null;
 
-/** 真实滚轮输入（mouse_event，方案 A / r47）：
- *  - 滚轮按「光标所在窗口」派发。截图窗只对选区洞内 click-through 透传，因此只要用户把鼠标放在
- *    扫描选区洞内，滚轮经洞透传到底层页面；光标移到洞外则恢复可点击、滚轮被截图窗吞（底层不动，
- *    这是有意行为——鼠标放选区里才能滚）。
- *  - 完全不做 SetCursorPos 锁定/还原：**绝不移用户光标**（r43~r46 锁光标注入→再还原，实测每次滚轮
- *    把光标拖到选区中心再丢回，就是用户说的"抢鼠标/鼠标被重置到固定位置"）。方案 A 放弃"鼠标放
- *    选区外也能滚"，换取零抢鼠标 + 更快（省去锁定/还原 + 不依赖 needLock 判断）。 */
+// PostMessage 滚轮目标缓存（会话内解析一次；窗口关闭时 IsWindow 校验失败重解析）
+let lsWheelTarget: { wnd: bigint; cls: string; viaRender: boolean } | null = null;
+// 轮询闭包的透传状态标记重置钩子（lsResolveWheelTarget 临时透传截图窗后，把闭包里的
+// lsLastClickThrough 重置为 false，下个 30ms tick 会按光标位置重新同步真实透传状态）
+let lsResetClickThroughState: (() => void) | null = null;
+
+/** 读取窗口类名（koffi 版，失败返回空串） */
+function lsClassOf(api: Win32FocusApi, h: number | bigint): string {
+  try {
+    const b = Buffer.alloc(1024);
+    api.GetClassNameW(h, b, 512);
+    let i = 0;
+    while (i < 1024 && b.readUInt16LE(i)) i += 2;
+    return b.slice(0, i).toString('utf16le');
+  } catch { return ''; }
+}
+
+/** 递归（≤3 层）查找 root 子树里最深的 Chrome_RenderWidgetHostHWND（Chromium 渲染子窗口）。
+ *  深度优先取最深层：嵌套结构的最新渲染窗在最里层。 */
+function lsFindRenderChild(api: Win32FocusApi, root: bigint, depth: number): bigint | null {
+  if (depth > 3) return null;
+  let prev: number | bigint = 0;
+  let found: bigint | null = null;
+  for (let i = 0; i < 40; i++) {
+    const c = api.FindWindowExW(root, prev, null, null);
+    if (!c || BigInt(c) === 0n) break;
+    const cls = lsClassOf(api, c);
+    if (cls === 'Chrome_RenderWidgetHostHWND') found = BigInt(c);
+    const deeper = lsFindRenderChild(api, BigInt(c), depth + 1);
+    if (deeper) found = deeper;
+    prev = c;
+  }
+  return found;
+}
+
+/** 按句柄 hex 反查 Xiyue 的 BrowserWindow（解析目标时若命中自己，临时透传后重试命中） */
+function lsFindXiyueWindowByHex(hex: string): BrowserWindow | null {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (!w || w.isDestroyed()) continue;
+    try {
+      const buf = w.getNativeWindowHandle();
+      if ((buf.byteLength >= 8 ? buf.readBigUInt64LE(0) : BigInt(buf.readUInt32LE(0))).toString(16) === hex) return w;
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
+/** 逻辑(DIP)选区中心 → 物理屏幕坐标（WindowFromPoint / WM_MOUSEWHEEL lParam 均要物理像素；
+ *  Electron 主进程 DPI-aware，lsWheelHole 是 DIP，直接用会命中错误窗口——r49 首测踩坑） */
+function lsHoleCenterPhys(): { x: number; y: number } | null {
+  if (!lsWheelHole) return null;
+  const dip = {
+    x: Math.round(lsWheelHole.x + lsWheelHole.width / 2),
+    y: Math.round(lsWheelHole.y + lsWheelHole.height / 2),
+  };
+  try {
+    const phys = screen.dipToScreenPoint(dip);
+    return { x: Math.round(phys.x), y: Math.round(phys.y) };
+  } catch {
+    // 兜底：按主屏缩放因子换算（display 配对失败时）
+    try {
+      const sf = screen.getPrimaryDisplay().scaleFactor || 1;
+      return { x: Math.round(dip.x * sf), y: Math.round(dip.y * sf) };
+    } catch { return dip; }
+  }
+}
+
+/** 解析选区中心正下方的滚轮目标窗口（Chromium → render 子窗口；普通 App → 命中窗口本身）。
+ *  命中 Xiyue 截图窗（未处于透传态，WindowFromPoint 被它挡住）时：临时 setIgnoreMouseEvents(true)
+ *  让命中跳过截图窗，解析完恢复为可点击并同步轮询闭包的透传状态标记（30ms 轮询会按光标
+ *  位置立即纠正回正确状态）。返回 true=成功缓存 lsWheelTarget。 */
+function lsResolveWheelTarget(): boolean {
+  const api = getWin32FocusApi();
+  const center = lsHoleCenterPhys();
+  if (!api || !center) return false;
+  const { x: cx, y: cy } = center;
+  try {
+    let hit = api.WindowFromPoint({ x: cx, y: cy });
+    if (!hit) { console.error('[LS-MAIN] resolve-wheel: WindowFromPoint null'); return false; }
+    let root = BigInt(api.GetAncestor(hit, 3) || hit);
+    const xiyue = getXiyueWindowHandles();
+    const rootHex = root.toString(16);
+    if (xiyue.has(rootHex)) {
+      // 命中自己：临时整窗透传，让命中测试跳过截图窗拿到真正的底层窗口
+      const cap = lsFindXiyueWindowByHex(rootHex);
+      if (cap) {
+        try { cap.setIgnoreMouseEvents(true); } catch { /* ignore */ }
+        hit = api.WindowFromPoint({ x: cx, y: cy });
+        // 恢复可点击 + 重置轮询的状态标记（下个 30ms tick 按光标位置重设）
+        try { cap.setIgnoreMouseEvents(false); lsResetClickThroughState?.(); } catch { /* ignore */ }
+      }
+      if (!hit) { console.error('[LS-MAIN] resolve-wheel: retry hit null'); return false; }
+      root = BigInt(api.GetAncestor(hit, 3) || hit);
+      if (xiyue.has(root.toString(16))) {
+        console.error('[LS-MAIN] resolve-wheel: still self after passthrough');
+        return false;
+      }
+    }
+    // Chromium 系：优先 render 子窗口（滚轮直达渲染层，前台无关）
+    const render = lsFindRenderChild(api, root, 0);
+    if (render) {
+      lsWheelTarget = { wnd: render, cls: 'Chrome_RenderWidgetHostHWND', viaRender: true };
+      console.error(`[LS-MAIN] wheel-target: render=0x${render.toString(16)} root=0x${root.toString(16)} cls=${lsClassOf(api, root)}`);
+      return true;
+    }
+    // 普通 App：post 到命中窗口本身（多数在消息循环里处理 WM_MOUSEWHEEL）
+    lsWheelTarget = { wnd: BigInt(hit), cls: lsClassOf(api, hit), viaRender: false };
+    console.error(`[LS-MAIN] wheel-target: hit=0x${BigInt(hit).toString(16)} cls=${lsWheelTarget.cls} (no render child)`);
+    return true;
+  } catch (err) {
+    console.error('[LS-MAIN] resolve-wheel failed:', (err as Error)?.message);
+    lsWheelTarget = null;
+    return false;
+  }
+}
+
+/** 方案B：PostMessage WM_MOUSEWHEEL（lParam=选区中心物理屏幕坐标）。缓存失效自动重解析。 */
+function lsPostWheel(delta: number): boolean {
+  const api = getWin32FocusApi();
+  const center = lsHoleCenterPhys();
+  if (!api || !center) return false;
+  try {
+    if (!lsWheelTarget || !api.IsWindow(lsWheelTarget.wnd)) {
+      if (lsWheelTarget) console.error('[LS-MAIN] wheel-target stale, re-resolving');
+      if (!lsResolveWheelTarget()) return false;
+    }
+    const { x: cx, y: cy } = center;
+    // wParam 高16位=delta（有符号），低16位=键状态0；lParam 低16位=x、高16位=y（物理屏幕坐标）
+    const wParam = BigInt(((delta & 0xffff) << 16) >>> 0);
+    const lParam = BigInt(((((cy & 0xffff) << 16) | (cx & 0xffff)) >>> 0));
+    const ok = api.PostMessageW(lsWheelTarget!.wnd, 0x020a, wParam, lParam);
+    if (ok) {
+      console.error(`[LS-MAIN] post-wheel delta=${delta} -> 0x${lsWheelTarget!.wnd.toString(16)} (${lsWheelTarget!.cls}) at=(${cx},${cy}) ok=${ok}`);
+      return true;
+    }
+    console.error(`[LS-MAIN] post-wheel failed (ret=0), fallback to mouse_event`);
+    lsWheelTarget = null; // 目标可能已失效，下次重新解析
+    return false;
+  } catch (err) {
+    console.error('[LS-MAIN] post-wheel failed:', (err as Error)?.message);
+    return false;
+  }
+}
+
+/** 滚轮注入统一入口（r49）：方案B PostMessage 优先 → 方案A mouse_event 保底。 */
 function lsWheel(delta: number): boolean {
+  if (lsPostWheel(delta)) return true;
+  // ── 方案A 保底（koffi 失败 / PostMessage 被拒）：真实输入 mouse_event。
+  //  滚轮按「光标所在窗口」派发，需要鼠标在选区洞内（截图窗 click-through 透传）。 */
   try {
     const koffi = require('koffi');
     const user32 = koffi.load('user32.dll');
@@ -120,8 +276,7 @@ function lsWheel(delta: number): boolean {
     const inHole = lsWheelHole
       ? (cx0 >= lsWheelHole!.x && cx0 <= lsWheelHole!.x + lsWheelHole!.width && cy0 >= lsWheelHole!.y && cy0 <= lsWheelHole!.y + lsWheelHole!.height)
       : false;
-    if (inHole) console.error(`[LS-MAIN] wheel delta=${delta} at=(${cx0},${cy0}) inHole`);
-    else console.error(`[LS-MAIN] wheel delta=${delta} at=(${cx0},${cy0}) OUTSIDE-HOLE ${lsWheelHole ? JSON.stringify(lsWheelHole) : 'null'}`);
+    console.error(`[LS-MAIN] fallback wheel delta=${delta} at=(${cx0},${cy0}) inHole=${inHole}`);
     mouseEvent(0x0800, 0, 0, delta, 0); // MOUSEEVENTF_WHEEL，负值向下翻页
     return true;
   } catch (err) {
@@ -135,8 +290,13 @@ function transferFocusTo(x: number, y: number): void {
   if (!api) return;
   const exclude = getXiyueWindowHandles();
   try {
-    // koffi 2.x：struct 实例传普通对象即可（new api.POINT 会抛 "is not a constructor"）
-    const hChild = api.WindowFromPoint({ x, y });
+    // x/y 是逻辑(DIP)屏幕坐标；WindowFromPoint 需物理像素（主进程 DPI-aware）
+    let px = x, py = y;
+    try {
+      const phys = screen.dipToScreenPoint({ x, y });
+      px = Math.round(phys.x); py = Math.round(phys.y);
+    } catch { /* 转换失败按原值（单屏 100% 缩放时 DIP=物理） */ }
+    const hChild = api.WindowFromPoint({ x: px, y: py });
     if (!hChild) { console.error('[LS-MAIN] WindowFromPoint returned null'); return; }
     let hRoot = api.GetAncestor(hChild, 3); // GA_ROOT = 3
     if (!hRoot) hRoot = hChild;
@@ -401,7 +561,7 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
       lsAutoScrollDeadline = Date.now() + 180000; // 安全阀：最多 3 分钟自动停
       lsAutoScrollTimer = setInterval(() => {
         if (Date.now() > lsAutoScrollDeadline) { lsAutoScrollStop('deadline'); return; }
-        // r42：直接对底层窗口 PostMessage WM_MOUSEWHEEL，不依赖光标在洞内
+        // r49 方案B：滚轮统一走 lsWheel（PostMessage 优先 → mouse_event 保底）
         if (!lsWheel(delta)) lsAutoScrollStop('error');
       }, Math.max(30, intervalMs));
       console.error(`[LS-MAIN] autoscroll start interval=${intervalMs}ms delta=${delta}`);      return true;
@@ -415,7 +575,8 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
     if (p.action === 'step') {
       // r23 步进制：只发一格滚轮，由渲染端等画面静止抓帧后再发下一格——每帧都是静止帧（锐度拉满），
       // 连续滚动模式页面永远在动画中，沉降等待预算耗尽后照样抓中途帧（亚像素重采样→文字发虚）
-      // r42：直接对底层窗口 PostMessage WM_MOUSEWHEEL，不依赖光标在洞内；鼠标停在图上任何位置都能翻页。
+      // r49 方案B：lsWheel 内部优先 PostMessage WM_MOUSEWHEEL 直达选区下方窗口（Chromium
+      // render 子窗口优先），鼠标在不在选区内都能翻页、不抢前台焦点；全失败才 fallback mouse_event。
       return lsWheel(p.delta ?? -40);
     }
     if (p.action === 'start') return lsAutoScrollStart(p.intervalMs ?? 600, p.delta ?? -40);
@@ -619,8 +780,12 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
     if (lsPollTimer) { clearInterval(lsPollTimer); lsPollTimer = null; }
     lsHole = null;
     lsWheelHole = null; // 清空模块级洞引用，防止下一会话误用旧坐标
+    lsWheelTarget = null; // 清空滚轮目标缓存，下个会话重新解析
     lsLastClickThrough = false;
   };
+
+  // 注册透传状态重置钩子（模块级 lsResolveWheelTarget 临时透传截图窗后同步闭包状态标记）
+  lsResetClickThroughState = () => { lsLastClickThrough = false; };
 
   const lsSetClickThrough = (on: boolean): void => {
     const captureWindow = options.getCaptureWindow();
@@ -723,7 +888,11 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
         registerLsHotkeys();
         if (lsPollTimer) clearInterval(lsPollTimer);
         lsPollTimer = setInterval(lsPollTick, 30);
-        console.error(`[LS-MAIN] active on hole=${JSON.stringify(lsHole)}`);
+        // r49 方案B：会话激活即预解析滚轮目标窗口（此时截图窗透传状态刚按光标设定，
+        // 解析内部自带「命中自己→临时透传重试」兜底），首格滚动零延迟。
+        lsWheelTarget = null;
+        const resolved = lsResolveWheelTarget();
+        console.error(`[LS-MAIN] active on hole=${JSON.stringify(lsHole)} wheelTargetResolved=${resolved}`);
       } else {
         // ⚠️ 顺序铁律：先恢复可交互再清轮询状态。lsStopPolling 会把 lsLastClickThrough
         // 重置为 false，若先清状态，随后的 lsSetClickThrough(false) 因「状态已一致」被

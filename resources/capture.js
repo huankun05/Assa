@@ -4272,8 +4272,10 @@ async function lsAutoStepLoop(token) {
         lsAutoCalib = false;
         if (lsDiagDue()) console.error(`[LS] calib coef=${coef.toFixed(3)}px/unit target=${target.toFixed(0)} -> delta=${-next}`);
       } else {
-        // 原 r31 比例闭环
-        const ratio = target / lsLastGoodS;
+        // 原 r31 比例闭环。r50 收紧：Chromium 平滑滚动的 delta→位移非线性（-24→120、-60→420），
+        // 裸乘法比例在 120↔420 间来回震荡（3.7-A 会话B 跳变 3.5× → 重叠忽大忽小 → 内容重复囤积）。
+        // clamp 单步比例到 [0.8, 1.5]，每次只微调、逐步收敛锁单一基线，避免 delta 骤降/陡升。
+        const ratio = Math.min(1.5, Math.max(0.8, target / lsLastGoodS));
         next = Math.round(Math.abs(lsAutoDelta) * ratio);
       }
       lsAutoDelta = -Math.min(260, Math.max(18, next));
@@ -4286,7 +4288,10 @@ async function lsAutoStepLoop(token) {
 
 /** 静止检测：每 100ms 抓 GDI 小图灰度，连续 3 次 diff<=0.05 判静止（r24 收紧）。
  *  r47 曾提速 60ms 轮询致软帧（sharp-gate 重试耗尽仍软），r48 回退 100ms。
- *  GDI 对静止画面 diff 精确 0.0，任何微动都非零。 */
+ *  GDI 对静止画面 diff 精确 0.0，任何微动都非零。
+ *  r50 曾把阈值收到 0.02+连续 4 次+settle 100ms → 含轻微持续动画的页面几乎永不判静止，
+ *  每步吃满 2500ms 超时，实测单步 9.7s（极慢）。r50b 回退原值恢复速度——静止判定宽松一点
+ *  造成的过早抓帧，改由下方 sharp-gate 兜底仲裁（见 r50b 改动），而不是卡住滚动节奏。 */
 async function lsWaitQuiet(timeoutMs) {
   const t0 = Date.now();
   let quietStreak = 0;
@@ -4947,6 +4952,9 @@ async function lsFullStep() {
           retries++;
         }
         if (retries > 0) console.error(`[LS] sharp-gate retries=${retries} lap=${Math.round(lap)} base=${Math.round(lsSharpBase)}`);
+        // r50 曾把 soft_frame 改丢弃重抓 → 实测 15:21 会话：4 帧被判软、唯一拼接帧 s=552 只 27px 重叠，
+        // 内容大量跳过且单步 9.7s。取证软帧实为整图均匀发虚（静态降采样/显示缩放），非滚动动画中途帧，
+        // sharp-gate 误触发；丢弃只会重滚造成位移漂移与丢内容。r50b 回退为仅落盘诊断、照常拼接。
         if (retries >= 3 && lap < lsSharpBase * 0.6) lsDebugDump(frame, 'soft_frame');
       }
       lsSharpBase = lsSharpBase > 0 ? lsSharpBase * 0.7 + lap * 0.3 : lap;
