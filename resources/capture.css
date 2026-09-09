@@ -1490,6 +1490,17 @@ body.is-longshot #btnLongShot {
   color: var(--cap-text-dim);
   text-align: center;
 }
+/* r57: 拼接健康度状态点（绿=正常 黄=吸附加速/猜测对齐 红=连续拒帧） */
+#ls-health-dot {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+}
 
 .capture-btn-icon {
   width: 14px;
@@ -1844,7 +1855,7 @@ body.is-longshot-edit .capture-canvas {
   box-shadow: 0 0 0 1px rgba(128,128,128,.65), 0 6px 20px rgba(0,0,0,.28);
   width: var(--ls-edit-w, 100%) !important;
   height: var(--ls-edit-h, auto) !important;
-  top: 0;
+  top: 14px; /* r57: 顶部呼吸 14px，结果不贴屏幕上缘 */
   left: 0;
   /* r29: 禁止浏览器对 canvas 做双线性插值缩放，避免 resize 后整窗发虚 */
   image-rendering: pixelated;

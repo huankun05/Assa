@@ -4009,6 +4009,7 @@ const LS_AUTO_STEP_GAP_MS = 120;   // r53: 200→120（抓帧前已有 lsWaitMot
                                    // gap 只影响感知节奏；r48 的 100ms 软帧问题在步进制+静止确认下不复存在）
 const LS_MOTION_WAIT_MS = 700;     // r53: 900→700（实测滚轮要么被吞要么 <300ms 内起滚，无中间态）；
                                    // 超时补发一次滚轮（再超时判到底/不可滚，自动收尾 1.4s）
+const LS_MULTI_WHEEL_GAP_MS = 100; // r57: 吸附模式多滚轮间隔（ms）——太近会被页面合并成一次手势
 const LS_ACTIVE_MS = 45;           // 活跃期全帧连拍节拍（GDI bitblt ~10ms；45ms×滚速1m/s=45px 位移，量程内必拼上）
 const LS_MOTION_HOLD = 300;        // 活跃保持窗口：最近一次变化后持续连拍 300ms 才交还探针巡查
 
@@ -4197,6 +4198,46 @@ function lsHintUpScroll() {
 
 function lsSendOverlayPreview() {}
 
+// r57: 拼接健康度状态点（借鉴 ShareX 绿/黄/红状态灯）：绿=正常拼接，黄=吸附加速/猜测对齐，红=连续拒帧
+let lsHealthDot = null;
+function lsSetHealth(color) {
+  if (!longShotPreview) return;
+  if (!lsHealthDot) {
+    lsHealthDot = document.createElement('span');
+    lsHealthDot.id = 'ls-health-dot';
+    longShotPreview.appendChild(lsHealthDot);
+  }
+  lsHealthDot.style.background = color;
+}
+
+// r57: 编辑器工具栏可拖动（参考微信截图）：按住工具栏非按钮区域拖动，按钮交互不受影响
+(function initEditorToolbarDrag() {
+  const bar = document.getElementById('toolbar');
+  if (!bar) return;
+  let drag = null;
+  bar.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button, select, input, label')) return;
+    const rect = bar.getBoundingClientRect();
+    drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    bar.style.left = `${rect.left}px`;
+    bar.style.top = `${rect.top}px`;
+    bar.style.right = 'auto';
+    bar.style.bottom = 'auto';
+    bar.style.transform = 'none';
+    try { bar.setPointerCapture(e.pointerId); } catch (_) { }
+  });
+  bar.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const left = Math.max(4, Math.min(e.clientX - drag.dx, window.innerWidth - bar.offsetWidth - 4));
+    const top = Math.max(4, Math.min(e.clientY - drag.dy, window.innerHeight - bar.offsetHeight - 4));
+    bar.style.left = `${left}px`;
+    bar.style.top = `${top}px`;
+  });
+  const endDrag = () => { drag = null; };
+  bar.addEventListener('pointerup', endDrag);
+  bar.addEventListener('pointercancel', endDrag);
+})();
+
 function lsPositionPreview() {
   if (!longShotPreview) return;
   const pad = 12;
@@ -4289,6 +4330,7 @@ function lsAutoScrollStart() {
   lsAutoProbe = -24;
   lsAutoCalib = true;
   lsAutoRampScale = 0; // r56: 渐进系数每会话重置
+  lsAutoSnapMode = false; lsAutoMultiWheel = 1; lsAutoSnapStreak = 0; // r57: 吸附态每会话重置
   lsAutoDelta = lsAutoProbe;
   lsAutoStepLoop(++lsAutoStepToken);
 }
@@ -4301,8 +4343,14 @@ function lsAutoScrollStop() {
 async function lsAutoStepLoop(token) {
   console.error('[LS] auto-step loop start');
   while (longShotActive && lsAutoScrollActive && token === lsAutoStepToken) {
-    try { await ipcRenderer.invoke('capture-ls-autoscroll', { action: 'step', delta: lsAutoDelta }); }
-    catch (err) { console.error('[LS] auto-step wheel failed', err); }
+    // r57: 吸附模式下每步连发 N 个滚轮（间隔 100ms 避免被页面合并成一次手势），
+    // 一次跨过多个吸附卡点，恢复 0.5 帧高的正常步长。
+    const wheels = lsAutoSnapMode ? Math.max(1, lsAutoMultiWheel) : 1;
+    for (let wi = 0; wi < wheels; wi++) {
+      try { await ipcRenderer.invoke('capture-ls-autoscroll', { action: 'step', delta: lsAutoDelta }); }
+      catch (err) { console.error('[LS] auto-step wheel failed', err); }
+      if (wi < wheels - 1) await new Promise((r) => setTimeout(r, LS_MULTI_WHEEL_GAP_MS));
+    }
     // r51: 发轮后先等「画面真的动起来」再等静止。被遮挡的目标窗口会节流丢弃 PostedMessage
     // 的 WM_MOUSEWHEEL（实测 15:47 会话第 2 格滚轮被吞，静置 2s 后下一格才恢复滚动），
     // 旧流程直接 lsWaitQuiet 在「从未滚动」的画面上 ~300ms 即判静 → 抓到与上一帧相同的
@@ -4333,10 +4381,34 @@ async function lsAutoStepLoop(token) {
     lsLastFullAt = Date.now();
     lsLastStepAppended = false;
     await lsFullStep();
+    // r57: 拼接健康度状态点（预览面板右上角）
+    if (lsLastStepAppended) lsSetHealth('#34d399');
+    else if (lsRejectStreak >= 4) lsSetHealth('#f87171');
+    else if (lsRejectStreak >= 2) lsSetHealth('#fbbf24');
     // r31 自适应步进：用匹配器实测位移 s 反推下一格滚轮量，使每格位移恒定≈目标比例*帧高。
     // 滚轮 delta 与目标 App 像素位移不线性（平滑滚动放大），但"实测 s→调 delta"闭环即可让
     // 每格位移收敛到目标，重叠恒足→不拒拼、不浪费小步，整体更快且清晰。
-    if (lsLastStepAppended && lsLastGoodS > 0 && lsCh > 0) {
+    // r57: 吸附式滚动检测与处理——实测位移持续 < 一半目标（与滚轮量大小无关）时，
+    // 判定页面按卡点固定步进（scroll-snap/分页滚动）。此时 delta→位移映射失效，
+    // delta 冻结，改用「每步连发 N 个滚轮」控制步长（N 按实测/目标自适应，1~4）。
+    const fullTarget = lsAutoTargetFrac * lsCh;
+    if (lsAutoSnapMode) {
+      if (lsLastStepAppended && lsLastGoodS > 0) {
+        if (lsLastGoodS < fullTarget * 0.55 && lsAutoMultiWheel < 4) lsAutoMultiWheel++;
+        else if (lsLastGoodS > fullTarget * 1.35 && lsAutoMultiWheel > 1) lsAutoMultiWheel--;
+        if (lsDiagDue()) console.error(`[LS] snap-mode wheels=${lsAutoMultiWheel} s=${lsLastGoodS.toFixed(0)} target=${fullTarget.toFixed(0)}`);
+      }
+    } else if (lsLastStepAppended && lsLastGoodS > 0 && lsCh > 0) {
+      if (lsLastGoodS < fullTarget * 0.5) lsAutoSnapStreak++; else lsAutoSnapStreak = 0;
+      if (lsAutoSnapStreak >= 2 && lsAcceptCount >= 3) {
+        lsAutoSnapMode = true;
+        lsAutoMultiWheel = Math.min(4, Math.max(2, Math.ceil(fullTarget / Math.max(1, lsLastGoodS))));
+        lsSetHealth('#fbbf24');
+        showToastMessage('该页面按卡片滚动，已自动加速');
+        console.error(`[LS] snap scroll detected -> multi-wheel=${lsAutoMultiWheel} (s=${lsLastGoodS.toFixed(0)} target=${fullTarget.toFixed(0)})`);
+      }
+    }
+    if (!lsAutoSnapMode && lsLastStepAppended && lsLastGoodS > 0 && lsCh > 0) {
       // r56: 校准后从 60% 目标起步、每步 ×1.25 渐进到 100%——探针 120px 小跳后直接接
       // 3~4 倍大步，起步速度突变观感明显（0.65 目标下用户实测反馈"不是平滑的速度"）。
       let target = lsAutoTargetFrac * lsCh;
@@ -4496,6 +4568,9 @@ let lsLastStepAppended = false; // 上一步是否真正追加了行（用于自
 let lsAutoProbe = -24;        // 方案A 首格探针滚轮量：小位移保证首格必然可接（重叠大、无过冲）
 let lsAutoCalib = false;      // 方案A 校准态：首个已追加步据探针实测位移反推正式 delta，取代固定 -60
 let lsAutoRampScale = 0;      // r56: 校准后的步长渐进系数（0.6 → ×1.25/步 → 1.0）；0=未校准无渐进
+let lsAutoSnapMode = false;   // r57: 吸附式滚动模式——页面按卡点固定步进，位移与滚轮量解耦
+let lsAutoMultiWheel = 1;     // r57: 吸附模式下每步注入的滚轮次数（1~4，按实测/目标自适应）
+let lsAutoSnapStreak = 0;     // r57: 连续「位移 < 一半目标」计数（连续 2 次且已拼 3 格才判吸附）
 function lsMatchScroll(frame, refCanvas) {
   if (!lsAccum) return 0;
   const ref = refCanvas || lsAccum; // 参考帧：默认累加图底部；救援模式传 lsPrev（新鲜参考）
@@ -5461,7 +5536,10 @@ async function enterLongShotEditor(dataURL, saveFilename) {
     const LS_BOTTOM_GAP = 24;        // 底部与工具栏/任务栏的间隙，防贴底
     document.documentElement.style.overflowY = 'auto';
     document.body.style.position = 'relative';
-    document.body.style.height = `${H + LS_TOOLBAR_RESERVE + LS_BOTTOM_GAP}px`;
+    // r57: body 高度 = 画布高度 + 顶部呼吸 14px（画布 CSS top:14px，不再贴屏幕上缘）。
+    // 工具栏改为悬浮（fixed）在视口底部、可拖动（参考微信截图）——不再为它预留固定填充区，
+    // 长图滚动到底时工具栏直接浮在图片下缘上方，此前的"黑色区域"彻底消失。
+    document.body.style.height = `${H + 14}px`;
     // 背景填充 div 双保险：body 行内背景曾在用户会话静默失效（回落 CSS 类 #14181d 深黑 = "黑色区域"）
     try {
       if (!editorBgCss) editorBgCss = 'rgb(26, 27, 30)'; // r55: 采样失败也回落到编辑器暗色 chrome
@@ -5471,7 +5549,8 @@ async function enterLongShotEditor(dataURL, saveFilename) {
         fill.id = 'ls-bg-fill';
         document.body.insertBefore(fill, document.body.firstChild);
       }
-      fill.style.cssText = `left:0;right:0;top:${H}px;height:${LS_TOOLBAR_RESERVE + LS_BOTTOM_GAP}px;background:${editorBgCss};`;
+      // r57: 工具栏悬浮化后不再需要填充区（body 高度即画布高度），高度归零防旧节点撑出滚动区
+      fill.style.cssText = `left:0;right:0;top:${H + 14}px;height:0;background:${editorBgCss};`;
       setTimeout(() => {
         try { console.error(`[LS] bodyBg applied=${getComputedStyle(document.body).backgroundColor} fillH=${fill.style.height}`); } catch (_) { }
       }, 100);
