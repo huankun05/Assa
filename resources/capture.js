@@ -4071,6 +4071,45 @@ function lsLapVar(cv) {
     return sum2 / n - m * m;
   } catch (_) { return 0; }
 }
+/** r54 内容归一化清晰度：只统计「有纹理行」的 laplacian 方差。
+ *  r52 已证 lap_var 会被内容疏密稀释（大面积纯背景把均值拉低），深/浅色页面都会误判：
+ *  深色页把锐利但稀疏的帧当软帧（17:31 每步白耗 360ms 重试），浅色页漏判真软帧
+ *  （18:43 会话软帧混入被用户感知为清晰度差）。行内灰度方差 ≥64（0-255 口径，×1e6 缩放单位）
+ *  的行才是文字/图形行——它们的 lap 下降才是真模糊信号，与背景占比无关。
+ *  lap 跨三行：要求该行与上下邻行都有纹理才计入。返回 0 = 纹理不足无法量化。 */
+function lsLapVarInfo(cv) {
+  try {
+    const w = cv.width, h = cv.height;
+    if (w < 8 || h < 8) return 0;
+    const d = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+    const cols = Math.floor((w - 2) / 2);
+    if (cols < 4) return 0;
+    const VAR_MIN = 64 * 1e6; // 行纹理门槛：64 × (灰度×1000 缩放)²
+    const rowInf = new Uint8Array(h);
+    const gray = new Float32Array(h * cols);
+    let textured = 0;
+    for (let y = 0; y < h; y++) {
+      const base = y * w, row = y * cols;
+      let rs = 0, rs2 = 0;
+      for (let c = 0; c < cols; c++) { const x = 1 + c * 2; const i = (base + x) * 4; const v = d[i] * 114 + d[i + 1] * 587 + d[i + 2] * 299; gray[row + c] = v; rs += v; rs2 += v * v; }
+      rowInf[y] = (rs2 / cols - (rs / cols) ** 2) >= VAR_MIN ? 1 : 0;
+      textured += rowInf[y];
+    }
+    if (textured < 4) return 0;
+    let sum = 0, sum2 = 0, n = 0;
+    for (let y = 1; y < h - 1; y++) {
+      if (!(rowInf[y - 1] && rowInf[y] && rowInf[y + 1])) continue; // lap 跨三行，任一行纯背景都会稀释
+      const row = y * cols;
+      for (let c = 1; c < cols - 1; c++) {
+        const lap = 4 * gray[row + c] - gray[row + c - 1] - gray[row + c + 1] - gray[row - cols + c] - gray[row + cols + c];
+        sum += lap; sum2 += lap * lap; n++;
+      }
+    }
+    if (n < cols * 2) return 0;
+    const m = sum / n;
+    return sum2 / n - m * m;
+  } catch (_) { return 0; }
+}
 let lsProbeCanvas = null;
 let lsFullBusy = false; let lsProbeGray = null; let lsProbeTimer = 0; let lsLastFullAt = 0; let lsProbeDiagLast = 0;
 let lsFullTimer = 0; let lsStartT = 0; let lsDebugDumps = 0; let lsLastFrameDiff = 0;
@@ -4268,8 +4307,11 @@ async function lsAutoStepLoop(token) {
       if (!moved2) {
         // 连续两轮无运动：页面已滚动到底 / 目标不可滚动。旧流程会永远空转（静帧被
         // static-gdi 跳过、不计拒链，循环没有停止条件），只能用户手动停止 → 自动收尾。
-        // r52 不弹 toast：收尾即进编辑器，浮层会盖在结果上被误读为"遮挡"（17:31 实测反馈）。
+        // r52 不弹 toast：收尾即进编辑器，浮层会盖在结果上被误读为"遮挡"。
+        // r54: 例外——一步都没拼上（页面未滚动/不可滚）时必须说明原因，否则用户只看到
+        // "单帧编辑器"以为功能坏了（18:42 会话实测反馈"不稳定"）。
         console.error('[LS] auto-step wheel dead (page bottom or unscrollable) -> auto finish');
+        if (lsAcceptCount === 0) showToastMessage('页面未滚动或不可滚动，已保留当前画面');
         stopLongScreenshot(true);
         break;
       }
@@ -5071,25 +5113,28 @@ async function lsFullStep() {
     // r53: 重试 3→1——lap_var 衡量的是内容疏密而非模糊度，深色稀疏内容（大面积纯背景）几乎每帧
     // 都被误判（17:31 会话每步 retries=3 白耗 360ms），且 lsWaitQuiet 已确认静止、r50b 已证
     // soft_frame 多为显示缩放而非动画帧，重抓无益；保留 1 次重试作为动画长尾的最后保险。
+    // r54: 改用 lsLapVarInfo（只统计有纹理行的 lap）——整帧 lap 被背景占比稀释是深/浅色都误判的
+    // 总根源（浅色页漏判真软帧：18:43 会话软帧混入被感知为清晰度差）；重试 1→2 兜住动画长尾。
     if (frame) {
-      let lap = lsLapVar(frame);
-      if (lsSharpBase > 0 && lap < lsSharpBase * 0.6) {
+      let lap = lsLapVarInfo(frame);
+      if (lsSharpBase > 0 && lap > 0 && lap < lsSharpBase * 0.6) {
         let retries = 0;
-        while (lap < lsSharpBase * 0.6 && retries < 1) {
+        while (lap > 0 && lap < lsSharpBase * 0.6 && retries < 2) {
           await new Promise((r) => setTimeout(r, 120));
           const nf = await lsGdiFrame(gx, gy, gw, gh, nextBuf);
           if (!nf) break;
           frame = nf; lsCw = nf.width; lsCh = nf.height;
-          lap = lsLapVar(frame);
+          lap = lsLapVarInfo(frame);
           retries++;
         }
         if (retries > 0) console.error(`[LS] sharp-gate retries=${retries} lap=${Math.round(lap)} base=${Math.round(lsSharpBase)}`);
         // r50 曾把 soft_frame 改丢弃重抓 → 实测 15:21 会话：4 帧被判软、唯一拼接帧 s=552 只 27px 重叠，
         // 内容大量跳过且单步 9.7s。取证软帧实为整图均匀发虚（静态降采样/显示缩放），非滚动动画中途帧，
         // sharp-gate 误触发；丢弃只会重滚造成位移漂移与丢内容。r50b 回退为仅落盘诊断、照常拼接。
-        if (retries >= 1 && lap < lsSharpBase * 0.6) lsDebugDump(frame, 'soft_frame');
+        if (retries >= 2 && lap < lsSharpBase * 0.6) lsDebugDump(frame, 'soft_frame');
       }
-      lsSharpBase = lsSharpBase > 0 ? lsSharpBase * 0.7 + lap * 0.3 : lap;
+      // r54: lap=0（纹理不足无法量化）不参与 EMA，避免纯背景帧把基线拖向 0
+      if (lap > 0) lsSharpBase = lsSharpBase > 0 ? lsSharpBase * 0.7 + lap * 0.3 : lap;
     }
     lsFrameIsGdi = !!frame;
     if (!frame) {
