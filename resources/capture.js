@@ -4288,6 +4288,7 @@ function lsAutoScrollStart() {
   // 探针位移小→重叠大→首格必然可接；随后闭环收敛到 lsAutoTargetFrac×帧高目标（r53 起 0.65）。
   lsAutoProbe = -24;
   lsAutoCalib = true;
+  lsAutoRampScale = 0; // r56: 渐进系数每会话重置
   lsAutoDelta = lsAutoProbe;
   lsAutoStepLoop(++lsAutoStepToken);
 }
@@ -4336,19 +4337,24 @@ async function lsAutoStepLoop(token) {
     // 滚轮 delta 与目标 App 像素位移不线性（平滑滚动放大），但"实测 s→调 delta"闭环即可让
     // 每格位移收敛到目标，重叠恒足→不拒拼、不浪费小步，整体更快且清晰。
     if (lsLastStepAppended && lsLastGoodS > 0 && lsCh > 0) {
-      const target = lsAutoTargetFrac * lsCh;       // 目标位移（内容像素）
+      // r56: 校准后从 60% 目标起步、每步 ×1.25 渐进到 100%——探针 120px 小跳后直接接
+      // 3~4 倍大步，起步速度突变观感明显（0.65 目标下用户实测反馈"不是平滑的速度"）。
+      let target = lsAutoTargetFrac * lsCh;
       let next;
       if (lsAutoCalib) {
         // 方案A 首格校准：由探针实测位移反推该 App 滚轮系数(px/单位)，直接设定 delta 使下一格命中 target，
         // 序贯计算比 r31 比例闭环首轮更快收敛（避免 fixed 首格在 App 系数差异大时反复震荡几步）。
         const coef = lsLastGoodS / Math.abs(lsAutoProbe);
-        next = Math.round(target / (coef || 1));
+        lsAutoRampScale = 0.6;
+        next = Math.round(target * lsAutoRampScale / (coef || 1));
         lsAutoCalib = false;
         if (lsDiagDue()) console.error(`[LS] calib coef=${coef.toFixed(3)}px/unit target=${target.toFixed(0)} -> delta=${-next}`);
       } else {
         // 原 r31 比例闭环。r50 收紧：Chromium 平滑滚动的 delta→位移非线性（-24→120、-60→420），
         // 裸乘法比例在 120↔420 间来回震荡（3.7-A 会话B 跳变 3.5× → 重叠忽大忽小 → 内容重复囤积）。
         // clamp 单步比例到 [0.8, 1.5]，每次只微调、逐步收敛锁单一基线，避免 delta 骤降/陡升。
+        if (lsAutoRampScale > 0 && lsAutoRampScale < 1) lsAutoRampScale = Math.min(1, lsAutoRampScale * 1.25);
+        target *= lsAutoRampScale;
         const ratio = Math.min(1.5, Math.max(0.8, target / lsLastGoodS));
         next = Math.round(Math.abs(lsAutoDelta) * ratio);
       }
@@ -4483,12 +4489,13 @@ let lsSharpBase = 0;      // r26 清晰度静止基准（lap_var EMA，闸门 = 
 // 但匹配器每步都实测出真实位移 s（lsLastGoodS），用它对 delta 做闭环反馈，使每格位移收敛到
 // 目标比例*帧高 —— 即"按像素格数移动"的工程等价实现：重叠恒足→不拒拼、不浪费小步→更快且清晰。
 let lsAutoDelta = -60;        // 当前滚轮 delta（自适应调）
-let lsAutoTargetFrac = 0.65;  // 目标每格位移 = 0.65*帧高 → 重叠 35%（r53 从 0.5 上调：r52 匹配器
-                              // 信息量加权后 180+ 纹理行的重叠依然稳判，步数少 23% 会话更快；
-                              // 主流推荐重叠 20~30%+，35% 留有余量）
+let lsAutoTargetFrac = 0.5;   // 目标每格位移 = 0.5*帧高 → 重叠 50%（r56 从 0.65 回落：单步跳跃
+                              // 占视口 65% 观感为"跳变"而非滚动，用户实测反馈不平滑；平滑优先，
+                              // 配合校准后 60%→80%→100% 渐进消除起步突变）
 let lsLastStepAppended = false; // 上一步是否真正追加了行（用于自适应反馈是否采纳）
 let lsAutoProbe = -24;        // 方案A 首格探针滚轮量：小位移保证首格必然可接（重叠大、无过冲）
 let lsAutoCalib = false;      // 方案A 校准态：首个已追加步据探针实测位移反推正式 delta，取代固定 -60
+let lsAutoRampScale = 0;      // r56: 校准后的步长渐进系数（0.6 → ×1.25/步 → 1.0）；0=未校准无渐进
 function lsMatchScroll(frame, refCanvas) {
   if (!lsAccum) return 0;
   const ref = refCanvas || lsAccum; // 参考帧：默认累加图底部；救援模式传 lsPrev（新鲜参考）

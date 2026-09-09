@@ -1013,9 +1013,11 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
 
   /** 长截图编辑态：渲染端把整图载入编辑器后，主进程把截图窗尺寸改成整图大小（夹在屏幕内），
    * 让长图像正常截图结果一样可标注/OCR/翻译/保存；超出屏幕部分由 body 纵向滚动（is-longshot-edit）。
-   * r27 铁律：窗口尺寸变化会触发软件合成栅格尺度失效（编辑器整窗持久发虚的实测根因）——
-   * ①尺寸已满足则只挪回屏内（move-only，绝不 setBounds 改尺寸）；②必须缩放时先屏外原位改尺寸、
-   * 200ms 后再挪回屏内；③附带参考补丁做渲染清晰度闭环自愈（见 lsEditorSharpnessGuard）。 */
+   * r27/r29: 窗口尺寸变化可能触发软件合成栅格尺度失效（编辑器整窗持久发虚的实测根因），
+   * 附参考补丁做渲染清晰度闭环自愈（见 lsEditorSharpnessGuard，r55 升级为梯度自愈）。
+   * r56: 窗口**始终**缩放到结果尺寸（走既有的屏外先改、200ms 挪回安全路径）——
+   * 此前"窗口≥目标就保持全屏"的 move-only 策略留下大片露底区域，被用户持续感知为灰色"阴影区"；
+   * 露底根治后由 sharp-guard 继续守护清晰度。 */
   ipcMain.on('capture-longshot-editor', (_event, payload) => {
     const captureWindow = options.getCaptureWindow();
     if (!captureWindow || captureWindow.isDestroyed()) return;
@@ -1025,26 +1027,30 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
       if (w < 1 || h < 1) return;
       const display = screen.getDisplayMatching(captureWindow.getBounds());
       const wa = display.workAreaSize;
-      const ew = Math.max(320, Math.min(w, wa.width - 40));
       // 底部预留工具栏高度：编辑态工具栏 fixed 在窗口底部（约 80px + 底部 28px 安全距），
       // 窗口若只比图片高几十 px，工具栏会整个叠在图上（实测遮挡）。图片高于屏幕时无法预留，
       // 工具栏悬浮在图上属常规编辑器行为。
       const LS_EDITOR_TOOLBAR_RESERVE = 170;
       const LS_BOTTOM_GAP = 24;
       const eh = Math.max(240, Math.min(h + LS_EDITOR_TOOLBAR_RESERVE + LS_BOTTOM_GAP, wa.height - 40));
+      // r56: 图高于窗口会出现纵向滚动条（约 17~24 CSS px），给宽度留出余量，
+      // 否则画布右缘被滚动条区域裁掉，导出 1:1 的图在编辑器里看不全。
+      const needsVScroll = h + LS_EDITOR_TOOLBAR_RESERVE + LS_BOTTOM_GAP > wa.height - 40;
+      const ew = Math.max(320, Math.min(w + (needsVScroll ? 24 : 0), wa.width - 40));
       const bx = display.workArea.x + Math.max(0, Math.round((wa.width - ew) / 2));
       const by = display.workArea.y + Math.max(0, Math.round((wa.height - eh) / 2));
       try { captureWindow.setResizable(true); } catch (_) { /* ignore */ }
       const cur = captureWindow.getBounds();
-      let resized = false;
-      // r29: 只要当前窗口 >= 目标尺寸，就不缩小 resize（缩小是栅格尺度失效的主要触发器）。
-      // 保持大选区窗口反而能完整容纳小编辑图，避免模糊；只有窗口不够大时才放大。
-      if (cur.width >= ew && cur.height >= eh) {
+      // r56: 编辑器窗口始终缩放到结果尺寸——"窗口比结果大"的露底区域被用户持续感知为
+      // 灰色"阴影区"（漂移的深/浅色处理都治标不治本），根治 = 窗口贴住结果。
+      // 走既有的屏外先改尺寸、200ms 挪回屏内的安全路径（栅格按目标尺寸重建，避开可见中间态）；
+      // 清晰度由 lsEditorSharpnessGuard 守护。当前尺寸已精确等于目标时仅居中挪动，避免无谓闪动。
+      let resized = true;
+      if (cur.width === ew && cur.height === eh) {
         captureWindow.setBounds({ x: bx, y: by, width: cur.width, height: cur.height });
-        console.error('[LS-MAIN] editor window move-only @' + bx + ',' + by + ' (keep ' + cur.width + 'x' + cur.height + ', target ' + ew + 'x' + eh + ')');
+        resized = false;
+        console.error('[LS-MAIN] editor window exact-fit @' + bx + ',' + by + ' (' + ew + 'x' + eh + ')');
       } else {
-        resized = true;
-        // 需要放大：先屏外原位改尺寸，200ms 后挪回屏内
         captureWindow.setBounds({ x: bx - ew - 300, y: by, width: ew, height: eh });
         setTimeout(() => {
           try {
