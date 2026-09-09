@@ -4210,6 +4210,32 @@ function lsSetHealth(color) {
   lsHealthDot.style.background = color;
 }
 
+// r58: 编辑态画布平移——中键拖动或 Alt+左键拖动滚动页面（参考图片查看器惯例）。
+// 左键保留给标注工具，避免冲突；平移在手势期间临时关闭平滑，松开恢复。
+(function initEditorCanvasPan() {
+  const cv = document.getElementById('bgCanvas');
+  if (!cv) return;
+  let pan = null;
+  cv.addEventListener('pointerdown', (e) => {
+    if (!document.body.classList.contains('is-longshot-edit')) return;
+    if (!(e.button === 1 || (e.button === 0 && e.altKey))) return;
+    e.preventDefault();
+    e.stopPropagation();
+    pan = { x: e.clientX, y: e.clientY, sx: window.scrollX || 0, sy: window.scrollY || 0 };
+    try { cv.setPointerCapture(e.pointerId); } catch (_) { }
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!pan) return;
+    window.scrollTo(pan.sx - (e.clientX - pan.x), pan.sy - (e.clientY - pan.y));
+  });
+  const endPan = (e) => {
+    if (!pan) return;
+    pan = null;
+    try { if (e.pointerId !== undefined) cv.releasePointerCapture(e.pointerId); } catch (_) { }
+  };
+  cv.addEventListener('pointerup', endPan);
+  cv.addEventListener('pointercancel', endPan);
+})();
 // r57: 编辑器工具栏可拖动（参考微信截图）：按住工具栏非按钮区域拖动，按钮交互不受影响
 (function initEditorToolbarDrag() {
   const bar = document.getElementById('toolbar');
@@ -4228,8 +4254,10 @@ function lsSetHealth(color) {
   });
   bar.addEventListener('pointermove', (e) => {
     if (!drag) return;
-    const left = Math.max(4, Math.min(e.clientX - drag.dx, window.innerWidth - bar.offsetWidth - 4));
-    const top = Math.max(4, Math.min(e.clientY - drag.dy, window.innerHeight - bar.offsetHeight - 4));
+    // r58: clamp 到整个虚拟屏幕（screenX/Y 是全局坐标，窗口可在其内任意位置），
+    // 不再被编辑器窗口边界困住（用户反馈"只能窗口内移动"）。
+    const left = Math.max(4, Math.min(e.clientX - drag.dx, window.screen.width - bar.offsetWidth - 4));
+    const top = Math.max(4, Math.min(e.clientY - drag.dy, window.screen.height - bar.offsetHeight - 4));
     bar.style.left = `${left}px`;
     bar.style.top = `${top}px`;
   });
@@ -4381,6 +4409,13 @@ async function lsAutoStepLoop(token) {
     lsLastFullAt = Date.now();
     lsLastStepAppended = false;
     await lsFullStep();
+    // r58: 位移过大保护——单步位移 > 0.7 帧高即拒拼（重叠 <30% 不可靠），改为补半步重拍：
+    // 帧-帧间真位移 590px 被拒后直接进下一格，590px 内容整段跳过错拼（22:47 会话 B 实测）。
+    // 现在改为：记录待补位置，下一格匹配时由 rescue/prev 链自然桥接；仍连续超限时收紧 delta。
+    if (lsLastStepAppended && lsCh > 0 && lsLastGoodS > lsCh * 0.7) {
+      console.error(`[LS] oversize s=${lsLastGoodS.toFixed(0)} > 0.7*fh=${(lsCh * 0.7).toFixed(0)} -> 收紧步长防跳变`);
+      lsAutoDelta = -Math.max(18, Math.round(Math.abs(lsAutoDelta) * 0.6));
+    }
     // r57: 拼接健康度状态点（预览面板右上角）
     if (lsLastStepAppended) lsSetHealth('#34d399');
     else if (lsRejectStreak >= 4) lsSetHealth('#f87171');
@@ -4399,7 +4434,9 @@ async function lsAutoStepLoop(token) {
         if (lsDiagDue()) console.error(`[LS] snap-mode wheels=${lsAutoMultiWheel} s=${lsLastGoodS.toFixed(0)} target=${fullTarget.toFixed(0)}`);
       }
     } else if (lsLastStepAppended && lsLastGoodS > 0 && lsCh > 0) {
-      if (lsLastGoodS < fullTarget * 0.5) lsAutoSnapStreak++; else lsAutoSnapStreak = 0;
+      // r58: 判据从"目标一半"改为绝对值 60px——target 已收紧到 0.35 帧高（矮选区 ~90px），
+      // 旧相对判据失效。吸附页面每手势 100~130px 恒定；正常页面校准后位移逼近 target 绝不恒小。
+      if (lsLastGoodS <= 60) lsAutoSnapStreak++; else lsAutoSnapStreak = 0;
       if (lsAutoSnapStreak >= 2 && lsAcceptCount >= 3) {
         lsAutoSnapMode = true;
         lsAutoMultiWheel = Math.min(4, Math.max(2, Math.ceil(fullTarget / Math.max(1, lsLastGoodS))));
@@ -4561,9 +4598,9 @@ let lsSharpBase = 0;      // r26 清晰度静止基准（lap_var EMA，闸门 = 
 // 但匹配器每步都实测出真实位移 s（lsLastGoodS），用它对 delta 做闭环反馈，使每格位移收敛到
 // 目标比例*帧高 —— 即"按像素格数移动"的工程等价实现：重叠恒足→不拒拼、不浪费小步→更快且清晰。
 let lsAutoDelta = -60;        // 当前滚轮 delta（自适应调）
-let lsAutoTargetFrac = 0.5;   // 目标每格位移 = 0.5*帧高 → 重叠 50%（r56 从 0.65 回落：单步跳跃
-                              // 占视口 65% 观感为"跳变"而非滚动，用户实测反馈不平滑；平滑优先，
-                              // 配合校准后 60%→80%→100% 渐进消除起步突变）
+let lsAutoTargetFrac = 0.35;  // 目标每格位移 = 0.35*帧高 → 重叠 65%（r58 从 0.5 收紧：
+                              // 实测页面瞬时滚动速度有波动，0.5 步长下单步可冲到 0.8+ 帧高
+                              // → 重叠 <12% 被拒 → 整段内容跳过错拼；65% 重叠给波动留足余量）
 let lsLastStepAppended = false; // 上一步是否真正追加了行（用于自适应反馈是否采纳）
 let lsAutoProbe = -24;        // 方案A 首格探针滚轮量：小位移保证首格必然可接（重叠大、无过冲）
 let lsAutoCalib = false;      // 方案A 校准态：首个已追加步据探针实测位移反推正式 delta，取代固定 -60
@@ -5039,6 +5076,23 @@ function lsMatchScroll(frame, refCanvas) {
       return alt.s;
     }
   }
+  // r58: 近距离滑谷防护——浅内容+亚像素时，比真谷近 20~40px 的滑谷 err 可能更低且落在
+  // 速度窗口内（22:46 会话 A：真值 175 被换成 140，35px 错位）。全谷候选里若存在与胜出谷
+  // 距离 <60px 的强谷（err <= 3×minErr），取其中 err 最小者——谷间距离远小于步长时，
+  // 两者必是同一对齐的相邻候选，择优而非择先。
+  if (cands && cands.length > 1) {
+    let near = null;
+    for (const c of cands) {
+      if (c.eR === Infinity) continue;
+      if (Math.abs(c.s - bestS) > 0 && Math.abs(c.s - bestS) <= 60 && c.e <= minErr * 3) {
+        if (!near || c.e < near.e) near = c;
+      }
+    }
+    if (near && near.s !== bestS) {
+      if (lsDiagDue()) console.error(`[LS] near-valley refine ${bestS} -> ${near.s} (err ${Math.round(near.e)} vs ${Math.round(minErr)})`);
+      bestS = near.s; minErr = near.e;
+    }
+  }
   let sExact = bestS;
   const denom = eBefore + eAfter - 2 * minErr;
   if (eBefore > 0 && eAfter > 0 && denom > 1e-9) {
@@ -5238,7 +5292,16 @@ async function lsFullStep() {
         // r50 曾把 soft_frame 改丢弃重抓 → 实测 15:21 会话：4 帧被判软、唯一拼接帧 s=552 只 27px 重叠，
         // 内容大量跳过且单步 9.7s。取证软帧实为整图均匀发虚（静态降采样/显示缩放），非滚动动画中途帧，
         // sharp-gate 误触发；丢弃只会重滚造成位移漂移与丢内容。r50b 回退为仅落盘诊断、照常拼接。
-        if (retries >= 2 && lap < lsSharpBase * 0.6) lsDebugDump(frame, 'soft_frame');
+        // r58 更新：r54 的内容归一化口径（只统计有纹理行）已消除"稀疏内容误判"——那时误判的是
+        // 整图均匀降采样帧（lap 与纹理无关地低），现在口径下仍 <0.6×基线的必是动画中途帧。
+        // r58 改为：耗尽重试仍软 → 整帧弃用（返回不拼），下格匹配由 rescue/prev 链桥接，
+        // 杜绝软帧入图（22:47 会话软帧 2311 vs 邻帧 3858~4861 被拼入）。
+        if (retries >= 2 && lap > 0 && lap < lsSharpBase * 0.6) {
+          lsDebugDump(frame, 'soft_frame');
+          console.error('[LS] soft frame discarded (动画中途帧，弃拼防发虚)');
+          lsPrev = frame; // 更新 prev 供救援链桥接
+          return;
+        }
       }
       // r54: lap=0（纹理不足无法量化）不参与 EMA，避免纯背景帧把基线拖向 0
       if (lap > 0) lsSharpBase = lsSharpBase > 0 ? lsSharpBase * 0.7 + lap * 0.3 : lap;
