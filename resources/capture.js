@@ -4005,8 +4005,10 @@ const LS_PROBE_MS = 150;           // GDI 通道探针间隔（BitBlt ~10ms；15
 const LS_FULL_COOLDOWN_MS = 100;   // 全分辨率捕获最小间隔（GDI 抓帧 ~10-19ms，仅防同一步滚动重复匹配）
 const LS_SETTLE_MS = 0;            // GDI 通道无沉降窗口：帧越密位移越小、重叠越多、谷越稳
 const LS_AUTO_SETTLE_MS = 220;     // （r22 遗留，r23 步进制下探针不再排程抓帧）自动滚动模式沉降等待
-const LS_AUTO_STEP_GAP_MS = 200;   // r48 回退（r47 曾 100ms 致软帧）；停顿 200ms，抓帧仍在静止后
-const LS_MOTION_WAIT_MS = 900;     // r51: 发轮后等「画面开始运动」的最长时间；超时补发一次滚轮（再超时判到底/不可滚，自动收尾）
+const LS_AUTO_STEP_GAP_MS = 120;   // r53: 200→120（抓帧前已有 lsWaitMotion+lsWaitQuiet 双重确认静止，
+                                   // gap 只影响感知节奏；r48 的 100ms 软帧问题在步进制+静止确认下不复存在）
+const LS_MOTION_WAIT_MS = 700;     // r53: 900→700（实测滚轮要么被吞要么 <300ms 内起滚，无中间态）；
+                                   // 超时补发一次滚轮（再超时判到底/不可滚，自动收尾 1.4s）
 const LS_ACTIVE_MS = 45;           // 活跃期全帧连拍节拍（GDI bitblt ~10ms；45ms×滚速1m/s=45px 位移，量程内必拼上）
 const LS_MOTION_HOLD = 300;        // 活跃保持窗口：最近一次变化后持续连拍 300ms 才交还探针巡查
 
@@ -4235,7 +4237,7 @@ function lsAutoScrollStart() {
   lsSettleRetries = 0;
   // 方案A 首格系数校准：先发一次小滚(探针)实测该 App 滚轮→像素系数，据其设定正式首格 delta，
   // 取代 r38 固定 -60 在滚动系数差异大的不同 App 下首格过冲(重叠不足被拒)/不足(内容大量重复)的问题。
-  // 探针位移小→重叠大→首格必然可接；随后闭环收敛到 0.5×帧高目标。
+  // 探针位移小→重叠大→首格必然可接；随后闭环收敛到 lsAutoTargetFrac×帧高目标（r53 起 0.65）。
   lsAutoProbe = -24;
   lsAutoCalib = true;
   lsAutoDelta = lsAutoProbe;
@@ -4430,7 +4432,9 @@ let lsSharpBase = 0;      // r26 清晰度静止基准（lap_var EMA，闸门 = 
 // 但匹配器每步都实测出真实位移 s（lsLastGoodS），用它对 delta 做闭环反馈，使每格位移收敛到
 // 目标比例*帧高 —— 即"按像素格数移动"的工程等价实现：重叠恒足→不拒拼、不浪费小步→更快且清晰。
 let lsAutoDelta = -60;        // 当前滚轮 delta（自适应调）
-let lsAutoTargetFrac = 0.5;   // 目标每格位移 = 0.5*帧高 → 重叠 50%，匹配最稳
+let lsAutoTargetFrac = 0.65;  // 目标每格位移 = 0.65*帧高 → 重叠 35%（r53 从 0.5 上调：r52 匹配器
+                              // 信息量加权后 180+ 纹理行的重叠依然稳判，步数少 23% 会话更快；
+                              // 主流推荐重叠 20~30%+，35% 留有余量）
 let lsLastStepAppended = false; // 上一步是否真正追加了行（用于自适应反馈是否采纳）
 let lsAutoProbe = -24;        // 方案A 首格探针滚轮量：小位移保证首格必然可接（重叠大、无过冲）
 let lsAutoCalib = false;      // 方案A 校准态：首个已追加步据探针实测位移反推正式 delta，取代固定 -60
@@ -4675,7 +4679,7 @@ function lsMatchScroll(frame, refCanvas) {
     const isSeedingNow = lsAcceptCount < 2 && lsLastGoodS < 200;
     for (const c of viable) {
       if (isSeedingNow) {
-        c.eff = c.eR * (1 + 0.8 * Math.abs(c.s - fh * 0.5) / fh);
+        c.eff = c.eR * (1 + 0.8 * Math.abs(c.s - fh * lsAutoTargetFrac) / fh);
       } else {
         // 速度连续性先验：等高列表行等周期内容会产生多个误差接近的假谷，
         // 单帧位移不会突变 → 有效误差 = err * (1 + 0.2*min(1.5, |s-上次位移|/50))，弱惩罚不压制真强谷
@@ -4845,7 +4849,7 @@ function lsMatchScroll(frame, refCanvas) {
     // (重叠仅25行) 被无条件采信 → 365 被覆盖成 704 → 作为 lsLastGoodS 毒化后续所有帧=大量重复/错拼。
     // 副链"帧-帧相邻"对周期内容并不免疫(等高行周期同样产生等深伪谷)，只有结果符合位移先验才可信：
     // 种子期先验≈0.5*帧高(步进目标)，已锚定期先验=lsLastGoodS(匀速)。重叠 <6% 帧高必为近整帧伪谷。
-    const pfPrior = isSeeding ? fh * 0.5 : lsLastGoodS;
+    const pfPrior = isSeeding ? fh * lsAutoTargetFrac : lsLastGoodS;
     const pfBound = isSeeding ? fh * 0.35 : Math.max(20, lsLastGoodS * 0.3);
     const pfOverlap = fh - ccM.sPf;
     const pfPriorOK = pfPrior > 0 && Math.abs(ccM.sPf - pfPrior) <= pfBound;
@@ -5063,12 +5067,15 @@ async function lsFullStep() {
       if (frame) { lsCw = frame.width; lsCh = frame.height; }
     }
     // r26 清晰度闸门：GDI 帧抓完先测 lap_var，显著低于会话静止基准（<0.6×EMA）= 画面仍在
-    // lsWaitQuiet 拦不住的亚像素动画长尾 → 等 120ms 重抓同缓冲，最多 3 次；耗尽仍低则放行（防平坦内容误杀）。
+    // lsWaitQuiet 拦不住的亚像素动画长尾 → 等 120ms 重抓同缓冲；耗尽仍低则放行（防平坦内容误杀）。
+    // r53: 重试 3→1——lap_var 衡量的是内容疏密而非模糊度，深色稀疏内容（大面积纯背景）几乎每帧
+    // 都被误判（17:31 会话每步 retries=3 白耗 360ms），且 lsWaitQuiet 已确认静止、r50b 已证
+    // soft_frame 多为显示缩放而非动画帧，重抓无益；保留 1 次重试作为动画长尾的最后保险。
     if (frame) {
       let lap = lsLapVar(frame);
       if (lsSharpBase > 0 && lap < lsSharpBase * 0.6) {
         let retries = 0;
-        while (lap < lsSharpBase * 0.6 && retries < 3) {
+        while (lap < lsSharpBase * 0.6 && retries < 1) {
           await new Promise((r) => setTimeout(r, 120));
           const nf = await lsGdiFrame(gx, gy, gw, gh, nextBuf);
           if (!nf) break;
@@ -5080,7 +5087,7 @@ async function lsFullStep() {
         // r50 曾把 soft_frame 改丢弃重抓 → 实测 15:21 会话：4 帧被判软、唯一拼接帧 s=552 只 27px 重叠，
         // 内容大量跳过且单步 9.7s。取证软帧实为整图均匀发虚（静态降采样/显示缩放），非滚动动画中途帧，
         // sharp-gate 误触发；丢弃只会重滚造成位移漂移与丢内容。r50b 回退为仅落盘诊断、照常拼接。
-        if (retries >= 3 && lap < lsSharpBase * 0.6) lsDebugDump(frame, 'soft_frame');
+        if (retries >= 1 && lap < lsSharpBase * 0.6) lsDebugDump(frame, 'soft_frame');
       }
       lsSharpBase = lsSharpBase > 0 ? lsSharpBase * 0.7 + lap * 0.3 : lap;
     }
