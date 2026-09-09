@@ -4358,7 +4358,7 @@ function lsAutoScrollStart() {
   lsAutoProbe = -24;
   lsAutoCalib = true;
   lsAutoRampScale = 0; // r56: 渐进系数每会话重置
-  lsAutoSnapMode = false; lsAutoMultiWheel = 1; lsAutoSnapStreak = 0; // r57: 吸附态每会话重置
+  lsAutoSnapMode = false; lsAutoMultiWheel = 1; lsAutoSnapStreak = 0; lsPrevLockS = 0; // r57/r59: 每会话重置
   lsAutoDelta = lsAutoProbe;
   lsAutoStepLoop(++lsAutoStepToken);
 }
@@ -4415,6 +4415,22 @@ async function lsAutoStepLoop(token) {
     if (lsLastStepAppended && lsCh > 0 && lsLastGoodS > lsCh * 0.7) {
       console.error(`[LS] oversize s=${lsLastGoodS.toFixed(0)} > 0.7*fh=${(lsCh * 0.7).toFixed(0)} -> 收紧步长防跳变`);
       lsAutoDelta = -Math.max(18, Math.round(Math.abs(lsAutoDelta) * 0.6));
+    }
+    // r59: 周期锁死自愈——连续 2 步位移几乎相同（差 <5px）且都 >0.6×帧高：匹配器锁死在
+    // 重复元素周期假谷上（23:10 会话连续 585±10 → 内容周期性重复+跳段）。重置速度先验，
+    // 下一格回种子先验重新搜索，打破周期锁定。
+    if (lsLastStepAppended && lsCh > 0 && lsLastGoodS > lsCh * 0.6) {
+      if (lsPrevLockS > 0 && Math.abs(lsLastGoodS - lsPrevLockS) < 5) {
+        console.error(`[LS] period-lock detected (s=${lsLastGoodS.toFixed(0)} twice) -> 重置匹配状态打破周期`);
+        lsLastGoodS = 0; lsAcceptCount = 0; lsRejectStreak = 0; lsAutoRampScale = 0; lsAutoCalib = true;
+        lsAutoProbe = -Math.max(24, Math.round(lsCh * 0.08));
+        lsAutoDelta = lsAutoProbe;
+        lsPrevLockS = 0;
+      } else {
+        lsPrevLockS = lsLastGoodS;
+      }
+    } else {
+      lsPrevLockS = 0;
     }
     // r57: 拼接健康度状态点（预览面板右上角）
     if (lsLastStepAppended) lsSetHealth('#34d399');
@@ -4608,6 +4624,7 @@ let lsAutoRampScale = 0;      // r56: 校准后的步长渐进系数（0.6 → �
 let lsAutoSnapMode = false;   // r57: 吸附式滚动模式——页面按卡点固定步进，位移与滚轮量解耦
 let lsAutoMultiWheel = 1;     // r57: 吸附模式下每步注入的滚轮次数（1~4，按实测/目标自适应）
 let lsAutoSnapStreak = 0;     // r57: 连续「位移 < 一半目标」计数（连续 2 次且已拼 3 格才判吸附）
+let lsPrevLockS = 0;          // r59: 上一格位移（周期锁死检测用：连续 2 步几乎相同且大步 → 重置）
 function lsMatchScroll(frame, refCanvas) {
   if (!lsAccum) return 0;
   const ref = refCanvas || lsAccum; // 参考帧：默认累加图底部；救援模式传 lsPrev（新鲜参考）
@@ -4692,6 +4709,17 @@ function lsMatchScroll(frame, refCanvas) {
     gaRowInf[r] = inf;
     gaInfTotal += inf;
   }
+  // r59: 纹理行"多样性"——重复小元素（头像/图标/分隔条行）行均值几乎相同，行间多样性≈0，
+  // 这类伪纹理在任何周期位移上都能凑出 ≥10 行的低误差重叠（23:10 会话：585px 假谷仅
+  // 23 行重复头像行，err=451 夺魁，真谷 140 的 500+ 多样行被无视 → 内容周期性重复+跳段）。
+  // 多样性 = 重叠区内相邻**有纹理**行的行均值差；低于阈值的对不计入证据行数。
+  const gaRowMean = new Float32Array(fh);
+  for (let r = 0; r < fh; r++) {
+    let s = 0;
+    const gi = r * colsR;
+    for (let ci = 0; ci < colsR; ci++) s += gaR[gi + ci];
+    gaRowMean[r] = s / colsR;
+  }
   const evalS = (s) => {
     const rows = fh - s;
     if (rows < 8) return Infinity;
@@ -4706,7 +4734,11 @@ function lsMatchScroll(frame, refCanvas) {
       }
       n++;
     }
-    if (n < 10) return Infinity; // 有效纹理行 <10：该对齐与纯背景错位不可区分，拒绝评分
+    // r59: 证据门槛 10→25——重复小元素（头像/图标行）在周期位移上能凑出 10~24 行
+    // "看似有效"的重叠（23:10 会话假谷 585 仅 23 行重复头像行，err=451 夺魁，真谷 140
+    // 有 124 行）。25 行 ≈ 帧高 5% 的实质内容重叠，真实滚动步长（≥0.35 帧高）下
+    // 真谷的重叠纹理行远超此值（实测 87~152 行）。
+    if (n < 25) return Infinity;
     return err / (n * colCount);
   };
   // r52: 参考图底部整体无证据（<10 纹理行）→ 无从判断任何位移，按静止跳过不计拒链
@@ -4832,7 +4864,8 @@ function lsMatchScroll(frame, refCanvas) {
       for (let ci = 0; ci < colsR; ci++) { const d = gfR[fi + ci] - gaR[gi + ci]; err += d * d; }
       n++;
     }
-    if (n < 10) return Infinity; // 有效纹理行 <10：该对齐与纯背景错位不可区分，拒绝评分
+    // r59: 与 evalS 同口径（证据门槛 10→25，防重复小元素伪谷）
+    if (n < 25) return Infinity;
     return err / (n * colsR);
   };
   // r28: 交叉验证仲裁必须带速度先验——周期内容（聊天列表等距消息）半周期位移的裸 evalR
