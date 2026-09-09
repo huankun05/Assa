@@ -967,8 +967,23 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
         return;
       }
       let round = 0;
+      // r52 自愈梯度：1.001 zoom 抖动实测无效（17:31 会话 0.60→0.60 两轮不动）。
+      // ①zoom 1.02（强制全页重排+重光栅）→ ②1px 窗口尺寸抖动（强制合成器按原尺寸重建光栅，
+      // 结束恢复原 bounds，不违反 r27 move-only 铁律的最终状态）→ ③仍 <0.7 放弃并记疑似采样伪报
+      // （导出文件是画布 1:1 像素，不受显示发虚影响；r29 已证 hide/show 更糟，不再尝试）。
+      const applyZoomHeal = (amount: number): void => {
+        try { win.webContents.setZoomFactor(amount); } catch (_) { /* ignore */ }
+        setTimeout(() => { try { win.webContents.setZoomFactor(1.0); } catch (_) { /* ignore */ } }, 50);
+      };
+      const applyBoundsNudgeHeal = (): void => {
+        try {
+          const b = win.getBounds();
+          win.setBounds({ x: b.x, y: b.y, width: b.width + 1, height: b.height });
+          setTimeout(() => { try { if (!win.isDestroyed()) win.setBounds(b); } catch (_) { /* ignore */ } }, 80);
+        } catch (_) { /* ignore */ }
+      };
       const check = (): void => {
-        if (win.isDestroyed() || round >= 2) return;
+        if (win.isDestroyed() || round >= 3) return;
         round++;
         win.webContents.capturePage({ x: ref.x, y: ref.y, width: ref.w, height: ref.h })
           .then((shot) => {
@@ -977,13 +992,16 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
             const ratio = refLap > 0 ? got / refLap : 0;
             console.error('[LS-MAIN] sharp-guard round' + round + ' ratio=' + ratio.toFixed(2) + ' (got=' + Math.round(got) + ' ref=' + Math.round(refLap) + ')');
             if (ratio >= 0.7) return;
-            // r29: hide/show 实测无法重建清晰表面（ratio 0.46->0.36 更差）。
-            // 用 zoomFactor 微小抖动强制 Chromium 重新光栅化页面，更可靠。
-            try { win.webContents.setZoomFactor(1.001); } catch (_) { /* ignore */ }
-            setTimeout(() => {
-              try { win.webContents.setZoomFactor(1.0); } catch (_) { /* ignore */ }
+            if (round === 1) {
+              applyZoomHeal(1.02);
               setTimeout(check, 700);
-            }, 50);
+            } else if (round === 2) {
+              applyBoundsNudgeHeal();
+              setTimeout(check, 700);
+            } else {
+              console.error('[LS-MAIN] sharp-guard give-up after zoom+bounds heal (ratio=' + ratio.toFixed(2)
+                + '; suspect guard sampling artifact, export file unaffected)');
+            }
           })
           .catch(() => { /* ignore */ });
       };

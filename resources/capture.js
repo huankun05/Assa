@@ -4006,6 +4006,7 @@ const LS_FULL_COOLDOWN_MS = 100;   // 全分辨率捕获最小间隔（GDI 抓�
 const LS_SETTLE_MS = 0;            // GDI 通道无沉降窗口：帧越密位移越小、重叠越多、谷越稳
 const LS_AUTO_SETTLE_MS = 220;     // （r22 遗留，r23 步进制下探针不再排程抓帧）自动滚动模式沉降等待
 const LS_AUTO_STEP_GAP_MS = 200;   // r48 回退（r47 曾 100ms 致软帧）；停顿 200ms，抓帧仍在静止后
+const LS_MOTION_WAIT_MS = 900;     // r51: 发轮后等「画面开始运动」的最长时间；超时补发一次滚轮（再超时判到底/不可滚，自动收尾）
 const LS_ACTIVE_MS = 45;           // 活跃期全帧连拍节拍（GDI bitblt ~10ms；45ms×滚速1m/s=45px 位移，量程内必拼上）
 const LS_MOTION_HOLD = 300;        // 活跃保持窗口：最近一次变化后持续连拍 300ms 才交还探针巡查
 
@@ -4251,6 +4252,26 @@ async function lsAutoStepLoop(token) {
   while (longShotActive && lsAutoScrollActive && token === lsAutoStepToken) {
     try { await ipcRenderer.invoke('capture-ls-autoscroll', { action: 'step', delta: lsAutoDelta }); }
     catch (err) { console.error('[LS] auto-step wheel failed', err); }
+    // r51: 发轮后先等「画面真的动起来」再等静止。被遮挡的目标窗口会节流丢弃 PostedMessage
+    // 的 WM_MOUSEWHEEL（实测 15:47 会话第 2 格滚轮被吞，静置 2s 后下一格才恢复滚动），
+    // 旧流程直接 lsWaitQuiet 在「从未滚动」的画面上 ~300ms 即判静 → 抓到与上一帧相同的
+    // 静止帧（static-gdi 跳过）→ 白白空转一格。先等运动出现，等不到就补发一次。
+    const moved = await lsWaitMotion(LS_MOTION_WAIT_MS);
+    if (!moved) {
+      if (!longShotActive || !lsAutoScrollActive || token !== lsAutoStepToken) break;
+      console.error('[LS] auto-step wheel no-op, resend once');
+      try { await ipcRenderer.invoke('capture-ls-autoscroll', { action: 'step', delta: lsAutoDelta }); }
+      catch (err) { console.error('[LS] auto-step wheel resend failed', err); }
+      const moved2 = await lsWaitMotion(LS_MOTION_WAIT_MS);
+      if (!moved2) {
+        // 连续两轮无运动：页面已滚动到底 / 目标不可滚动。旧流程会永远空转（静帧被
+        // static-gdi 跳过、不计拒链，循环没有停止条件），只能用户手动停止 → 自动收尾。
+        // r52 不弹 toast：收尾即进编辑器，浮层会盖在结果上被误读为"遮挡"（17:31 实测反馈）。
+        console.error('[LS] auto-step wheel dead (page bottom or unscrollable) -> auto finish');
+        stopLongScreenshot(true);
+        break;
+      }
+    }
     const settled = await lsWaitQuiet(2500); // 平滑动画 ~500-700ms；超时兜底照抓（防卡死不滚）
     if (!longShotActive || !lsAutoScrollActive || token !== lsAutoStepToken) break;
     if (!settled && lsDiagDue()) console.error('[LS] auto-step settle-timeout, capture anyway');
@@ -4313,6 +4334,31 @@ async function lsWaitQuiet(timeoutMs) {
       }
       prev = gray;
     }
+  }
+  return false;
+}
+
+/** r51: 发轮后等「画面真的动起来」。返回 true=已检测到滚动；false=超时无任何运动
+ *  （滚轮被目标窗口吞掉，或页面已滚动到底）。采样与 lsWaitQuiet 同源（GDI 全分辨率选区、
+ *  100ms 轮询、1/3 像素步进灰度差），阈值同探针 changed（>0.5）：真滚动哪怕几像素也远超此值，
+ *  被吞的滚轮画面 diff 实测恒 0.00（15:47 会话第 2 格静帧 fdiff=0.00）——二者不会混淆。 */
+async function lsWaitMotion(timeoutMs) {
+  const t0 = Date.now();
+  const dpr = window.devicePixelRatio || 1;
+  let prev = null;
+  while (Date.now() - t0 < timeoutMs) {
+    await new Promise((r) => setTimeout(r, 100));
+    let gray = null;
+    try {
+      const gres = await ipcRenderer.invoke('capture-longshot-gdi', { gx: Math.round(selX * dpr), gy: Math.round(selY * dpr), gw: Math.round(selW * dpr), gh: Math.round(selH * dpr) });
+      if (gres && gres.buf && gres.w > 0) gray = lsGdiGray(gres);
+    } catch (_) { }
+    if (gray && prev && prev.length === gray.length) {
+      let acc = 0; let n = 0;
+      for (let i = 0; i < gray.length; i += 3) { acc += Math.abs(gray[i] - prev[i]); n++; }
+      if (n && acc / n > 0.5) return true;
+    }
+    if (gray) prev = gray;
   }
   return false;
 }
@@ -4436,20 +4482,66 @@ function lsMatchScroll(frame, refCanvas) {
     }
   }
   const S_MAX = fh - 8;
+  // r52 行纹理度：每行灰度方差。方差 <64（σ<8 灰阶）= 纯背景行，不构成位移证据。
+  // 实测深色聊天窗（会话 1788946273508）：假位移 488 的重叠仅 31 行且全为纯背景，
+  // 平均 SSD err=0 完美夺魁（真位移 260 重叠 259 行带文字，err 反而数千）——
+  // min-err 目标被"小而纯"的条带欺骗。ShareX ScrollingCaptureManager 同课：
+  // 它按"逐行字节全等的最长连击"评分，证据数量决定胜负，背景条带的连击天然短于真重叠。
+  // 等价实现：粗搜 evalS 与仲裁 evalR 都只在有纹理行上计分，有效纹理行不足的偏移直接 Infinity。
+  // 注意候选生成也必须加权——否则真位移根本进不了候选（实测 f4→f5 真值 135 因粗搜未加权漏选）。
+  const stepR = 4;
+  const colsR = Math.floor((w - 1) / stepR) + 1;
+  const gfR = new Float32Array(fh * colsR);
+  for (let r = 0; r < fh; r++) {
+    const base = r * w;
+    for (let ci = 0, x = 0; ci < colsR; ci++, x += stepR) {
+      const i = (base + x) * 4;
+      gfR[r * colsR + ci] = (fData[i] * 114 + fData[i + 1] * 587 + fData[i + 2] * 299) / 1000;
+    }
+  }
+  const gaR = new Float32Array(fh * colsR);
+  for (let r = 0; r < fh; r++) {
+    const base = r * w;
+    for (let ci = 0, x = 0; ci < colsR; ci++, x += stepR) {
+      const i = (base + x) * 4;
+      gaR[r * colsR + ci] = (aData[i] * 114 + aData[i + 1] * 587 + aData[i + 2] * 299) / 1000;
+    }
+  }
+  const gaRowInf = new Uint8Array(fh);
+  let gaInfTotal = 0;
+  for (let r = 0; r < fh; r++) {
+    const gi = r * colsR;
+    let sum = 0, sum2 = 0;
+    for (let ci = 0; ci < colsR; ci++) { const v = gaR[gi + ci]; sum += v; sum2 += v * v; }
+    const mean = sum / colsR;
+    const inf = (sum2 / colsR - mean * mean) >= 64 ? 1 : 0;
+    gaRowInf[r] = inf;
+    gaInfTotal += inf;
+  }
   const evalS = (s) => {
     const rows = fh - s;
     if (rows < 8) return Infinity;
-    let err = 0;
+    let err = 0, n = 0;
     for (let r = 0; r < rows; r++) {
+      if (!gaRowInf[s + r]) continue; // 纯背景行对任何位移都"全等"，不计分不掩盖证据稀缺
       const gi = (s + r) * colCount;
       const fi = r * colCount;
       for (let ci = 0; ci < colCount; ci++) {
         const d = gf[fi + ci] - ga[gi + ci];
         err += d * d;
       }
+      n++;
     }
-    return err / (rows * colCount);
+    if (n < 10) return Infinity; // 有效纹理行 <10：该对齐与纯背景错位不可区分，拒绝评分
+    return err / (n * colCount);
   };
+  // r52: 参考图底部整体无证据（<10 纹理行）→ 无从判断任何位移，按静止跳过不计拒链
+  // （与 static-gdi 同语义：纯背景内容的滚动在像素层面本就不可检测）
+  if (gaInfTotal < 10) {
+    if (lsDiagDue()) console.error(`[LS] diag no-evidence ref infRows=${gaInfTotal} t=${Date.now() - lsStartT}ms (参考区纯背景，跳过匹配)`);
+    lsRejectStreak = 0;
+    return 0;
+  }
   const e0 = evalS(0);
   if (e0 < 0.3) {
     if (lsDiagDue()) console.error(`[LS] diag static e0=${e0.toFixed(2)} t=${Date.now() - lsStartT}ms (帧未变化/页面未滚动)`);
@@ -4473,16 +4565,32 @@ function lsMatchScroll(frame, refCanvas) {
   const crossCheck = (sMain) => {
     if (!pg) return { has: false };
     if (pfCache) return pfCache;
+    // r52: 副链同样只信有纹理行——无加权的副链会被背景条带假谷骗过，经 cross-trust-pf
+    // 覆盖正确的主链（17:31 会话 f6→f7：主链正确 50 被副链假谷 135 覆盖，实测复现）
+    const pgRowInf = new Uint8Array(fh);
+    let pgInfTotal = 0;
+    for (let r = 0; r < fh; r++) {
+      const gi = r * colCount;
+      let sum = 0, sum2 = 0;
+      for (let ci = 0; ci < colCount; ci++) { const v = pg[gi + ci]; sum += v; sum2 += v * v; }
+      const mean = sum / colCount;
+      pgRowInf[r] = (sum2 / colCount - mean * mean) >= 64 ? 1 : 0;
+      pgInfTotal += pgRowInf[r];
+    }
     const evalPf = (s) => {
       const rows = fh - s;
       if (rows < 8) return Infinity;
-      let err = 0;
+      let err = 0, n = 0;
       for (let r = 0; r < rows; r++) {
+        if (!pgRowInf[s + r]) continue;
         const gi = (s + r) * colCount, fi = r * colCount;
         for (let ci = 0; ci < colCount; ci++) { const d = gf[fi + ci] - pg[gi + ci]; err += d * d; }
+        n++;
       }
-      return err / (rows * colCount);
+      if (n < 10) return Infinity;
+      return err / (n * colCount);
     };
+    if (pgInfTotal < 10) { pfCache = { has: false }; return pfCache; }
     const e0p = evalPf(0);
     if (e0p < 0.3) { pfCache = { has: false }; return pfCache; }
     const sn = Math.floor(S_MAX / 2) + 1;
@@ -4512,7 +4620,13 @@ function lsMatchScroll(frame, refCanvas) {
   const bestSB = valleys[0].s;
   const minErrB = valleys[0].e;
   const cands = [];
-  for (const v of valleys.slice(0, 4)) {
+  // r52: 精搜扩展到全部局部谷（cap 48，按粗搜深度排序截断）。
+  // top-4/8 的教训：窄真谷在 2px 粗网格上深度严重失真——真位移 135 谷底 err=68，
+  // 网格 ±2px 采样即 929，按采样深度排不进 top-N → 精搜永远到不了真位移，
+  // 候选里只剩内容重复的宽假谷（17:31 会话 f4→f5 实测）。谷实测 20~39 个，
+  // 全部精搜 + evalR 复核 ≈ 额外 10ms，步进制下每格仅一次匹配，开销可接受。
+  const valleyCands = valleys.length > 48 ? valleys.slice(0, 48) : valleys;
+  for (const v of valleyCands) {
     const lo = Math.max(0, v.s - 3);
     const hi = Math.min(S_MAX, v.s + 3);
     let bs = -1, be = Infinity;
@@ -4533,33 +4647,19 @@ function lsMatchScroll(frame, refCanvas) {
   // r26b/c 高密度复核（stepX=4）：主链 stepX≈w/160 的列采样在浅误差曲线（帧间内容变化/亚像素残留）上
   // 会翻转真假谷（实测真实帧 stepX=9 下伪谷 68 err=3710 反超真谷 422 err=3759，而 stepX=4/全精度均
   // 正确给出 422）。evalR 提升到函数级：候选重排与 crossCheck 仲裁共用。
-  const stepR = 4;
-  const colsR = Math.floor((w - 1) / stepR) + 1;
-  const gfR = new Float32Array(fh * colsR);
-  for (let r = 0; r < fh; r++) {
-    const base = r * w;
-    for (let ci = 0, x = 0; ci < colsR; ci++, x += stepR) {
-      const i = (base + x) * 4;
-      gfR[r * colsR + ci] = (fData[i] * 114 + fData[i + 1] * 587 + fData[i + 2] * 299) / 1000;
-    }
-  }
-  const gaR = new Float32Array(fh * colsR);
-  for (let r = 0; r < fh; r++) {
-    const base = r * w;
-    for (let ci = 0, x = 0; ci < colsR; ci++, x += stepR) {
-      const i = (base + x) * 4;
-      gaR[r * colsR + ci] = (aData[i] * 114 + aData[i + 1] * 587 + aData[i + 2] * 299) / 1000;
-    }
-  }
+  // （r52: gfR/gaR/gaRowInf 已上移到 evalS 之前共用——粗搜与仲裁必须同一套加权口径）
   const evalR = (s) => {
     const rows = fh - s;
     if (rows < 8) return Infinity;
-    let err = 0;
+    let err = 0, n = 0;
     for (let r = 0; r < rows; r++) {
+      if (!gaRowInf[s + r]) continue; // 纯背景行对任何位移都"全等"，计分只会稀释证据、误导仲裁
       const gi = (s + r) * colsR, fi = r * colsR;
       for (let ci = 0; ci < colsR; ci++) { const d = gfR[fi + ci] - gaR[gi + ci]; err += d * d; }
+      n++;
     }
-    return err / (rows * colsR);
+    if (n < 10) return Infinity; // 有效纹理行 <10：该对齐与纯背景错位不可区分，拒绝评分
+    return err / (n * colsR);
   };
   // r28: 交叉验证仲裁必须带速度先验——周期内容（聊天列表等距消息）半周期位移的裸 evalR
   // 可能更低（实测主链真值 202 eR=2705 被副链伪谷 99 eR=2166 否决 = 正确帧被拒）。
@@ -4567,11 +4667,13 @@ function lsMatchScroll(frame, refCanvas) {
   const effR = (s) => evalR(s) * (1 + 0.2 * Math.min(1.5, Math.abs(s - lsLastGoodS) / 50));
   if (cands.length) {
     for (const c of cands) c.eR = evalR(c.s);
+    // r52: eR=Infinity（有效纹理行不足）的候选不参与胜出——那是背景条带假谷，不是证据
+    const viable = cands.filter((c) => c.eR < Infinity);
     // r38 seeding 偏好：首 1-2 格无速度基准，周期内容(聊天/列表/代码块)易锁到等于内容周期的假谷，
     // 导致过小位移(重叠>70%→顶部重复)或过大位移(重叠<20%→匹配不稳定)。
     // 在候选排序中加入向 0.5×帧高的软偏好(系数 0.8)，既防假谷错拼，又不过分压制真强谷。
     const isSeedingNow = lsAcceptCount < 2 && lsLastGoodS < 200;
-    for (const c of cands) {
+    for (const c of viable) {
       if (isSeedingNow) {
         c.eff = c.eR * (1 + 0.8 * Math.abs(c.s - fh * 0.5) / fh);
       } else {
@@ -4580,8 +4682,10 @@ function lsMatchScroll(frame, refCanvas) {
         c.eff = c.eR * (1 + 0.2 * Math.min(1.5, Math.abs(c.s - lsLastGoodS) / 50));
       }
     }
-    cands.sort((a, b) => a.eff - b.eff);
-    bestS = cands[0].s; minErr = cands[0].e;
+    viable.sort((a, b) => a.eff - b.eff);
+    if (viable.length) {
+      bestS = viable[0].s; minErr = viable[0].e;
+    }
   }
   if (bestS === 0) {
     lsRejectStreak++;
@@ -4591,6 +4695,13 @@ function lsMatchScroll(frame, refCanvas) {
       let gbs = -1, gbe = Infinity;
       for (let s2 = glo; s2 <= ghi; s2++) { const e = evalS(s2); if (e < gbe) { gbe = e; gbs = s2; } }
       if (gbs > 0 && gbe < e0 * 0.95) {
+        // r52: best-guess 证据校验（粗搜已加权，此处兜底精搜窗口边缘纹理行不足的情形）
+        let infRows = 0;
+        for (let r = 0; r < fh - gbs; r++) { if (gaRowInf[gbs + r]) infRows++; }
+        if (infRows < 10) {
+          if (lsDiagDue()) console.error(`[LS] best-guess no-evidence gbs=${gbs} infRows=${infRows} (reject)`);
+          lsRejectStreak++; lsDebugDump(frame, 'guess_no_evidence'); return 0;
+        }
         // 速度连续性：周期假谷会锁到远离真实位移的谷，偏离过大且非深谷判为假谷（防 best-guess 锁错周期错拼）
         // velBound 0.5×last：周期 P=42 时假谷偏离 42px，可拒；真实滚动 50% 变速仍可容。
         if (lsLastGoodS > 8 && lsAcceptCount >= 2) {
@@ -4684,11 +4795,24 @@ function lsMatchScroll(frame, refCanvas) {
         // 优先采用候选中"速度一致"(|s-lastGood|≤velBound)的谷——它是真位移(匀速)；
         // 无 alt：主链呈极强谷(ratio<0.1，假谷信号)才采用预测防漏帧，否则硬拒(保护 r26 变速真值不被错改)
         let alt = null;
-        if (cands && cands.length) for (const c of cands) { if (Math.abs(c.s - lsLastGoodS) <= velBound) { alt = c; break; } }
+        if (cands && cands.length) for (const c of cands) { if (c.eR === Infinity) continue; if (Math.abs(c.s - lsLastGoodS) <= velBound) { alt = c; break; } }
         if (alt) {
           if (lsDiagDue()) console.error(`[LS] vel-inconsist -> adopt ${alt.s} (alt) 矮选区防周期假谷/漏帧`);
           lsRejectStreak = 0; lsLastMatchRatio = 1; lsAcceptCount++;
           return alt.s;
+        }
+        // r52: 证据丰富的极强谷优先于速度预测。加权口径下"极强谷 + ≥20 纹理行"即真位移
+        // （实测 f6→f7：真值 50 有 63 纹理行 err=14，却因偏离 lastGood=135 走到"强谷无 alt
+        // → predict"被 135 覆盖 → 重拼 85px）。速度先验只对薄证据谷（10~19 行）继续防周期假谷。
+        if (minErr < e0 * 0.1) {
+          let infAtBest = 0;
+          for (let r = 0; r < fh - bestS; r++) { if (gaRowInf[bestS + r]) infAtBest++; }
+          if (infAtBest >= 20) {
+            if (lsDiagDue()) console.error(`[LS] vel-inconsist -> trust evidence-rich valley s=${bestS} infRows=${infAtBest} (速度先验让位)`);
+            lsRejectStreak = 0; lsLastMatchRatio = e0 > 0 ? minErr / e0 : 1;
+            lsLastGoodS = bestS; lsAcceptCount++;
+            return bestS;
+          }
         }
         if (minErr < e0 * 0.1) {
           if (lsDiagDue()) console.error(`[LS] vel-inconsist -> adopt predict ${Math.round(lsLastGoodS)} (强谷无 alt) 防漏帧`);
@@ -4767,6 +4891,7 @@ function lsMatchScroll(frame, refCanvas) {
     const bound = velBound !== Infinity ? velBound : Math.max(20, lsLastGoodS * 0.3);
     let alt = null;
     for (const c of cands) {
+      if (c.eR === Infinity) continue; // r52: 无证据（背景条带）候选不参与周期假谷纠偏
       if (Math.abs(c.s - lsLastGoodS) <= bound && c.e <= minErr * 1.5) { if (!alt || c.e < alt.e) alt = c; }
     }
     if (alt) {
@@ -5239,6 +5364,14 @@ async function enterLongShotEditor(dataURL, saveFilename) {
       for (let i = 0; i < d8.length; i += 4) { r8 += d8[i]; g8 += d8[i + 1]; b8 += d8[i + 2]; }
       const n8 = d8.length / 4;
       editorBgCss = `rgb(${Math.round(r8 / n8)},${Math.round(g8 / n8)},${Math.round(b8 / n8)})`;
+      // r52 边界可视化：长图常窄于窗口，露底区域与画布同色时结果边界不可辨——
+      // 17:31 深色会话实测：右侧 638px 死区被当成结果的一部分（"多余"），重复的空背景块
+      // 被读成"遮挡"。编辑态露底区域统一压暗 45% 与画布区分（body 背景与下方 fill 兜底同色）。
+      const m8 = editorBgCss.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (m8) {
+        const dk = (v) => Math.max(0, Math.round(Number(v) * 0.55));
+        editorBgCss = `rgb(${dk(m8[1])},${dk(m8[2])},${dk(m8[3])})`;
+      }
       document.body.style.background = editorBgCss;
     } catch (_) { }
     document.documentElement.style.setProperty('--ls-edit-w', `${W}px`);

@@ -1840,7 +1840,8 @@ body.is-longshot-edit .capture-size-info {
   position: absolute;
 }
 body.is-longshot-edit .capture-canvas {
-  box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 6px 20px rgba(0,0,0,.28);
+  /* r52: 描边提到中灰 .65——原 .16 白边在深色主题下与压暗露底区几乎不可分，结果边界不可辨 */
+  box-shadow: 0 0 0 1px rgba(128,128,128,.65), 0 6px 20px rgba(0,0,0,.28);
   width: var(--ls-edit-w, 100%) !important;
   height: var(--ls-edit-h, auto) !important;
   top: 0;
