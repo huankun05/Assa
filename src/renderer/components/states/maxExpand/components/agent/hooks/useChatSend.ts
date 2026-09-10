@@ -138,10 +138,12 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
       error?: string;
     } = {};
     try {
+      // 仅在用户于授权框点击"允许"后进入此函数：主进程终审要求 confirm 工具必须携带 userConfirmed
       execution = await executor({
         tool: params.tool,
         arguments: params.argumentsPayload,
         workspaces: aiConfig.workspaces,
+        userConfirmed: true,
       });
     } catch (error: unknown) {
       execution = {

@@ -32,4 +32,6 @@ export interface AgentLocalToolRequest {
   arguments?: unknown;
   /** 工作空间列表 */
   workspaces?: unknown;
+  /** 用户已在 UI 上确认本次调用；白名单中 confirm: true 的工具缺少它会被终审拒绝 */
+  userConfirmed?: unknown;
 }

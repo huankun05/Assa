@@ -29,6 +29,8 @@ export interface ExecuteAgentLocalToolRequest {
   tool: string;
   arguments?: Record<string, unknown>;
   workspaces?: string[];
+  /** 用户已在确认框点击"允许"；file.delete / cmd.exec / browser.* / net.ping 等 confirm 工具必须为 true */
+  userConfirmed?: boolean;
 }
 
 /** Agent 本地工具执行结果 */

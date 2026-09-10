@@ -21,14 +21,18 @@
 /**
  * @file localToolIpc.ts
  * @description Agent 本地工具 IPC handler 注册，将渲染进程的本地工具执行请求桥接到主进程。
+ *   终审与审计不在此处：统一由 services/xiyueToolSchema.xiyueExecuteTool 收口，
+ *   本 handler 只做透传与"抛异常 → 失败结果"的兜底转换。
  * @author 鸡哥
  */
 
 import { ipcMain } from 'electron';
-import type { AgentLocalToolRequest, AgentLocalToolResult } from './types/AgentLocalToolRequest';
-import { xiyueAuditLog, xiyueFinalCheck } from '../../services/xiyueToolSchema';
+import type { AgentLocalToolRequest } from '../../types/agent/AgentLocalToolRequest';
+import type { AgentLocalToolResult } from '../../types/agent/AgentLocalToolResult';
 
-export type { AgentLocalToolRequest, AgentLocalToolResult } from './types/AgentLocalToolRequest';
+// 多个同级模块（index / ollamaIpc / 两个编排器）从这里取类型，保留再导出
+export type { AgentLocalToolRequest } from '../../types/agent/AgentLocalToolRequest';
+export type { AgentLocalToolResult } from '../../types/agent/AgentLocalToolResult';
 
 interface RegisterAgentLocalToolIpcHandlersOptions {
   executeAgentLocalTool: (request: AgentLocalToolRequest) => Promise<AgentLocalToolResult>;
@@ -38,52 +42,17 @@ interface RegisterAgentLocalToolIpcHandlersOptions {
 export function registerAgentLocalToolIpcHandlers(options: RegisterAgentLocalToolIpcHandlersOptions): void {
   ipcMain.handle('agent:local-tool:execute', async (_event, request: AgentLocalToolRequest) => {
     const startedAt = Date.now();
-    const tool = typeof request?.tool === 'string' ? request.tool.trim().toLowerCase() : '';
-    const args = typeof request?.arguments === 'object' && request?.arguments !== null
-      ? (request.arguments as Record<string, unknown>) : {};
-    const workspaces = Array.isArray(request?.workspaces) ? request.workspaces.map(String) : [];
-
-    const finalCheck = xiyueFinalCheck({ tool, arguments: args, workspaces });
-    if (!finalCheck.allowed) {
-      const denial: AgentLocalToolResult = {
-        success: false,
-        result: {},
-        error: `汐月终审拒绝：${finalCheck.denyReason}`,
-        durationMs: Date.now() - startedAt,
-      };
-      xiyueAuditLog({
-        tool,
-        arguments: args,
-        workspaces,
-        success: false,
-        error: denial.error,
-        durationMs: denial.durationMs,
-      });
-      return denial;
-    }
-
-    let result: AgentLocalToolResult;
     try {
-      result = await options.executeAgentLocalTool(request);
+      return await options.executeAgentLocalTool(request);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err ?? 'local tool execute failed');
-      result = {
+      const failure: AgentLocalToolResult = {
         success: false,
         result: {},
         error: message,
         durationMs: Date.now() - startedAt,
       };
+      return failure;
     }
-
-    xiyueAuditLog({
-      tool,
-      arguments: args,
-      workspaces,
-      success: result.success,
-      result: result.result,
-      error: result.error,
-      durationMs: result.durationMs,
-    });
-    return result;
   });
 }

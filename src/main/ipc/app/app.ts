@@ -36,7 +36,7 @@ import { clearLogsCacheFiles, ensureLogsDir } from '../../log/mainLog';
 import { openStandaloneWindow, openStandaloneWindowWithTab, closeStandaloneWindow } from '../../window/standaloneWindow';
 import { openSettingsWindow } from '../../window/settingsWindow';
 import { registerAgentIpcHandlers } from '../agent';
-import { xiyueAuditLog, xiyueFinalCheck, type XiyueToolAuditRecord } from '../../services/xiyueToolSchema';
+import { xiyueExecuteTool } from '../../services/xiyueToolSchema';
 import { queryOpenWindowsWithIcons, type RunningWindowInfo } from '../../system/runningProcesses';
 import { broadcastSettingChange } from '../../utils/broadcast';
 import { getSmtcNowPlaying } from '../../music/smtcAccessor';
@@ -366,7 +366,22 @@ async function executeLocalWebSearch(args: Record<string, unknown>): Promise<{
   };
 }
 
+/**
+ * 汐月本地工具执行入口：终审 + 审计统一由 xiyueExecuteTool 收口，
+ * 本函数只是把纯实现 executeAgentLocalToolImpl 挂到闸门后面。
+ * 渲染层 IPC 与主进程 Ollama/自定义编排器都经此入口，不允许直接调用 Impl。
+ */
 async function executeAgentLocalTool(request: AgentLocalToolRequest): Promise<{
+  success: boolean;
+  result: unknown;
+  error: string;
+  durationMs: number;
+}> {
+  return xiyueExecuteTool(request, executeAgentLocalToolImpl, { source: 'main-executor' });
+}
+
+/** 纯工具实现：只负责"怎么做"；"能不能做"（白名单/工作区/用户确认）已在闸门判定 */
+async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promise<{
   success: boolean;
   result: unknown;
   error: string;
@@ -379,19 +394,6 @@ async function executeAgentLocalTool(request: AgentLocalToolRequest): Promise<{
     const workspaces = parseWorkspaces(request?.workspaces);
     if (!tool) {
       throw new Error('tool 不能为空');
-    }
-
-    const finalCheck = xiyueFinalCheck({ tool, arguments: args, workspaces });
-    if (!finalCheck.allowed) {
-      xiyueAuditLog({
-        tool,
-        arguments: args,
-        workspaces,
-        success: false,
-        error: `终审拒绝：${finalCheck.denyReason}`,
-        durationMs: Date.now() - startedAt,
-      });
-      throw new Error(`汐月终审拒绝：${finalCheck.denyReason}`);
     }
 
     if (tool === 'file.list') {

@@ -104,11 +104,12 @@ describe('agent ipc handlers', () => {
     });
 
     executeAgentLocalTool.mockRejectedValueOnce(new Error('execute failed'));
+    // durationMs 来自真实 Date.now() 差值，全量跑时会跨毫秒边界，只断言类型
     await expect(handler?.({}, { tool: 'x' })).resolves.toEqual({
       success: false,
       result: {},
       error: 'execute failed',
-      durationMs: 0,
+      durationMs: expect.any(Number),
     });
   });
 

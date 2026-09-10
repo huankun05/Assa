@@ -71,7 +71,8 @@ export function useAgentAuthDecision(options: UseAgentAuthDecisionOptions): (all
         }
         let execution: { success?: boolean; result?: unknown; error?: string } = {};
         try {
-          execution = await executor({ tool: auth.tool!, arguments: auth.argumentsPayload ?? {}, workspaces });
+          // 用户已点击"允许"：主进程终审要求 confirm 工具必须携带 userConfirmed
+          execution = await executor({ tool: auth.tool!, arguments: auth.argumentsPayload ?? {}, workspaces, userConfirmed: true });
         } catch (e: unknown) {
           execution = { success: false, result: {}, error: e instanceof Error ? e.message : '本地工具执行失败' };
         }
