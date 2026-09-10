@@ -353,6 +353,7 @@ const CAPTURE_I18N = {
       cancel: '取消',
       done: '完成',
       captureHint: '拖拽框选截图区域 · 悬停窗口可快速选中 · Enter 完成 · Esc 取消',
+      lsStartHint: '长截图中：滚轮自动翻页（鼠标位置无关），建议将鼠标移出选区——悬停效果会干扰拼接',
       guideStart: '拖拽框选 · 悬停窗口可快速选中',
       guideNudgeSel: '↑↓←→ 微调选区 · Shift = 10px',
       guideNudgeAnnot: '↑↓←→ 微调悬停的对象 · Shift = 10px',
@@ -441,6 +442,7 @@ const CAPTURE_I18N = {
       cancel: 'Cancel',
       done: 'Done',
       captureHint: 'Drag to select a region · Hover a window to select it · Enter to finish · Esc to cancel',
+      lsStartHint: 'Scrolling captures automatically (mouse position irrelevant). Move the mouse out of the selection — hover effects interfere with stitching',
       guideStart: 'Drag to select · Hover a window to select it',
       guideNudgeSel: '↑↓←→ / WASD nudge selection · Shift = 10px',
       guideNudgeAnnot: '↑↓←→ nudge hovered object · Shift = 10px',
@@ -4323,6 +4325,9 @@ async function startLongScreenshot() {
   lsSourceId = null;
   clearLongShotHole();
   setLsActive(true);
+  // r60: 业界共识（ShareX/Snagit 官方文档）——悬停效果是滚动拼接的头号输入源干扰，
+  // 处理方式是引导用户移开鼠标而非程序化移动（侵入性强，无商业产品这么做）。
+  showToastMessage(tCapture('lsStartHint'));
   // 默认自动匀速滚动：进入会话即开始（UI paint 后），用户可点控制条开关改手动
   if (lsAutoScrollOn) {
     if (btnLongShotAuto) btnLongShotAuto.textContent = '自动滚动：开';
