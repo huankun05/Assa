@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="HJiSj5bGXGM9Pupy4whgmV">
+<head data-page-node-id="Lz9IJXQ5bP8tXkOWBNwz0F">
+<meta charset="UTF-8" data-page-node-id="wi7NNwKlS48Cv9jRKgGz9x">
+<title>XiyueTab 状态点验证 · 4 状态</title>
+<link rel="stylesheet" href="../../src/renderer/styles/hover/xiyue-tab.css" data-page-node-id="twliSqMMKWuuVPYiPU6ZEx">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#e8e8ea;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    padding:36px 30px; display:flex; flex-direction:column; gap:28px;
+  }
+  .page-title { font-size:21px; font-weight:600; color:#1d1d1f; }
+  .page-desc  { font-size:13px; color:#6e6e73; line-height:1.7; margin-top:7px; }
+  .page-desc code { background:rgba(0,0,0,.06); padding:1px 5px; border-radius:4px; font-size:11.5px; }
+
+  .theme-dark {
+    --island-bg:#000; --color-island-text:#fff;
+    --color-text-rgb:255,255,255; --icon-invert:1;
+    --color-island-accent:#409cff;
+  }
+  .theme-light {
+    --island-bg:rgba(255,255,255,.9); --color-island-text:#1d1d1f;
+    --color-text-rgb:0,0,0; --icon-invert:0;
+    --color-island-accent:#2f7fe6;
+  }
+
+  .island-shell {
+    position:relative; background:var(--island-bg);
+    border-radius:22px; overflow:hidden;
+    box-shadow:0 8px 30px rgba(0,0,0,.16);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .h60 { height:60px; width:340px; border-radius:20px; }
+  .island-shell::after {
+    content:''; position:absolute; inset:0;
+    border:1px dashed rgba(255,60,60,.4); border-radius:inherit; pointer-events:none;
+  }
+
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px 28px; }
+  .cell { display:flex; flex-direction:column; gap:9px; }
+  .cell-label { font-size:12.5px; font-weight:600; color:#1d1d1f; display:flex; align-items:center; gap:7px; }
+  .badge { font-size:10px; font-weight:600; padding:2px 7px; border-radius:5px; letter-spacing:.2px; }
+  .b-green { background:rgba(52,199,89,.15); color:#248a3d; }
+  .b-blue  { background:rgba(64,156,255,.15); color:#0a6fd6; }
+  .b-orange{ background:rgba(255,149,0,.18); color:#a56000; }
+  .b-red   { background:rgba(255,59,48,.15); color:#d70015; }
+</style>
+</head>
+<body data-page-node-id="CPjW7pvAsCO7FKnWecfPoF">
+
+<div data-page-node-id="uh10Mvq3aOc3aikFk7xSp7">
+  <div class="page-title" data-page-node-id="4osclqmEP4MT6DMgERgdrO">状态点验证 · 4 种状态</div>
+  <div class="page-desc" data-page-node-id="FZZPwxhqiWKDhIdnpXsGYi">
+    引用真实 <code data-page-node-id="hLbQDtX7zI6fPKVhqz24Lu">xiyue-tab.css</code>。状态点颜色与呼吸频率随 mood 变化：
+    <b data-page-node-id="3bdxwkeogHZOOQ48hTfpV6">绿=在线(1.8s)</b> / <b data-page-node-id="LGVcqZnzYy1iugPgtwmKcE">蓝=思考(1.0s)</b> / <b data-page-node-id="qmJYVls2oDG4Bw11qRv8id">黄=待澄清(1.4s)</b> / <b data-page-node-id="wVWnA2VLCoQO0hXVYKlJt2">红=收音(0.8s)</b>。<br data-page-node-id="to1fR8gyjmzjveBnFPjeDn">
+    红色虚线 = 60px 岛边界，内容全部居中且不溢出。
+  </div>
+</div>
+
+<div class="grid" data-page-node-id="Tq1A3S0owoM7wGyE5RHjES">
+
+  <!-- happy 绿 -->
+  <div class="cell" data-page-node-id="dU9jiZdnHdBVfJUvBd61Z3">
+    <div class="cell-label" data-page-node-id="qLOPBpjKXYvqFodYJZlLPV">深色 · 开心 <span class="badge b-green" data-page-node-id="26QjloOdj7nES5KV2Hm0eD">绿 · 在线 1.8s</span></div>
+    <div class="island-shell h60 theme-dark" data-page-node-id="IEbAhdX8hX0OGEEkK5Rvi0">
+      <div class="xiyue-tab" data-page-node-id="sY1H1vQJX67jq9WdCD2eAX">
+        <div class="xiyue-identity" data-page-node-id="h2M06uEpLpCY3lB5k2ayWF">
+          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="KhFGsoa5eUt9C8M8EQpjC2">
+            <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="bna0FpaX7p1CUjI4ATbBy4"/>
+            <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="DpkS5pz5XHDzdxdgt1XqI1"/>
+            <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="xXsBTD9yE30cpoiLk5rWBf"/>
+            <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="WLfCiuw2vCCxst8NYzTsW4"/>
+            <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="PtgNa1CZZh68aqPp9e8R6c"/>
+          </svg>
+          <div class="xiyue-text-block" data-page-node-id="WCr6MVA2Q8tDb5HQA3HOSp">
+            <span class="xiyue-name" data-page-node-id="AoEjHY782RzRZn3rxK3UN6">汐月<span class="xiyue-name-sep" data-page-node-id="uPBbcsSt0xhUAHLG0WFEaN">·</span>开心<span class="xiyue-status-dot xiyue-status-dot--happy" data-page-node-id="haMbL7n65HY7KRHDHlzliR"></span></span>
+            <span class="xiyue-sub" data-page-node-id="AuKDs4pAkd2A6lHX5anPgv">下午好，有什么可以帮你？</span>
+          </div>
+        </div>
+        <div class="xiyue-divider" data-page-node-id="RObF9RT5HrW8rsiLB0PZdo"></div>
+        <div class="xiyue-actions" data-page-node-id="rVVVqnfQwvIfC7lZC12Qmw">
+          <button class="xiyue-action-btn" data-page-node-id="eSO7AbMDA3CYJnpK36CvVr">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="EGkdlYthhxSAyQpOqD3P9e">
+              <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="yItrC216R2e3zv1Y8lCabp"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="RwN4vFFaTyDzuJcDI96cBo"/><path d="M12 18.4v3.1" data-page-node-id="CfFnrEK2JHEKtJQadD2nYH"/><path d="M8.6 21.5h6.8" data-page-node-id="UlpZmUKvXZQASrdP28MsJh"/>
+            </svg>
+          </button>
+          <button class="xiyue-action-btn" data-page-node-id="V53ACZpJ9xYtWxIJZqZq7x">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="8T5Sz0AWes0O3dSZLtG5XB">
+              <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="LHLrYIi8A5aPVrC2DlnJTn"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="ECy274UNXiO8HMz7Up68im"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="GTPvi4ufd1PMw79EbBIGC3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- thinking 蓝 -->
+  <div class="cell" data-page-node-id="HMAr1gsJ3QGGo6EjpjCv3S">
+    <div class="cell-label" data-page-node-id="NXb2vsuDteBe9ykLM1kN3G">深色 · 思考中 <span class="badge b-blue" data-page-node-id="CHmVNoDUegFz6XWbaHpgUs">蓝 · 思考 1.0s</span></div>
+    <div class="island-shell h60 theme-dark" data-page-node-id="1IdUgXRW5BMPDh7LVzGAtQ">
+      <div class="xiyue-tab" data-page-node-id="y5IOkSQUtnaZuxJ0EcZHgi">
+        <div class="xiyue-identity" data-page-node-id="5fKJAJzK2rmIJWmI6vsVke">
+          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="2Xd4U4zDGNgPnF5MvfxHVS">
+            <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="qLMNouz3YK1EGRIMgbslFB"/>
+            <path d="M10.4 14.8c.8-.85 1.9-.85 2.7 0" stroke-width="1.5" data-page-node-id="HcFdYhItEZlyQgNt2wPAm9"/>
+            <path d="M17.7 14.8c.8-.85 1.9-.85 2.7 0" stroke-width="1.5" data-page-node-id="Z3fzZQyUJ9QCLjhAgZ9dC4"/>
+            <path d="M13.4 20h2.9" data-page-node-id="EnCKhriRwcMOvrUMUMdAfa"/>
+            <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="gBGzUJOPAlXOTnGykGnf6F"/>
+          </svg>
+          <div class="xiyue-text-block" data-page-node-id="WmDvGFgLb3D5xGOFJxxpQG">
+            <span class="xiyue-name" data-page-node-id="cSZBoXY4rtEKAp7XG9NRWS">汐月<span class="xiyue-name-sep" data-page-node-id="j9AcYjyWXatpaRvTB3HACe">·</span>思考中<span class="xiyue-status-dot xiyue-status-dot--thinking" data-page-node-id="rTLdq38UGA9VEzK2zrztA8"></span></span>
+            <span class="xiyue-sub" data-page-node-id="d53AIsYMvVGihNEcUvgzmE">正在理解你的问题…</span>
+          </div>
+        </div>
+        <div class="xiyue-divider" data-page-node-id="DJz6XSsqTBYEERRpEQxTk0"></div>
+        <div class="xiyue-actions" data-page-node-id="p64W4sbCeiIrgoGBOxV69Y">
+          <button class="xiyue-action-btn" data-page-node-id="p2EO1azuLvMPtLRxOdbhin">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="4OxNoL97pcTQm8vO7bWJrl">
+              <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="7aLHUeMpeMNrympG2tAGAx"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="gVndDTbORMipxYWCSYAhOr"/><path d="M12 18.4v3.1" data-page-node-id="DkIecFV4xsTXlzxXbzxTFP"/><path d="M8.6 21.5h6.8" data-page-node-id="NYjWBSBZEc5yam6YeRI8BG"/>
+            </svg>
+          </button>
+          <button class="xiyue-action-btn" data-page-node-id="ioyT8mbFBn7gTIrsxIsLsF">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="Q8IzblRrwc18AprJPTvIHa">
+              <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="UI9dTxBP5Q0Lb3CyAO5OU5"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="QwbAuYY8R9jchW6pi2XrJH"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="5qURLeW7eB4rxCWeJCOGBj"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- confuse 黄 -->
+  <div class="cell" data-page-node-id="QpMTxUuAV4skmbBCF3JUu2">
+    <div class="cell-label" data-page-node-id="Yi2BCXaIEz3YBddABiefRH">浅色 · 困惑 <span class="badge b-orange" data-page-node-id="XFKHltgLqN2VBmtgyIQZR8">黄 · 待澄清 1.4s</span></div>
+    <div class="island-shell h60 theme-light" data-page-node-id="q0Qd9BtHxgPKIHcKfOHMsh">
+      <div class="xiyue-tab" data-page-node-id="6UNq2G5YUpX41f8QZICGGA">
+        <div class="xiyue-identity" data-page-node-id="bHhvYAhHyweLhKcZBHEjG1">
+          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="WtUlRosEzwZfEi2aDjdg8j">
+            <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="CrR5DEPmzHyufiVFGRFdym"/>
+            <path d="M10.6 14.6h2.8" stroke-width="1.5" data-page-node-id="bJ38qmphyQOojqubGfzwDH"/>
+            <circle cx="19" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="caQFkIOgDGREs4r5C4fUgj"/>
+            <path d="M12.6 20.2c.65-.85 1.3-.85 1.95 0s1.3.85 1.95 0" stroke-width="1.5" data-page-node-id="xUFi9LDcrXBiSuZIgKIxZ2"/>
+            <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="Cftt2HjMZhMG8DJqRU4l0T"/>
+          </svg>
+          <div class="xiyue-text-block" data-page-node-id="EVf56d8A9NU9BxokdmsCHo">
+            <span class="xiyue-name" data-page-node-id="IDQ4H60aEASBgAW1D3lDDU">汐月<span class="xiyue-name-sep" data-page-node-id="v7UE4t3b7reDtq0O8pcYUV">·</span>困惑<span class="xiyue-status-dot xiyue-status-dot--confuse" data-page-node-id="7IDoJgx8kHinq626V3VwRB"></span></span>
+            <span class="xiyue-sub" data-page-node-id="lZZiL5ImPV98vR0cVWM0w1">能再说得具体点吗？</span>
+          </div>
+        </div>
+        <div class="xiyue-divider" data-page-node-id="gaBkJ8KPdbxSA30mBvTc9O"></div>
+        <div class="xiyue-actions" data-page-node-id="ffNO2jEXpoCAMIBxPP6jvV">
+          <button class="xiyue-action-btn" data-page-node-id="rPi6ZZhxWBUWhjL850SGYz">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="FmhD1WA0zJVQ555yMfag7o">
+              <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="GhrkBmhDWoIeF0CClGDeub"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="P6MmuZVAK8v5elHjxmqQbe"/><path d="M12 18.4v3.1" data-page-node-id="Q4dd3fCqsAEeGC4g3DiCbP"/><path d="M8.6 21.5h6.8" data-page-node-id="lVRlZmfAKj8u6C9l7HdKb7"/>
+            </svg>
+          </button>
+          <button class="xiyue-action-btn" data-page-node-id="GaRVlNiVrEuqVRDq2ao1kF">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="rBWXRB7MoTIYMLPcxCKmmj">
+              <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="ZAv3HRCR7Br1IhYc742Cg2"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="7CV3cSbmPMtHliGwAZaUpj"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="zMdu9JHFHSbgou2bkFcrS7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- listening 红 -->
+  <div class="cell" data-page-node-id="VoSTtQy4pEQpTjh7Y29biZ">
+    <div class="cell-label" data-page-node-id="viT0fObmJVE3iIuffQLE4j">浅色 · 聆听中 <span class="badge b-red" data-page-node-id="TW8WP75ABFg81dCAFt2hr1">红 · 收音 0.8s</span></div>
+    <div class="island-shell h60 theme-light" data-page-node-id="2uKw88sl1xTsj5jYOGNlzN">
+      <div class="xiyue-tab" data-page-node-id="Qg6x3f6f4a8NasN0a3PNd4">
+        <div class="xiyue-identity" data-page-node-id="PDNOXB7KsH1SIGrbfsN0YM">
+          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="O6YY8OZ1BpuoindE73bckN">
+            <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="mW3SB3SVmfslFhOPWDr0Ec"/>
+            <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="O9Bg7XkhZZDJZUj4gfrDR9"/>
+            <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="39lqOzHIVKRg6eTXe728cv"/>
+            <circle cx="15.4" cy="19.8" r="1.5" data-page-node-id="ZcHFsV2ZJzkFDOBCBSG72d"/>
+            <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="eDnPRHbqazIyoD366wJCUl"/>
+          </svg>
+          <div class="xiyue-text-block" data-page-node-id="Y2JSJ0ceKEAB0fbSgVHDF5">
+            <span class="xiyue-name" data-page-node-id="LJqxY3Gq0DXI2zOFGorMby">汐月<span class="xiyue-name-sep" data-page-node-id="Kfw9xg3Hi5K0XQccSDEbEI">·</span>聆听中<span class="xiyue-status-dot xiyue-status-dot--listening" data-page-node-id="H1nllDrRhJkry5815w3HNM"></span></span>
+            <span class="xiyue-sub" data-page-node-id="rgvUsq6KNSjA7auOY8uWh1">我在听，请说话…</span>
+          </div>
+        </div>
+        <div class="xiyue-divider" data-page-node-id="5XVDUUvA3kD8DuQF1VBg9n"></div>
+        <div class="xiyue-actions" data-page-node-id="Tkmo2dM2e64ICVLErGngiR">
+          <button class="xiyue-action-btn" data-page-node-id="oVC7iHlaeCbQIsHs6ARlUo">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="wJOlfB80SLQjEbilylEWmm">
+              <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="wRPZImuePncB9H5A4Ahbaz"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="ZjCoBRCDC60MFUhp3ACxQV"/><path d="M12 18.4v3.1" data-page-node-id="MfLF3Y0SZtce0AyedbSAye"/><path d="M8.6 21.5h6.8" data-page-node-id="fDbBRTik5BomUVcd4rXJCD"/>
+            </svg>
+          </button>
+          <button class="xiyue-action-btn" data-page-node-id="Ig5EnMpN8stYKoqpmDYtpK">
+            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="be5uEGeeb6F4NtfsZJI4PF">
+              <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="Kyx4YnV9yrc2tmaI6Hz5Ih"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="rW4kergB314B9rP9sZsyYj"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="BIPG3MDwBQnHAdFEMlpoT3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

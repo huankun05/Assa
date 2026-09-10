@@ -1,0 +1,228 @@
+/*
+ * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
+ * https://github.com/JNTMTMTM/eIsland
+ *
+ * Copyright (C) 2026 JNTMTMTM
+ * Copyright (C) 2026 pyisland.com
+ *
+ * Original author: JNTMTMTM[](https://github.com/JNTMTMTM)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/**
+ * @file xiyue-tab.css
+ * @description Hover 汐月 AI 页样式
+ *
+ * 结构（与 LyricsTab「封面 + 歌词」同构）：
+ *   .xiyue-tab
+ *     └ .xiyue-identity   左：头像 + 两行文案（主：名字·状态 ｜ 副：问候语）
+ *     └ .xiyue-divider    1px 竖分隔线
+ *     └ .xiyue-actions    右：语音 / 文字聊天两个图标入口
+ *
+ * ⚠ 高度硬约束：hover 态灵动岛只有 60px（pill 态 72px），而 .xiyue-tab 带
+ *   `contain: layout paint`，超出会被直接裁掉（表现为「内容跑到岛外 / 显示不全」）。
+ *   当前最高元素为 34px 头像，60px 岛上下各留 13px，安全。
+ *   任何新增元素都必须重新核算总高，不得超过 60px。
+ *
+ * 主题适配：图标统一走 `filter: brightness(0) invert(var(--icon-invert))`，
+ *   与 Xiyue 的 action-btn / SvgIcon 体系一致；文字用 --color-island-text。
+ *
+ * @author 鸡哥
+ */
+
+.xiyue-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  height: 100%;
+  width: 100%;
+  padding: 0 18px;
+  color: var(--color-island-text);
+  contain: layout paint;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  box-sizing: border-box;
+}
+
+/* ---------- 左：头像 + 两行文案 ---------- */
+
+.xiyue-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0; /* 允许文字块收缩，配合 ellipsis 防撑破 */
+}
+
+/* 头像：SVG 与 <img> 共用同一套尺寸与主题适配 */
+.xiyue-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  filter: brightness(0) invert(var(--icon-invert));
+}
+
+.xiyue-text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* 主行：「汐月·开心 ●」 —— inline-flex 让状态点与文字基线对齐 */
+.xiyue-name {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.1px;
+  color: var(--color-island-text);
+  white-space: nowrap;
+}
+
+/**
+ * 状态点：颜色 + 呼吸频率随 mood 变化
+ *   happy     绿 #34c759 在线（慢呼吸 1.8s）
+ *   thinking  蓝 #409cff 思考中（快呼吸 1.0s）
+ *   confuse   黄 #ff9500 待澄清（中速 1.4s）
+ *   listening 红 #ff3b30 收音中（急促 0.8s）
+ * 用独立的 --dot-glow* 变量而非 color-mix()，避免旧版 Chromium 不支持。
+ */
+.xiyue-status-dot {
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--dot-color);
+  animation: xiyue-dot-pulse 1.8s ease-in-out infinite;
+}
+
+.xiyue-status-dot--happy {
+  --dot-color: #34c759;
+  --dot-glow: rgba(52, 199, 89, 0.28);
+  --dot-glow-soft: rgba(52, 199, 89, 0.08);
+  animation-duration: 1.8s;
+}
+
+.xiyue-status-dot--thinking {
+  --dot-color: #409cff;
+  --dot-glow: rgba(64, 156, 255, 0.3);
+  --dot-glow-soft: rgba(64, 156, 255, 0.08);
+  animation-duration: 1s;
+}
+
+.xiyue-status-dot--confuse {
+  --dot-color: #ff9500;
+  --dot-glow: rgba(255, 149, 0, 0.3);
+  --dot-glow-soft: rgba(255, 149, 0, 0.08);
+  animation-duration: 1.4s;
+}
+
+.xiyue-status-dot--listening {
+  --dot-color: #ff3b30;
+  --dot-glow: rgba(255, 59, 48, 0.32);
+  --dot-glow-soft: rgba(255, 59, 48, 0.08);
+  animation-duration: 0.8s;
+}
+
+@keyframes xiyue-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--dot-glow); }
+  50%      { box-shadow: 0 0 0 4px var(--dot-glow-soft); }
+}
+
+/* 尊重用户的「减弱动态效果」系统设置 */
+@media (prefers-reduced-motion: reduce) {
+  .xiyue-status-dot { animation: none; box-shadow: 0 0 0 2px var(--dot-glow); }
+}
+
+/* 主行中间的分隔点，弱化到 40% 避免抢视觉 */
+.xiyue-name-sep {
+  opacity: 0.4;
+  margin: 0 3px;
+  font-weight: 400;
+}
+
+/* 副行：问候语 / 状态描述；过长时省略号截断，窄岛也不撑破 */
+.xiyue-sub {
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
+  color: rgba(var(--color-text-rgb), 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+/* ---------- 分隔线 ---------- */
+
+.xiyue-divider {
+  width: 1px;
+  height: 28px;
+  flex-shrink: 0;
+  background: rgba(var(--color-text-rgb), 0.14);
+}
+
+/* ---------- 右：两个图标入口 ---------- */
+
+.xiyue-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* 交互手感沿用 Xiyue action-btn 的弹性曲线 */
+.xiyue-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  color: var(--color-island-text);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.16s ease;
+}
+
+.xiyue-action-btn:hover {
+  transform: scale(1.12);
+  background: rgba(var(--color-text-rgb), 0.1);
+}
+
+.xiyue-action-btn:active {
+  transform: scale(0.94);
+}
+
+.xiyue-action-btn:focus-visible {
+  outline: 2px solid var(--color-island-accent);
+  outline-offset: 2px;
+}
+
+.xiyue-action-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+  filter: brightness(0) invert(var(--icon-invert));
+}

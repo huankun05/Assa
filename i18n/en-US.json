@@ -390,7 +390,13 @@
       "lyrics": "Music",
       "weather": "Weather",
       "expand": "Expand",
+      "xiyue": "Xiyue AI",
       "switchToPage": "Switch to {{label}} page"
+    },
+    "xiyue": {
+      "openChat": "Open Xiyue AI chat",
+      "hint": "Click to chat, or talk by voice",
+      "voice": "Voice chat"
     },
     "actions": {
       "hideIsland": "Hide Dynamic Island",

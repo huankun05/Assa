@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN" data-page-node-id="zAGkSBqELJEE9ghG7m8PE7">
+<head data-page-node-id="tD890PhvbhGOVRy6CPVHNn">
+<meta charset="utf-8" data-page-node-id="q5HsqYnwa0P8IFR64i8Tog" />
+<title>XiyueTab 修改后预览 · 高度约束验证</title>
+<style>
+  /* === 复刻 Xiyue 设计语言（reset.css） === */
+  :root {
+    --color-text-rgb: 255, 255, 255;
+    --color-island-bg: #000000;
+    --color-island-text: #ffffff;
+    --color-island-accent: oklch(0.7 0.15 250);
+    --island-ui-font: 'Microsoft YaHei', 'PingFang SC', -apple-system, sans-serif;
+  }
+  [data-theme="light"] {
+    --color-text-rgb: 0, 0, 0;
+    --color-island-bg: #f5f5f7;
+    --color-island-text: #1d1d1f;
+  }
+  [data-theme="light"] .island-shell {
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; background: #e5e7eb; font-family: var(--island-ui-font); }
+  body { padding: 32px; }
+
+  /* === 灵动岛壳（shell.css） === */
+  .island-shell {
+    position: relative;
+    width: 500px;
+    background: var(--color-island-bg);
+    border-radius: 0 0 22px 22px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .island-shell.hover { width: 500px; height: 60px; }
+  .island-shell.shape-pill.hover { height: 72px; border-radius: 30px; }
+
+  /* === hover 内容容器（hover-content.css） === */
+  .hover-content {
+    display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+    width: 100%; height: 100%; padding: 0 16px;
+  }
+  .hover-nav-dots { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+  .hover-nav-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(var(--color-text-rgb), 0.3); border: none; cursor: pointer; padding: 0;
+  }
+  .hover-nav-dot.active { width: 6px; height: 6px; background: rgba(var(--color-text-rgb), 0.95); }
+  .hover-tab-content {
+    flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end;
+    white-space: nowrap; overflow: hidden;
+  }
+
+  /* === 修改后的 XiyueTab（xiyue-tab.css） === */
+  .xiyue-tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; height: 100%; flex: 1; min-width: 0; padding: 2px 8px;
+    color: var(--color-island-text); white-space: nowrap;
+    contain: layout paint; backface-visibility: hidden; transform: translateZ(0);
+  }
+
+  .xiyue-row {
+    display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0;
+  }
+
+  /* 主入口：玻璃拟态 */
+  .xiyue-entry {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 4px 14px 4px 6px; border-radius: 999px;
+    background: rgba(var(--color-text-rgb), 0.1);
+    border: 1px solid rgba(var(--color-text-rgb), 0.16);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    color: var(--color-island-text);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.3px; cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  }
+  .xiyue-entry:hover {
+    background: rgba(var(--color-text-rgb), 0.16);
+    border-color: rgba(64, 156, 255, 0.55);
+    box-shadow: 0 3px 12px rgba(64, 156, 255, 0.22);
+  }
+  .xiyue-entry:active { transform: scale(0.97); }
+  .xiyue-entry-icon {
+    width: 24px; height: 24px; object-fit: contain; flex-shrink: 0;
+    filter: drop-shadow(0 0 3px rgba(64, 156, 255, 0.55));
+  }
+  .xiyue-entry-text { display: inline-flex; align-items: center; line-height: 1; }
+
+  /* 次级：语音（同款玻璃，更轻） */
+  .xiyue-voice {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(var(--color-text-rgb), 0.06);
+    border: 1px solid rgba(var(--color-text-rgb), 0.12);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    color: var(--color-island-text); font-size: 11.5px; cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+  }
+  .xiyue-voice:hover {
+    background: rgba(var(--color-text-rgb), 0.12);
+    border-color: rgba(var(--color-text-rgb), 0.24);
+  }
+  .xiyue-voice:active { transform: scale(0.97); }
+  .xiyue-voice-icon { width: 11px; height: 11px; flex-shrink: 0; color: var(--color-island-accent); }
+
+  .xiyue-hint {
+    margin: 0; font-size: 10.5px; line-height: 1.2;
+    color: rgba(var(--color-text-rgb), 0.6); letter-spacing: 0.2px; user-select: none;
+  }
+
+  /* === 预览页面布局（非项目代码） === */
+  .stage { padding: 28px; border-radius: 16px; margin-bottom: 24px; }
+  .stage.dark { background: #0e1218; }
+  .stage.light { background: #f3f4f6; }
+  .stage h3 { font-size: 14px; margin-bottom: 6px; }
+  .stage.dark h3 { color: #fff; }
+  .stage.light h3 { color: #1d1d1f; }
+  .stage .meta { font-size: 11px; margin-bottom: 18px; }
+  .stage.dark .meta { color: #8b8b8f; }
+  .stage.light .meta { color: #666; }
+
+  /* 高度标尺：直观看出是否溢出 */
+  .measure { position: relative; }
+  .measure::after {
+    content: ''; position: absolute; left: -14px; top: 0; bottom: 0; width: 3px;
+    background: #ff5252;
+  }
+  .measure-tag {
+    position: absolute; left: -14px; top: 50%; transform: translateY(-50%) translateX(-100%);
+    padding: 2px 6px; border-radius: 4px; background: #ff5252; color: #fff;
+    font-size: 10px; font-weight: 600; white-space: nowrap; margin-left: -6px;
+  }
+
+  h2 { color: #1d1d1f; margin-bottom: 8px; }
+  .lead { color: #555; font-size: 13px; margin-bottom: 24px; line-height: 1.7; }
+  .lead code { background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 4px; }
+
+  /* 对比：修改前（实心蓝 + 三行溢出） */
+  .old .xiyue-tab { gap: 10px; padding: 4px 8px; }
+  .old .xiyue-entry {
+    padding: 9px 22px; border: none;
+    background: linear-gradient(135deg, oklch(0.7 0.15 250), oklch(0.65 0.12 250));
+    color: #ffffff; font-size: 14px;
+  }
+  .old .xiyue-voice { padding: 6px 16px; font-size: 12.5px; border-color: rgba(var(--color-text-rgb), .28); }
+  .old .xiyue-hint { font-size: 11px; }
+</style>
+</head>
+<body data-page-node-id="WBCZsJRrdgZT99RGD9YNlG">
+  <h2 data-page-node-id="QbJ1nL1zKyY8vCLx6rwHJi">XiyueTab 修改后预览 · 高度约束验证</h2>
+  <p class="lead" data-page-node-id="p2auP5YpB4VdKXH5NXFDXT">
+    验证点：<b data-page-node-id="m1DwxdnTpXXYS6sUEO26xT">① 内容完整落在灵动岛内</b>（红色标尺 = 岛的实际高度，60px / 72px）；
+    <b data-page-node-id="3S1gaLQU3uFHGuqLekAgqw">② 玻璃拟态</b>（半透明主题色 + <code data-page-node-id="Bt402QNrpJSy0KOymxspRU">backdrop-filter: blur(16px) saturate(1.4)</code> + 1px 细边），主蓝只做点缀。
+  </p>
+
+  <!-- ===== 深色主题 ===== -->
+  <div class="stage dark" data-page-node-id="TA4ktOkUUJYYxG6QJJkLNa">
+    <h3 data-page-node-id="jJVIGtrrpAmNxhibEgaZSO">深色主题 · 修改后</h3>
+    <p class="meta" data-page-node-id="lB7mqbWZLMhFqlOj5achFE">hover 非 pill（60px，最严格）· 内容 ≈ 48px，未溢出</p>
+    <div class="measure" data-page-node-id="0i8pJ4Ycfbl2jHXcgiPYAg">
+      <div class="island-shell hover" data-page-node-id="c8vKqBkgBRw9yNZf3P1I2x">
+        <span class="measure-tag" data-page-node-id="jlSsIZupmRcbBiBPdgNZBG">60px</span>
+        <div class="hover-content" data-page-node-id="gaVgepOlzznT6PBykCKrd8">
+          <div class="hover-nav-dots" data-page-node-id="2LrRdXoeTH8rSOZkuOSeGq">
+            <button class="hover-nav-dot" data-page-node-id="Zj7pdcYUwfP1E88mQOQUQq"></button>
+            <button class="hover-nav-dot" data-page-node-id="F6XkmIa2u0ehGu9UzGoTUg"></button>
+            <button class="hover-nav-dot active" data-page-node-id="CTZNh7QMkwwTBgJkkVcPcl"></button>
+            <button class="hover-nav-dot" data-page-node-id="gu4M8TP2Mjcf9poEsJHY8Z"></button>
+            <button class="hover-nav-dot" data-page-node-id="On2V2hGvpyBrwI6ES6w4Yj"></button>
+          </div>
+          <div class="hover-tab-content" data-page-node-id="Badw4A0gr4D0KnPHAplQ0u">
+            <div class="xiyue-tab" data-page-node-id="bNXWSoS9IXXPfPCwB4FJEz">
+              <div class="xiyue-row" data-page-node-id="1tR5GRDReVJgZ6KBBxabC4">
+                <button class="xiyue-entry" data-page-node-id="ozuwCpskBDBYWLGh1nGy5x">
+                  <img class="xiyue-entry-icon" src="../../src/renderer/public/image/AGENT_DEFAULT.png" alt="" data-page-node-id="1ZJWYsDfS1J0cc4tx3tPlp">
+                  <span class="xiyue-entry-text" data-page-node-id="JljtaPS67qonmVrDueReLz">汐月 AI</span>
+                </button>
+                <button class="xiyue-voice" data-page-node-id="K1QJBDqing4wmkgvnuZkPs">
+                  <svg class="xiyue-voice-icon" viewBox="0 0 16 16" aria-hidden="true" data-page-node-id="7e9esRddTTMLzFSL0SBSGs">
+                    <path d="M8 1.5a2.75 2.75 0 0 0-2.75 2.75v3.5a2.75 2.75 0 0 0 5.5 0v-3.5A2.75 2.75 0 0 0 8 1.5Z" fill="currentColor" data-page-node-id="UO2Q1QB6laAyLpfR1ImpA1"/>
+                    <path d="M3.5 7.25a.5.5 0 0 1 .5.5 4 4 0 0 0 8 0 .5.5 0 0 1 1 0 5 5 0 0 1-4.25 4.96V13.5h1.25a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1 0-1H7.75v-.79A5 5 0 0 1 3.5 7.75a.5.5 0 0 1 .5-.5Z" fill="currentColor" data-page-node-id="LNDhPkeebwKCMSfzswszL3"/>
+                  </svg>
+                  语音对话
+                </button>
+              </div>
+              <p class="xiyue-hint" data-page-node-id="iuFIpdkScntLLD1uCzOEi0">点击进入对话，或语音交谈</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="meta" style="margin-top: 24px;" data-page-node-id="DSITDJyRDAUtQhBkeN540b">hover pill（72px）</p>
+    <div class="measure" data-page-node-id="WaP5226lwfG1IkfqconSey">
+      <div class="island-shell shape-pill hover" data-page-node-id="mB5ROwf5vuJVYpCo7JoiPq">
+        <span class="measure-tag" data-page-node-id="9a4LZMS0tgrVClHXd1JqKh">72px</span>
+        <div class="hover-content" data-page-node-id="VfXkJtTPeIdbCYwqFlWAL7">
+          <div class="hover-nav-dots" data-page-node-id="x0x5tdxmhin661ASx6b5O8">
+            <button class="hover-nav-dot" data-page-node-id="tSCiJX8CAJQDpfl8eqi1Yb"></button>
+            <button class="hover-nav-dot" data-page-node-id="y7jI5KhE4PNdRdXRAWsUM9"></button>
+            <button class="hover-nav-dot active" data-page-node-id="aWpEXjP2RfMHmAbZDhAGJL"></button>
+            <button class="hover-nav-dot" data-page-node-id="0Lk2qp2as6bOgiTF5qAXNt"></button>
+            <button class="hover-nav-dot" data-page-node-id="OqRytZgrKAnkcK77Jn3Dg4"></button>
+          </div>
+          <div class="hover-tab-content" data-page-node-id="uChZRuBH1AzsGT0VdpqSBg">
+            <div class="xiyue-tab" data-page-node-id="YcXDfDE2AH2BXcafo5rE2Y">
+              <div class="xiyue-row" data-page-node-id="Ec0AfHxwMeJzPKCV6kMbAG">
+                <button class="xiyue-entry" data-page-node-id="SKKa90StKYgxOErvpqMAr9">
+                  <img class="xiyue-entry-icon" src="../../src/renderer/public/image/AGENT_DEFAULT.png" alt="" data-page-node-id="4BKRTYd4s6o5984gMkgbqC">
+                  <span class="xiyue-entry-text" data-page-node-id="EWbOUrdX3A4r7bd9yTVoMf">汐月 AI</span>
+                </button>
+                <button class="xiyue-voice" data-page-node-id="J0Jnr80xA7cF8RvSDcyCmB">
+                  <svg class="xiyue-voice-icon" viewBox="0 0 16 16" aria-hidden="true" data-page-node-id="GkGCfUxu5fQWdadE8g36aq">
+                    <path d="M8 1.5a2.75 2.75 0 0 0-2.75 2.75v3.5a2.75 2.75 0 0 0 5.5 0v-3.5A2.75 2.75 0 0 0 8 1.5Z" fill="currentColor" data-page-node-id="5fpovf2pTnXqsUYahGcToH"/>
+                    <path d="M3.5 7.25a.5.5 0 0 1 .5.5 4 4 0 0 0 8 0 .5.5 0 0 1 1 0 5 5 0 0 1-4.25 4.96V13.5h1.25a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1 0-1H7.75v-.79A5 5 0 0 1 3.5 7.75a.5.5 0 0 1 .5-.5Z" fill="currentColor" data-page-node-id="RLvCaw6PNq5SvAT3jM65bG"/>
+                  </svg>
+                  语音对话
+                </button>
+              </div>
+              <p class="xiyue-hint" data-page-node-id="BnNB4GVVmGrhdRkYOv4i5y">点击进入对话，或语音交谈</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 浅色主题 ===== -->
+  <div class="stage light" data-theme="light" data-page-node-id="UmBCHAEdTFjR0QgVaFEr4P">
+    <h3 data-page-node-id="60IBl3bGyZkGg2z09VjffA">浅色主题 · 修改后</h3>
+    <p class="meta" data-page-node-id="5QzoEhVo5CAWbaBCTDrzrv">hover 非 pill（60px，最严格）</p>
+    <div class="measure" data-page-node-id="x2RSvJjzeJbJxJeiPOEkM6">
+      <div class="island-shell hover" data-page-node-id="LGIt52SUiEt1Cc23bGRDa1">
+        <span class="measure-tag" data-page-node-id="3eKJAWiEAnFqrFeBx9x4Vy">60px</span>
+        <div class="hover-content" data-page-node-id="MX2wESrlj1GnNJnPj35Wt6">
+          <div class="hover-nav-dots" data-page-node-id="1wydmJLd8VZBKZGc8Yga2Q">
+            <button class="hover-nav-dot" data-page-node-id="bGWs2NYt22ynYUVwxBTPNG"></button>
+            <button class="hover-nav-dot" data-page-node-id="C7EEn2IaeE48N07BQHuDrB"></button>
+            <button class="hover-nav-dot active" data-page-node-id="GhOibo4t3hKvUYhnW5vdfb"></button>
+            <button class="hover-nav-dot" data-page-node-id="7BH7rNOBeQfn9UQQSYYR4C"></button>
+            <button class="hover-nav-dot" data-page-node-id="ajAcBatvmdDSkoogphIl69"></button>
+          </div>
+          <div class="hover-tab-content" data-page-node-id="WlOTvEZ1igzWEL2lOm0awF">
+            <div class="xiyue-tab" data-page-node-id="6CnMeHxGLsHtcjxbbtW3FT">
+              <div class="xiyue-row" data-page-node-id="BqpT8Oro4ZCVd5MbVZJSLL">
+                <button class="xiyue-entry" data-page-node-id="wIc2IgI6mJxuJxmkXywh6C">
+                  <img class="xiyue-entry-icon" src="../../src/renderer/public/image/AGENT_DEFAULT.png" alt="" data-page-node-id="9BzmekkI8kIpybwBZP843z">
+                  <span class="xiyue-entry-text" data-page-node-id="81NEGT2RQXiLjnhZBAwNOd">汐月 AI</span>
+                </button>
+                <button class="xiyue-voice" data-page-node-id="c9ZF2HCmYsCbGdJbkVEnD3">
+                  <svg class="xiyue-voice-icon" viewBox="0 0 16 16" aria-hidden="true" data-page-node-id="parGqFoWkKK7N82raFfZh7">
+                    <path d="M8 1.5a2.75 2.75 0 0 0-2.75 2.75v3.5a2.75 2.75 0 0 0 5.5 0v-3.5A2.75 2.75 0 0 0 8 1.5Z" fill="currentColor" data-page-node-id="T63podHSA6cZD0w5Ho0x5T"/>
+                    <path d="M3.5 7.25a.5.5 0 0 1 .5.5 4 4 0 0 0 8 0 .5.5 0 0 1 1 0 5 5 0 0 1-4.25 4.96V13.5h1.25a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1 0-1H7.75v-.79A5 5 0 0 1 3.5 7.75a.5.5 0 0 1 .5-.5Z" fill="currentColor" data-page-node-id="RCx8Y5wXNmDnd0U861Kvgn"/>
+                  </svg>
+                  语音对话
+                </button>
+              </div>
+              <p class="xiyue-hint" data-page-node-id="NTDaCgvxBtIWkA1uxs6A2S">点击进入对话，或语音交谈</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="meta" style="margin-top: 24px;" data-page-node-id="BUxgjagKlGcP8xgxg9BKAP">hover pill（72px）</p>
+    <div class="measure" data-page-node-id="qD5rXLAT5q3vODCjuqhePQ">
+      <div class="island-shell shape-pill hover" data-page-node-id="cL8of27EM4dnIwDwmChOTB">
+        <span class="measure-tag" data-page-node-id="c1RGhUEOkXDz2P5jI6RiXg">72px</span>
+        <div class="hover-content" data-page-node-id="Djyd2EWAAMqcURgpDEocye">
+          <div class="hover-nav-dots" data-page-node-id="yaliG8qd9UmpdHA0FpN7mJ">
+            <button class="hover-nav-dot" data-page-node-id="PS1swfANIpdek6ycawd7A3"></button>
+            <button class="hover-nav-dot" data-page-node-id="lkeMzlSKCZujcXkw8vWGV5"></button>
+            <button class="hover-nav-dot active" data-page-node-id="CLO1v6f3AzdbKxqGFg838f"></button>
+            <button class="hover-nav-dot" data-page-node-id="EIDz4inuYuGX9JPn4UTXtg"></button>
+            <button class="hover-nav-dot" data-page-node-id="kPDzHyH9pGdTCYBaLSDyYD"></button>
+          </div>
+          <div class="hover-tab-content" data-page-node-id="ctiwsMrew1ZHiMc6SSCI2e">
+            <div class="xiyue-tab" data-page-node-id="91paC7eYmhYUJ7JJtxuqNY">
+              <div class="xiyue-row" data-page-node-id="zQzAN278YAsNr1IUifbQH8">
+                <button class="xiyue-entry" data-page-node-id="YMLK7kx8s74xYVw9hP00qI">
+                  <img class="xiyue-entry-icon" src="../../src/renderer/public/image/AGENT_DEFAULT.png" alt="" data-page-node-id="c2cOe8vxnx1U6xFzUy8mqx">
+                  <span class="xiyue-entry-text" data-page-node-id="srTxhujTqSzrF1GbEmUAlV">汐月 AI</span>
+                </button>
+                <button class="xiyue-voice" data-page-node-id="KX2MFSAt36zaPLd5mTgdeR">
+                  <svg class="xiyue-voice-icon" viewBox="0 0 16 16" aria-hidden="true" data-page-node-id="XcrICu2sEXMe4aMZYQULxq">
+                    <path d="M8 1.5a2.75 2.75 0 0 0-2.75 2.75v3.5a2.75 2.75 0 0 0 5.5 0v-3.5A2.75 2.75 0 0 0 8 1.5Z" fill="currentColor" data-page-node-id="KTmGf4Z4DN0MCbRxMLxjU2"/>
+                    <path d="M3.5 7.25a.5.5 0 0 1 .5.5 4 4 0 0 0 8 0 .5.5 0 0 1 1 0 5 5 0 0 1-4.25 4.96V13.5h1.25a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1 0-1H7.75v-.79A5 5 0 0 1 3.5 7.75a.5.5 0 0 1 .5-.5Z" fill="currentColor" data-page-node-id="5m2XskPGVncqxehlIdrPRI"/>
+                  </svg>
+                  语音对话
+                </button>
+              </div>
+              <p class="xiyue-hint" data-page-node-id="yW2RWVSmV8uIDjfEsCa7Wc">点击进入对话，或语音交谈</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 修改说明 -->
+  <div style="margin-top: 24px; color: #1d1d1f; font-size: 14px; line-height: 1.9;" data-page-node-id="lOwU2MR9GnpSjKJh3ScKvU">
+    <h3 style="margin-bottom: 10px;" data-page-node-id="5cXZYTCMTS2qnOBEVjgThH">本次修改</h3>
+    <ul style="padding-left: 20px;" data-page-node-id="vH49ji6A6EAD7YEGJegNkB">
+      <li data-page-node-id="HUJWw0tBpCHgxspTTt5J4c"><b data-page-node-id="t1ytf84fb16ee83r6uAQxA">① 修溢出</b>：原三行布局 ≈ 95px，超出 hover 态 60px 岛高 → 被 <code data-page-node-id="aGsodg6xkSOVPmLkpToWBI">contain: layout paint</code> 裁掉。改为主入口 + 语音按钮<b data-page-node-id="G2bzOBUy4ZTEGAsI2JlXxI">同一行</b>（新增 <code data-page-node-id="UeV8l97ONgvliiLlWTqkhz">.xiyue-row</code>），总高降到 ≈ 48px，60px / 72px 都装得下。</li>
+      <li data-page-node-id="WOHJKErj2MUgFcggWbXwKf"><b data-page-node-id="jOuDFBiHIlnPfYD8IFpDkb">② 改玻璃风格</b>：实心蓝渐变 → <code data-page-node-id="HWQwuhtLn8qNlo4SMVcIGT">rgba(var(--color-text-rgb), 0.1)</code> + <code data-page-node-id="GFmQwLWkP84yJ3Os2w9PCA">backdrop-filter: blur(16px) saturate(1.4)</code> + 1px 细边；文字改回 <code data-page-node-id="paxPElujAFzuH4jsvo3f5F">var(--color-island-text)</code> 主题自适应（不再写死白字）。</li>
+      <li data-page-node-id="AJhiyESm8rRXlkBxE6kDb3"><b data-page-node-id="12j3hyYltdF9ILtxYRbyiV">③ 主蓝只做点缀</b>：小恐龙图标外圈 <code data-page-node-id="mMCeX5eXOUBR1LYwRsapzf">drop-shadow(0 0 3px rgba(64,156,255,.55))</code>；hover 时边框点亮为 <code data-page-node-id="R12piyO9afZzpDhMSPo7qL">rgba(64,156,255,.55)</code>；语音麦克风图标用 accent 色。</li>
+      <li data-page-node-id="mYBaAqieWMOLE9RS8Qi0Pk"><b data-page-node-id="KeN8RYbjENAtY27Yov7vj4">④ 紧凑化</b>：gap 10px → 4px；padding 4px 8px → 2px 8px；hint 11px → 10.5px。</li>
+    </ul>
+  </div>
+</body>
+</html>

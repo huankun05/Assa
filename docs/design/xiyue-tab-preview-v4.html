@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="dNXiekPF7ELuXE9mE4VGF2">
+<head data-page-node-id="Ej0Blteiry2k6HiNlvyPts">
+<meta charset="UTF-8" data-page-node-id="NDAkaPR8087FBStHtXm7nr">
+<title>XiyueTab 模板 v4 · 状态表情 + 双图标入口</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background:#e8e8ea;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    padding:40px 32px;
+    display:flex;
+    flex-direction:column;
+    gap:36px;
+  }
+
+  .page-title {
+    font-size:22px; font-weight:600; color:#1d1d1f; letter-spacing:-.3px;
+  }
+  .page-desc {
+    font-size:13.5px; color:#6e6e73; line-height:1.7; margin-top:8px;
+  }
+  .page-desc code {
+    background:rgba(0,0,0,.06); padding:1px 6px; border-radius:4px;
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:#1d1d1f;
+  }
+
+  /* ===== 主题令牌（与 Xiyue 运行时一致） ===== */
+  .theme-dark {
+    --island-bg:#000;
+    --island-text:#fff;
+    --text-rgb:255,255,255;
+    --icon-invert:1;          /* filter: brightness(0) invert(1) → 白 */
+    --divider:rgba(255,255,255,.14);
+    --btn-hover:rgba(255,255,255,.12);
+    --status-dim:rgba(255,255,255,.62);
+  }
+  .theme-light {
+    --island-bg:rgba(255,255,255,.86);
+    --island-text:#1d1d1f;
+    --text-rgb:0,0,0;
+    --icon-invert:0;          /* filter: brightness(0) invert(0) → 黑 */
+    --divider:rgba(0,0,0,.13);
+    --btn-hover:rgba(0,0,0,.07);
+    --status-dim:rgba(0,0,0,.55);
+  }
+
+  /* ===== 岛壳 ===== */
+  .island-shell {
+    position:relative;
+    background:var(--island-bg);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 8px 30px rgba(0,0,0,.16);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .h60 { height:60px; width:300px; border-radius:20px; }
+  .h72 { height:72px; width:300px; border-radius:22px; }
+
+  /* 高度标尺（红色虚线） */
+  .island-shell::after {
+    content:'';
+    position:absolute; inset:0;
+    border:1px dashed rgba(255,60,60,.45);
+    border-radius:inherit;
+    pointer-events:none;
+  }
+
+  /* ==========================================================
+     核心：XiyueTab 布局（严格居中）
+     ========================================================== */
+  .xiyue-tab {
+    display:flex;
+    align-items:center;
+    justify-content:center;   /* 水平居中 */
+    gap:14px;
+    height:100%;
+    width:100%;
+    padding:0 18px;
+    color:var(--island-text);
+    contain:layout paint;
+    box-sizing:border-box;
+  }
+
+  /* ---- 左：状态表情 + 状态文字（上下两行，垂直居中） ---- */
+  .xiyue-avatar-block {
+    display:flex;
+    flex-direction:column;
+    align-items:center;       /* 水平居中 */
+    justify-content:center;   /* 垂直居中 */
+    gap:3px;
+    flex-shrink:0;
+  }
+
+  .xiyue-avatar {
+    width:32px; height:32px;
+    flex-shrink:0;
+    /* Xiyue 主题适配机制：单色 SVG → filter invert */
+    filter:brightness(0) invert(var(--icon-invert));
+    display:block;
+  }
+
+  .xiyue-status-text {
+    font-size:10.5px;
+    font-weight:500;
+    line-height:1.25;
+    letter-spacing:.2px;
+    white-space:nowrap;
+    color:var(--status-dim);
+    user-select:none;
+  }
+
+  /* ---- 分隔线 ---- */
+  .xiyue-divider {
+    width:1px;
+    height:26px;
+    background:var(--divider);
+    flex-shrink:0;
+  }
+
+  /* ---- 右：两个高级图标入口（复用 action-btn 交互） ---- */
+  .xiyue-actions {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    flex-shrink:0;
+  }
+
+  .xiyue-action-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:34px; height:34px;
+    padding:0;
+    background:transparent;
+    border:none;
+    border-radius:11px;
+    cursor:pointer;
+    color:var(--island-text);
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .16s ease;
+  }
+  .xiyue-action-btn:hover {
+    transform:scale(1.12);
+    background:var(--btn-hover);
+  }
+  .xiyue-action-btn:active { transform:scale(.94); }
+
+  .xiyue-action-icon {
+    width:21px; height:21px;
+    object-fit:contain;
+    display:block;
+    /* 线性图标也走同一套 invert 机制 */
+    filter:brightness(0) invert(var(--icon-invert));
+  }
+
+  /* ==========================================================
+     展示网格
+     ========================================================== */
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:26px 30px;
+  }
+
+  .cell { display:flex; flex-direction:column; gap:11px; }
+
+  .cell-label {
+    font-size:12.5px;
+    font-weight:600;
+    color:#1d1d1f;
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .cell-label .badge {
+    font-size:10px; font-weight:600;
+    padding:2px 7px; border-radius:5px;
+    background:rgba(0,0,0,.06); color:#6e6e73;
+    letter-spacing:.2px;
+  }
+  .cell-label .badge.h { background:rgba(255,59,48,.12); color:#d70015; }
+
+  /* 状态说明表 */
+  .state-table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    background:#fff;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+  }
+  .state-table th {
+    background:#f5f5f7;
+    text-align:left;
+    padding:10px 14px;
+    font-weight:600;
+    color:#1d1d1f;
+    font-size:12px;
+    border-bottom:1px solid rgba(0,0,0,.07);
+  }
+  .state-table td {
+    padding:10px 14px;
+    border-bottom:1px solid rgba(0,0,0,.05);
+    color:#3a3a3c;
+    vertical-align:middle;
+  }
+  .state-table tr:last-child td { border-bottom:none; }
+  .state-table td.mono {
+    font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:11.5px;
+    color:#6e6e73;
+  }
+  .swatch {
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .swatch svg { width:26px; height:26px; filter:brightness(0) invert(0); }
+
+  .note {
+    background:#fff;
+    border-radius:12px;
+    padding:16px 18px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+    font-size:12.5px;
+    line-height:1.85;
+    color:#3a3a3c;
+  }
+  .note b { color:#1d1d1f; }
+  .note ul { margin:6px 0 0 18px; }
+  .note li { margin:3px 0; }
+</style>
+</head>
+<body data-page-node-id="LRl37Z71GY8sxoLbPHLsD7">
+
+  <div data-page-node-id="5eRng5eMUxgnhhJxy7F6jV">
+    <div class="page-title" data-page-node-id="CfFQg9kW5Yqa78ukmf2WUI">XiyueTab 模板 v4 · 状态表情 + 双图标入口</div>
+    <div class="page-desc" data-page-node-id="W8WPeqmDhCYrAlQa6w4tyj">
+      左侧：<b data-page-node-id="cPmSd6TGr3pbMOrwAqGfAz">状态表情</b>（单色 SVG 恐龙，眼睛/嘴随状态变化）+ <b data-page-node-id="zOekAZr9Hy5uMtBumU7Gg8">状态文字</b>「汐月·开心」<br data-page-node-id="3mSA1E6lKjayzs0hsMwLTp">
+      右侧：<b data-page-node-id="EvmNyDfrmOgnlDp1lksByk">两个高级线性图标</b> —— 语音（麦克风） / 文字聊天（气泡）<br data-page-node-id="xBFtgQONAr5GAtlOqznv1F">
+      全部走 <code data-page-node-id="i9hVtCuuyj4OU1qoWDFtRc">filter: brightness(0) invert(var(--icon-invert))</code> 主题适配，严格居中。<br data-page-node-id="VNLoYc3t1qTIE75FHZELCg">
+      红色虚线 = 岛壳实际边界（60px / 72px），所有内容均在框内。
+    </div>
+  </div>
+
+  <div class="grid" data-page-node-id="HvUj2h5pfuQbF3LK1WPYvi">
+
+    <!-- 1. 深色 · 60px · 开心 -->
+    <div class="cell" data-page-node-id="5DtjWmYGcMSJMSuQqQEJbl">
+      <div class="cell-label" data-page-node-id="IxW37pVJRcP0A13WJnpbIO">深色主题 · 开心 <span class="badge h" data-page-node-id="uRusZIxiPgkW3EW19LtTmh">60px 极限</span></div>
+      <div class="island-shell h60 theme-dark" data-page-node-id="jt9obgAiTH21vsG0pB4MS9">
+        <div class="xiyue-tab" data-page-node-id="SSQJJGiWvsTmBEay7zQEaK">
+          <div class="xiyue-avatar-block" data-page-node-id="3eOiX4pLWy3RJvvHaT2sIM">
+            <!-- 开心：圆眼 + 微笑 + 腮红 -->
+            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="cd0LP8K4BNsNA5GSq9Vwlq">
+              <!-- 头顶两个小角（恐龙特征） -->
+              <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="RASlM4GtSFkD12sw13PYEZ"/>
+              <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="fB1Qh2D9Ihqq8KaCUpHnoc"/>
+              <!-- 头 -->
+              <rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="xfXpeRcjC9ruduHTFI9Dn6"/>
+              <!-- 眼（开心：实心圆） -->
+              <circle cx="12.6" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="7YM2M04jrUHk91qYdMbTZP"/>
+              <circle cx="19.4" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="IDZDDimnBHBFxU1CDKF6TE"/>
+              <!-- 嘴（微笑） -->
+              <path d="M13.2 19.4c1 1.15 2 1.7 2.9 1.7s1.85-.55 2.85-1.7" data-page-node-id="hLHkZBWDNZJWnZ7WJ4Tgen"/>
+              <!-- 腮红 -->
+              <path d="M8.2 17.6c.55.3 1.1.45 1.6.45" stroke-width="1.4" data-page-node-id="gWdTWEM5d7yL3uRFBORaG5"/>
+              <path d="M23.8 17.6c-.55.3-1.1.45-1.6.45" stroke-width="1.4" data-page-node-id="pfo4nvlAFZCj8QeN4dRouA"/>
+            </svg>
+            <span class="xiyue-status-text" data-page-node-id="vyqa7Lha1tXFtWvGBGsiPD">汐月·开心</span>
+          </div>
+          <div class="xiyue-divider" data-page-node-id="gC4DHEopk3n1dm5Hmd8T2Z"></div>
+          <div class="xiyue-actions" data-page-node-id="RZIaHyMk9tKegco4rJjEob">
+            <!-- 语音（麦克风） -->
+            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="g6gGARVcqT7DFAws5HiLa9">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="g5gUME6DhogtVC2zY1Duaq">
+                <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="u7TppeHPqn0NK6kXSgJxXX"/>
+                <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="oDw2WphEB07b31XbBJGTvF"/>
+                <path d="M12 18.4v3.1" data-page-node-id="K5GTOGf6axQfesCGB7sCZQ"/>
+                <path d="M8.6 21.5h6.8" data-page-node-id="TWW8pJIsh0D0rJpDJYk7fr"/>
+              </svg>
+            </button>
+            <!-- 文字聊天（带文字行的气泡） -->
+            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="3GGnNMEcG7qKLSfnd1CRoh">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="GXQxZU2e1wi8Lz627WsEih">
+                <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="58AaDBLDgCeURS72D6Go5K"/>
+                <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="tMeJBulHFBQoPzFRJUAqfI"/>
+                <path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="GelPHWVRpfzh2DskJOpzK9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 深色 · 72px · 思考中 -->
+    <div class="cell" data-page-node-id="JdjnScXVnAJCkaHZuMEYZK">
+      <div class="cell-label" data-page-node-id="NibAtiHl9xPNd08ShB6EXh">深色主题 · 思考中 <span class="badge" data-page-node-id="kshRENgj34fXqjlkDR0gWV">72px</span></div>
+      <div class="island-shell h72 theme-dark" data-page-node-id="CE8NW3Uf6qFv18jpTYBjgw">
+        <div class="xiyue-tab" data-page-node-id="29fKsddWqcZUSjPnjFrXop">
+          <div class="xiyue-avatar-block" data-page-node-id="nMv4wGbWDB4QLoA6EOZ8Qu">
+            <!-- 思考：半闭眼（弧线）+ 平嘴 + 思考点 -->
+            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="eXgGIHVGEpPoJwklgSw4Qm">
+              <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="I876bPBKTjyue6fvbk9Y6Q"/>
+              <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="ZDdh3iDyOlTws3U1RhjnxC"/>
+              <rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="zE1jcyx6jsYzGH1QmOxnuU"/>
+              <!-- 半闭眼（向下弧 = 思索） -->
+              <path d="M10.9 14.8c.9-.9 2.1-.9 3 0" stroke-width="1.7" data-page-node-id="n0QkDgB4Ds9wrVw7xJjKJc"/>
+              <path d="M18.1 14.8c.9-.9 2.1-.9 3 0" stroke-width="1.7" data-page-node-id="yGnLmgxBMYbM6uLomuBwmJ"/>
+              <!-- 平嘴（抿嘴思考） -->
+              <path d="M14 19.8h4" data-page-node-id="B1iTNoqk43hQ5fwGVJyr1j"/>
+            </svg>
+            <span class="xiyue-status-text" data-page-node-id="UUdQIN8mP9mfWpPncoLsiR">汐月·思考中</span>
+          </div>
+          <div class="xiyue-divider" data-page-node-id="jpLPRx3zkYDjF0vFhY18eH"></div>
+          <div class="xiyue-actions" data-page-node-id="JJsECxvuYJxLW4IjwjnyCv">
+            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="7qczKqDX5ApTPFQWdqHeUx">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="Z6PjPS5kd4ZNc1OlZ5zF9v">
+                <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="8r1GLHIPsYCyPZqxUPQG4E"/>
+                <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="SS4oUnMD89OAXhYARSLIJw"/>
+                <path d="M12 18.4v3.1" data-page-node-id="A9wGXAlJ4GDeppDyvgpd0w"/>
+                <path d="M8.6 21.5h6.8" data-page-node-id="09eEbi03jWZCSd6VAAKnQ4"/>
+              </svg>
+            </button>
+            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="dF6Zo6xn6F5QCpXnqsm8BH">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="rQcZb5U5kIGhFY7mOk63AW">
+                <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="5T8DfAUwdGmGtCQbivIdI1"/>
+                <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="qjeXbTqfJcyPhEU3On6hvl"/>
+                <path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="wzoKrY8sI9lT48YgNIvi2M"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 浅色 · 60px · 开心 -->
+    <div class="cell" data-page-node-id="zg3yGMCjEByEDgFV9jx9iE">
+      <div class="cell-label" data-page-node-id="c709MGjxEBfezm5DN5i6WO">浅色主题 · 开心 <span class="badge h" data-page-node-id="JsuaIzkADtUSnWktb6cYfy">60px 极限</span></div>
+      <div class="island-shell h60 theme-light" data-page-node-id="oeBk4PONjjQhvGFM0ofUtC">
+        <div class="xiyue-tab" data-page-node-id="OjMVp1arwDqFAhLx10Eygw">
+          <div class="xiyue-avatar-block" data-page-node-id="PKv61LTJUPVtliGlHYuStz">
+            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="kcuVfrc22scTgfzP48vs6V">
+              <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="OMPfEGKRURhriXArLAFWF5"/>
+              <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="lnHUbYZygEFBRDKufWunNh"/>
+              <rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="r4UiVWTtgb4FW5iavVBRlz"/>
+              <circle cx="12.6" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="2C64giK8Bf5RQh8GU357Pv"/>
+              <circle cx="19.4" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="HOxy8JPknoA02wbjOEFXsg"/>
+              <path d="M13.2 19.4c1 1.15 2 1.7 2.9 1.7s1.85-.55 2.85-1.7" data-page-node-id="h4ESfoNnBPYSwT2YA5GFwM"/>
+              <path d="M8.2 17.6c.55.3 1.1.45 1.6.45" stroke-width="1.4" data-page-node-id="IPwWMr5i9Ze6efKaKSRBLT"/>
+              <path d="M23.8 17.6c-.55.3-1.1.45-1.6.45" stroke-width="1.4" data-page-node-id="OgYGWGU9RZLweXa7iVnTZL"/>
+            </svg>
+            <span class="xiyue-status-text" data-page-node-id="EbRhcMHI951xfbUEYDtyKk">汐月·开心</span>
+          </div>
+          <div class="xiyue-divider" data-page-node-id="Mt1rsKoJBH5fwAxrVimlas"></div>
+          <div class="xiyue-actions" data-page-node-id="hbZtGR3gABRhA1k7o5WPYZ">
+            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="yCgPqy6ZGo3PYVcjNHHFAf">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="RGpsTTePCacY2l3BLqjdTM">
+                <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="76bqpXhxVWi67NA7DkWNe4"/>
+                <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="8QGhtxokHCgsmYQ9r9CfAk"/>
+                <path d="M12 18.4v3.1" data-page-node-id="UVEokKFckNTeatNASomeMj"/>
+                <path d="M8.6 21.5h6.8" data-page-node-id="A8Xc40T76Ntt2eZM7YNhBH"/>
+              </svg>
+            </button>
+            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="7FerqbRN1K8u7plOwyfFmf">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="U5FGH7NXwxsXHaZadNXTKu">
+                <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="nxG2WmiJcmr582gL7wCJyp"/>
+                <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="Rg2HWukTtowA4kvAiHnQZj"/>
+                <path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="sQAWGnibyLlVjoug9zqCCO"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 浅色 · 72px · 困惑 -->
+    <div class="cell" data-page-node-id="sAd3mb5JJvc9o9QFP4vS4z">
+      <div class="cell-label" data-page-node-id="36PhAuMEhXrFI2Y2BNhuQE">浅色主题 · 困惑 <span class="badge" data-page-node-id="PTAlbmcrlV0gtkdwphXza1">72px</span></div>
+      <div class="island-shell h72 theme-light" data-page-node-id="qMA8WhFDfdqesTa2p5qoZ2">
+        <div class="xiyue-tab" data-page-node-id="o0Kg7AOL9qOFWmbJlpZtyk">
+          <div class="xiyue-avatar-block" data-page-node-id="ZqWDKm3zCMAmhNbfmPZ9kC">
+            <!-- 困惑：一睁一眯 + 波浪嘴 -->
+            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="CrFuvkgy5rYKWsyvQWNHXR">
+              <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="OYlDTURoqn0lb8uAhdjC6O"/>
+              <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="pZWvxVdal3kbCtCY01djYN"/>
+              <rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="gHxs9SeH3M0iI7jOBZLMhc"/>
+              <!-- 左眼眯（横线） -->
+              <path d="M10.9 14.8h3.2" stroke-width="1.7" data-page-node-id="szcqxCUDBUwf9QKn13kesx"/>
+              <!-- 右眼睁（圆） -->
+              <circle cx="19.6" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="MedKfLoUS0swCuVEyXndfK"/>
+              <!-- 波浪嘴（困惑） -->
+              <path d="M13.4 20.1c.7-.9 1.4-.9 2.1 0s1.4.9 2.1 0" stroke-width="1.6" data-page-node-id="2Hh7XO6qw4A2PYYOwhYUmQ"/>
+            </svg>
+            <span class="xiyue-status-text" data-page-node-id="h0I5z6I0ATqRFUzi6UMQG4">汐月·困惑</span>
+          </div>
+          <div class="xiyue-divider" data-page-node-id="ZM5Udse944db9P7h8kf9i7"></div>
+          <div class="xiyue-actions" data-page-node-id="upXUKlcvVVIFt26h0iGeFw">
+            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="lJP4Xu0KRCYX1giGKmsZK0">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="vBV3m5YQKLIAh6aAEbO6GJ">
+                <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="5i0ywQcFSHbZHvBwNenpIQ"/>
+                <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="oBalUQUh8N1OR4PbL9GqF3"/>
+                <path d="M12 18.4v3.1" data-page-node-id="zVCyumuNKdovVkX8mSgJZu"/>
+                <path d="M8.6 21.5h6.8" data-page-node-id="3BKu216lI43thoP3MGNEX0"/>
+              </svg>
+            </button>
+            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="mYP9rk9IEvOk6CYhyRFDJ6">
+              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="yntqEqa9FjJuIpps8BbADL">
+                <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="FCPdMDjvDWDR0ChvbwgvCk"/>
+                <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="z3nISFDXB9VSTlIYMcE20H"/>
+                <path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="xh6GE3cUxeg9abCMQ5YVyR"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 表情状态表 -->
+  <div data-page-node-id="lqIvyZ5sDBxsdbxbV5gZPa">
+    <div class="cell-label" style="margin-bottom:11px;" data-page-node-id="7DinPJgYIXM6X4ebQLuHa4">表情状态系统（预留扩展）</div>
+    <table class="state-table" data-page-node-id="bxOi8hcCHXCFdxd4MFomgF">
+      <thead data-page-node-id="Q5tpUOIUWHFpB2fo0xICrv">
+        <tr data-page-node-id="ewBzY5as6wHyL1E7aueakJ"><th style="width:120px;" data-page-node-id="QXnrm2VbWr9mntGvg9oHnL">状态</th><th style="width:90px;" data-page-node-id="IooRATG6mQA1SjeNhYvGSw">表情</th><th style="width:130px;" data-page-node-id="iRtdDIB6AAylxrEDMreNPu">状态文字</th><th data-page-node-id="pSVWCYHPtDnSU2Anytjphi">触发时机</th></tr>
+      </thead>
+      <tbody data-page-node-id="rMGALiNTjqpBwTrFSpTEsE">
+        <tr data-page-node-id="jt7r6mP1MWFmtfBtftq0AL">
+          <td data-page-node-id="oTMCMey8aqljFTDBtUVWEa"><b data-page-node-id="ayHBj2a5UQ1uXgpUCCCkOZ">开心</b>·happy</td>
+          <td data-page-node-id="ycQHDmIcKd4GDlcgicilj8"><span class="swatch" data-page-node-id="cfO65ZUdO6CGxcJq6oVznC"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="XT0YiObbVDmqtNmnfAC3jE"><path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="74g4U5QD5RitEc01DYbOIH"/><path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="yWTN4wYxtZaiRK1WoV3RCg"/><rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="4oydwzfHDxzjrxU0PdJfrb"/><circle cx="12.6" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="uwEJlrTHLASUU567Bvgm2m"/><circle cx="19.4" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="qVt424ZMs0NMsEAnNk7Dtv"/><path d="M13.2 19.4c1 1.15 2 1.7 2.9 1.7s1.85-.55 2.85-1.7" data-page-node-id="YVrujf34hKEPeL6jk6kvhv"/><path d="M8.2 17.6c.55.3 1.1.45 1.6.45" stroke-width="1.4" data-page-node-id="dgsqWsybj4Z2T70CpHAzZD"/><path d="M23.8 17.6c-.55.3-1.1.45-1.6.45" stroke-width="1.4" data-page-node-id="1OWo2cEvkjCaqUu1h4xXxI"/></svg></span></td>
+          <td class="mono" data-page-node-id="NMjUtBLLLVi2xUZ2dZbWrb">汐月·开心</td>
+          <td data-page-node-id="5AtJbnzqy7Gqt4yOkL4nhJ">空闲 / 刚完成回复（<b data-page-node-id="75pOPE4PnVehK5e6WJe0H0">默认态</b>）</td>
+        </tr>
+        <tr data-page-node-id="HdQspihD9JifG5kyTN647v">
+          <td data-page-node-id="EqCNejuDvs6LnqGxawqNEh"><b data-page-node-id="fhneSEEmXuReL2ZUigXPeS">思考中</b>·thinking</td>
+          <td data-page-node-id="o7xG54DAoid1n9M0FqF5Je"><span class="swatch" data-page-node-id="3RBN2gY0DczH8M1a4ivvG2"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="fVWPKDjaCYjSW5Kjp8Re6b"><path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="3uiXFBTqBIEqafyWIBgODY"/><path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="CK5hfF3EXCik1aG4AO4B3h"/><rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="0Rm4PIzRu1IDev4O6KMTuf"/><path d="M10.9 14.8c.9-.9 2.1-.9 3 0" stroke-width="1.7" data-page-node-id="GBe4ydvDSKK8LOWJPmTMPM"/><path d="M18.1 14.8c.9-.9 2.1-.9 3 0" stroke-width="1.7" data-page-node-id="Di4ae3EBOFQnfku7HG6ncw"/><path d="M14 19.8h4" data-page-node-id="xHBkuGJ3RWZPCqGl1v8o3l"/></svg></span></td>
+          <td class="mono" data-page-node-id="DmVmHHSxHY38ZiLswdtT0x">汐月·思考中</td>
+          <td data-page-node-id="AcoDiH5Iu4ZKtWYeAMWVJf">正在推理 / 等待模型返回</td>
+        </tr>
+        <tr data-page-node-id="wEnmZRoj3ctGznbqcY02DN">
+          <td data-page-node-id="hNFCcL25wAW0IgEnac4MGC"><b data-page-node-id="theFJXxinZi82CUVJlqev2">困惑</b>·confuse</td>
+          <td data-page-node-id="bCz63urZdjpimpe2Pablhu"><span class="swatch" data-page-node-id="wrJBHy8C8cVyqzz3AnkPbA"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="uhdrZbYkpwzB4SdHhxUDfB"><path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="EY1Vz4DCao2XrdHbDvE4pR"/><path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="IGPW0WzOtFSSHwkuaEOP9w"/><rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="4tg7EBPGtqAuP1MHZjqshL"/><path d="M10.9 14.8h3.2" stroke-width="1.7" data-page-node-id="TWLqo5jpxmZyi4WA9FHanr"/><circle cx="19.6" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="HpaCOGN77AlJQR3DFJHplT"/><path d="M13.4 20.1c.7-.9 1.4-.9 2.1 0s1.4.9 2.1 0" stroke-width="1.6" data-page-node-id="GWzAkMh1mLW3HlNGJX2hPF"/></svg></span></td>
+          <td class="mono" data-page-node-id="9R1ep79DxX5Fu2Z5xaujCi">汐月·困惑</td>
+          <td data-page-node-id="1RefFaEpJ5Df4Z0KwCz6rA">指令不明确 / 需要用户澄清</td>
+        </tr>
+        <tr data-page-node-id="M4ltds63g1wEzGnFpoDKGB">
+          <td data-page-node-id="BmPBFYTNCAwlyxKc6asNev"><b data-page-node-id="kmD0rIjFPFvVHfx3Cqqkve">聆听中</b>·listening</td>
+          <td data-page-node-id="LJO27jzTjTcFifK9h9vqkl"><span class="swatch" data-page-node-id="jpZm4U4sLJVr4hOHyWCkFl"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="4cH4OCDVDNn9rjqtikWiwK"><path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="4VnZO2PADVpnCTjESgW2q0"/><path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="PbDH9eV0TADcBWdva4hD5P"/><rect x="5.5" y="6" width="21" height="19.5" rx="8.5" data-page-node-id="FNrC1vPPIA3SsjhsMt82cU"/><circle cx="12.6" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="Y2CATEkPAyRzqXgHGQTCZa"/><circle cx="19.4" cy="14.6" r="1.55" fill="currentColor" stroke="none" data-page-node-id="6KF1CaGROsYf2pqfBjz3if"/><path d="M13.6 19.6h4.8" stroke-width="1.7" data-page-node-id="xCugwATpluTWjG69O9tXZ1"/><path d="M24.5 11.5c.9.9 1.4 1.7 1.4 2.5s-.5 1.6-1.4 2.5" stroke-width="1.4" data-page-node-id="pB41f5wjyFCFoKhqFK2Z3f"/></svg></span></td>
+          <td class="mono" data-page-node-id="6ibdvFFV8TNF66EaJlCVEH">汐月·聆听中</td>
+          <td data-page-node-id="qfR9hVfjuaSlZOElWfJiN5">语音输入激活（麦克风已开）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note" data-page-node-id="HmSpmlkP6fhTiJwF8txkxk">
+    <b data-page-node-id="zjYXnm0aGKeBakXNqD777E">本模板相对上一版的改动</b>
+    <ul data-page-node-id="iRvAyJFahfwG1ZmAPjngWN">
+      <li data-page-node-id="HGZbVLeAcl7bXajPojy9hI">右侧从「icon-only 方块」改为 <b data-page-node-id="w4cFsel6vas1zG2xsD0up2">两个高级线性图标</b> —— 麦克风（语音）+ 带文字行的气泡（文字聊天），语义更明确</li>
+      <li data-page-node-id="8YSx9ImJtInLvTPsWTQEpP">状态文字简化为「汐月·开心」，<b data-page-node-id="26mgcgPkMLtFW0xJJ6VXAC">移除模型信息</b>（GPT-4o 等后续再定）</li>
+      <li data-page-node-id="3pDVJ3ONQwwmYPpvoTgVGd">恐龙头像改为 <b data-page-node-id="VWI1MfvoOF0zk9o2JEshiZ">正面视角</b>（32px 下比全身侧面更清晰），头顶两角保留恐龙特征</li>
+      <li data-page-node-id="BWOXK0jiEJZsTajRqYdZdm">头像 32px + gap 3px + 文字 13px = <b data-page-node-id="l6IfAASHqswmqyx7FH7NDk">总高 48px</b>，60px 岛上下各留 6px，严格居中不溢出</li>
+      <li data-page-node-id="KHt4roQE6iAlXwHOaLwviI">所有 SVG 均为 <b data-page-node-id="Hga1obOzQVZBKJNFkFsfeR">单色 currentColor</b>，可被 <code data-page-node-id="shoGLGgSXpewV6lAgZ5D4Q">filter: brightness(0) invert()</code> 主题适配</li>
+      <li data-page-node-id="T0VXNX6SXvHFLT3aHb7g95">按钮交互沿用 Xiyue <code data-page-node-id="LB3j52zoG98wG833FAdktm">action-btn</code> 的手感：<code data-page-node-id="xFB6JSKSrBn2zc9uCjEy1A">cubic-bezier(.34,1.56,.64,1)</code> 弹性缩放</li>
+    </ul>
+  </div>
+
+</body>
+</html>

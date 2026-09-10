@@ -392,7 +392,13 @@
       "lyrics": "歌曲",
       "weather": "天气",
       "expand": "展开",
+      "xiyue": "汐月 AI",
       "switchToPage": "切换到{{label}}页面"
+    },
+    "xiyue": {
+      "openChat": "打开汐月 AI 对话",
+      "hint": "点击进入对话，或语音交谈",
+      "voice": "语音对话"
     },
     "actions": {
       "hideIsland": "隐藏灵动岛",
