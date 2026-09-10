@@ -1,17 +1,26 @@
-"""汐月 Python sidecar 服务（Phase 0 语音回路核心）。
+"""汐月 Python sidecar 服务（Phase 0 精简实现）。
 
-HTTP 127.0.0.1:8765（XIYUE_AGENT_PORT 可覆盖），由 Rust 外壳拉起与守护。
+HTTP 127.0.0.1:8765（XIYUE_AGENT_PORT 可覆盖），由 Electron 主进程
+（src/main/services/xiyueAgentService.ts）拉起、健康巡检并自动重启。
 
 端点：
-- GET  /health -> {"ok": true}
-- POST /voice  -> 录音 → VAD/STT → Ollama → TTS，返回 {"user","reply","audio"}
-- POST /chat   -> 文本对话 {"text": "..."}，返回 {"user","reply","audio"}
+- GET  /health      -> {"ok": true, "model": ...}
+- GET  /identity    -> 身份信息（XiyueIdentityReader）
+- GET  /emotion     -> {"state", "enabled"}
+- POST /chat        -> 文本对话 {"text"}，返回 {"user","reply","audio","audio_b64"}
+- POST /chat/stream -> SSE：think → tool_call_request* → chunk* → final | error
+- POST /transcribe  -> {"audio_b64"} → faster-whisper → {"text"}
+- POST /tool-result -> 主进程回传工具执行结果 {"requestId","success","result","error"}
+- POST /browser     -> Playwright 浏览器工具路由
+- POST /voice       -> 已废弃（410），主路径是渲染层录音 → /transcribe
 
-管线（Phase 0，无工具、权限闸不介入，设计 §13）：
-- 采集：sounddevice 16k 单声道，能量端点检测（Rust 采集 Phase 1 移入）
-- VAD/STT：faster-whisper（vad_filter 内置 Silero，省独立 VAD 依赖）
-- LLM：Ollama qwen3-4b-32k + persona/xiyue.md 系统提示 + 内存历史（≤10 轮）
-- TTS：kokoro（中文，24k wav）→ 失败回退 pyttsx3（Windows SAPI，离线）
+双闸门：本模块只做 gate/policy.py 预检并发出 tool_call_request；
+执行与终审（xiyueFinalCheck）在 Electron 主进程，侧车不直接执行工具。
+
+管线：
+- STT：faster-whisper（voice/stt.py，默认 CPU int8）
+- LLM：Ollama（默认 qwen3-4b-32k，think=False）+ identity.build_system_prompt + 历史≤10 轮 + 工作记忆
+- TTS：kokoro（24k wav）→ 失败回退 pyttsx3
 """
 from __future__ import annotations
 
@@ -22,15 +31,12 @@ import sys
 import threading
 import time
 import uuid
-import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))  # 让 agent.* 可导入
 sys.path.insert(0, str(ROOT / "voice"))  # 让 voice.* 可导入
-
-import numpy as np  # noqa: E402
 
 from agent.memory.store import resolve_data_dir  # noqa: E402
 from agent.memory.history import load_history as _load_history, save_history as _save_history  # noqa: E402
@@ -44,6 +50,7 @@ from agent.identity import (  # noqa: E402
     get_emotion_default_state,
     is_emotion_enabled,
     get_max_history_turns,
+    get_trust_level,
 )
 
 PORT = int(os.environ.get("XIYUE_AGENT_PORT", "8765"))
@@ -53,9 +60,6 @@ TMP_DIR = DATA_DIR / "tmp"
 # None → 用 voice/stt.py 的 DEFAULT_MODEL（仓库内 data/models/faster-whisper-base，免联网）
 WHISPER_MODEL = os.environ.get("XIYUE_WHISPER_MODEL") or None
 LLM_MODEL = os.environ.get("XIYUE_LLM_MODEL") or ""
-
-_tts_dir = TTS_DIR
-_tmp_dir = TMP_DIR
 
 # ---- 身份 / 配置读取（从 identity.py 引入，失败回退）----
 def _load_model_default() -> str:
@@ -144,12 +148,12 @@ _TOOL_POLICY = {
 
 
 def _decide_tool(tool_name: str):
-    """policy.py 裁决：返回 (authorizationRequired, denied)"""
+    """policy.py 预检：返回 (authorizationRequired, denied)。信任等级读 xiyue.json security.trust_level。"""
     from agent.gate.policy import Ctx, ToolMeta, decide
 
     meta, risks, confirm = _TOOL_POLICY.get(tool_name, ("unknown", ["read"], True))
     tm = ToolMeta(id=tool_name, level=2 if confirm else 1, risks=risks, confirm=confirm)
-    decision = decide(tm, ctx=Ctx(current_level=1))
+    decision = decide(tm, ctx=Ctx(current_level=get_trust_level()))
     if decision.value == "deny":
         return True, True
     return decision.value == "confirm", False
@@ -180,6 +184,32 @@ def _put_tool_result(request_id: str, result: dict) -> bool:
     return True
 
 
+def _strip_think(text: str) -> str:
+    """安全网：模型无视 think=False 仍内联 <think> 时，只保留最终回答。两条回复路径共用。"""
+    text = text or ""
+    if "</think>" in text:
+        text = text.split("</think>")[-1]
+    return text.strip()
+
+
+def _ollama_chat(model: str, messages: list[dict], tools: list[dict] | None = None):
+    """统一 LLM 调用。
+
+    think=False：旧实现让 qwen3 先生成思考再剥离，纯浪费首字延迟；不支持该参数的模型自动回退。
+    """
+    import ollama  # 局部导入，避免启动期依赖
+
+    kwargs: dict = {"model": model, "messages": messages, "stream": False}
+    if tools is not None:
+        kwargs["tools"] = tools
+    try:
+        return ollama.chat(**kwargs, think=False)
+    except Exception as e:
+        if "think" in str(e).lower():
+            return ollama.chat(**kwargs)
+        raise
+
+
 def _run_agent_loop(messages: list[dict], emit) -> str:
     """工具化 agent 循环：ollama + tools，最多 _MAX_TOOL_ROUNDS 轮。
 
@@ -188,11 +218,9 @@ def _run_agent_loop(messages: list[dict], emit) -> str:
     """
     model = LLM_MODEL or _load_model_default()
     for _round in range(_MAX_TOOL_ROUNDS):
-        import ollama  # 局部导入（与 _llm_reply 一致，避免启动期依赖）
-
-        resp = ollama.chat(model=model, messages=messages, tools=TOOL_DEFS, stream=False)
+        resp = _ollama_chat(model, messages, TOOL_DEFS)
         msg = resp["message"]
-        content = (msg.get("content") or "").strip()
+        content = _strip_think(msg.get("content") or "")
         tool_calls = msg.get("tool_calls") or []
         if not tool_calls:
             return content
@@ -222,8 +250,8 @@ def _run_agent_loop(messages: list[dict], emit) -> str:
             messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False)})
 
     # 超出轮数：兜底再问一次
-    resp = ollama.chat(model=model, messages=messages, tools=TOOL_DEFS, stream=False)
-    return (resp["message"].get("content") or "").strip()
+    resp = _ollama_chat(model, messages, TOOL_DEFS)
+    return _strip_think(resp["message"].get("content") or "")
 
 
 def _load_persona() -> str:
@@ -267,42 +295,12 @@ def _get_tts():
     return None
 
 
-def _record_simple(max_sec: float = 12.0, thresh: float = 0.006) -> Path | None:
-    """简化录音：录固定 max_sec，再按能量裁掉首尾静音（Phase 0 够用，延迟=固定）。
-
-    Phase 1 换流式 VAD（Silero 流式端点）后延迟可再降。
-    """
-    import sounddevice as sd
-
-    sr = 16000
-    audio = sd.rec(int(max_sec * sr), samplerate=sr, channels=1, dtype="float32")
-    sd.wait()
-    audio = audio.reshape(-1)
-    rms = np.sqrt(np.convolve(audio**2, np.ones(1600) / 1600, mode="same"))  # 100ms 窗
-    voiced = np.where(rms > thresh)[0]
-    if voiced.size == 0:
-        return None
-    start = max(0, voiced[0] - 1600)          # 前留 100ms
-    end = min(len(audio), voiced[-1] + 2400)  # 后留 150ms
-    segment = (audio[start:end] * 32767).astype(np.int16)
-    _tmp_dir.mkdir(parents=True, exist_ok=True)
-    path = _tmp_dir / f"in_{int(time.time()*1000)}.wav"
-    with wave.open(str(path), "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sr)
-        w.writeframes(segment.tobytes())
-    return path
-
-
 def _transcribe(wav: Path) -> str:
     stt = _get_stt()
     return stt.transcribe(str(wav), language="zh").strip()
 
 
 def _llm_reply(user_text: str) -> str:
-    import ollama
-
     model = LLM_MODEL or _load_model_default()
     emotion = get_current_emotion()
     system = _build_system(emotion_state=emotion)
@@ -318,10 +316,8 @@ def _llm_reply(user_text: str) -> str:
     messages = [{"role": "system", "content": system}] + _history[-get_max_history_turns():] + [
         {"role": "user", "content": user_text}
     ]
-    resp = ollama.chat(model=model, messages=messages, stream=False)
-    content = (resp["message"]["content"] or "").strip()
-    # 剥离 qwen3 思考段（若存在）
-    reply = content.split("</think>")[-1].strip() if "</think>" in content else content
+    resp = _ollama_chat(model, messages)
+    reply = _strip_think(resp["message"]["content"] or "")
     _history.append({"role": "user", "content": user_text})
     _history.append({"role": "assistant", "content": reply})
     _save_history(_history)
@@ -408,22 +404,11 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             if self.path == "/voice":
-                wav = _record_simple()
-                if wav is None:
-                    # 未检测到说话：直接回一句提示，不浪费一次 LLM 调用
-                    user_text = ""
-                    reply = "没听到你说话哦，再试一次？"
-                    audio = _tts(reply)
-                else:
-                    user_text = _transcribe(wav)
-                    reply = _llm_reply(user_text) if user_text else "没听清，再说一遍？"
-                    audio = _tts(reply) if reply else None
+                # 服务端固定录 12 秒的旧路径已废弃：延迟不可接受，且渲染层已无调用方
                 self._send({
-                    "user": user_text,
-                    "reply": reply,
-                    "audio": str(audio) if audio else "",
-                    "audio_b64": _audio_b64(audio),
-                })
+                    "error": "/voice 已废弃：请使用渲染层录音 → POST /transcribe → POST /chat/stream",
+                    "deprecated": True,
+                }, 410)
             elif self.path == "/chat":
                 text = (body.get("text") or "").strip()
                 if not text:
@@ -612,9 +597,15 @@ def _run_browser_tool(tool: str, args: dict) -> dict:
 
 def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        removed = clear_expired()
+        if removed:
+            print(f"[xiyue-agent] 清理过期工作记忆 {removed} 条", flush=True)
+    except Exception as e:
+        print(f"[xiyue-agent] 清理过期工作记忆失败: {e}", flush=True)
     resolved_model = LLM_MODEL or _load_model_default()
     print(f"[xiyue-agent] listening on 127.0.0.1:{PORT} (llm={resolved_model}, "
-          f"stt={WHISPER_MODEL}, data={DATA_DIR})", flush=True)
+          f"stt={WHISPER_MODEL}, trust_level={get_trust_level()}, data={DATA_DIR})", flush=True)
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
 
 

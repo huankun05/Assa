@@ -598,7 +598,7 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 | GET | /health | 健康检查（返回 ok + 当前模型名） | 否 |
 | GET | /identity | 获取身份信息（XiyueIdentityReader.as_dict） | 否 |
 | GET | /emotion | 获取情绪状态（state + enabled） | 否 |
-| POST | /voice | 服务端录音→STT→LLM→TTS（备用，固定 12s + 能量裁剪） | 否 |
+| POST | /voice | **已废弃（P0a-1）**：返回 410 + `deprecated: true`；原服务端固定录 12s 路径已删除 | 否 |
 | POST | /chat | 文字对话（完整回复 + TTS audio_b64） | 否 |
 | POST | /transcribe | 语音转文字（audio_b64 → faster-whisper） | 否 |
 | POST | /chat/stream | 文字对话（SSE 模拟流式 + 工具循环） | 是 |
@@ -617,7 +617,7 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 7. 拿到完整回复 → 按 8 字符 + 20ms 人工切片 → chunk 事件推送
 8. final 事件（含 TTS audio_b64）结束 → 写 history.json → `_extract_and_store_facts` 抽取写 working_memory.json
 
-> 一致性问题：`_llm_reply`（/chat、/voice 路径）会剥离 qwen3 `</think>` 思考段，`_run_agent_loop`（/chat/stream 路径）不剥离，两条路径行为不一致。
+> ~~一致性问题：`_llm_reply`（/chat、/voice 路径）会剥离 qwen3 `</think>` 思考段，`_run_agent_loop`（/chat/stream 路径）不剥离，两条路径行为不一致。~~ **P0a-1 已修复**：三处 LLM 调用收口为 `_ollama_chat()`（`think=False`，不支持时回退），`_strip_think()` 作为两路共用安全网。
 
 #### 记忆系统
 - **L0 对话历史**：history.py → `history.json` 持久化（读写上限 200 条消息），侧车重启不丢；prompt 注入 `max_history_turns=10`（xiyue.json 可配）。正常工作
@@ -635,7 +635,7 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 
 #### 权限 gate
 - `gate/policy.py`：纯函数 `decide(tool, params, ctx)` → ALLOW/CONFIRM/DENY，五步裁决（凭据强制确认 → 等级越权 → 外部内容注入防护 → 工具自身需确认 → 放行）
-- server.py 侧 `_TOOL_POLICY` 为 19 个工具声明 (meta, risks, confirm)，`_decide_tool` 固定 `Ctx(current_level=1)`——**四级信任模型实际只用到 L1，L2/L3 未接线**
+- server.py 侧 `_TOOL_POLICY` 为 19 个工具声明 (meta, risks, confirm)，`_decide_tool` 的 `Ctx(current_level=...)` **自 P0a-1 起读 xiyue.json `security.trust_level`**（默认 1；0 = 一切需确认；≥2 因工具最高等级 2 且均标 confirm，行为与 1 等价）——L2/L3 的差异化仍待统一 schema 后定义
 - 双闸门：Python 预检 → Electron 主进程 xiyueFinalCheck 终审 → xiyueAuditLog 审计（logs/xiyue-tools.log）
 - 文档腐旧：policy.py docstring 仍写"Rust 侧在执行前用同一份 tool_schema.json 终审"，server.py 头部仍写"由 Rust 外壳拉起与守护"，均为 Tauri 时代残留
 
@@ -804,7 +804,7 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 - **TTS**：kokoro 0.9.4 合成 24kHz wav，音色 zf_xiaobei；pyttsx3 2.99 作为兜底（系统 SAPI）；docstring 记录设计目标为 CosyVoice V3
 - **VAD**：`voice/vad.py` 引用 `silero_vad` 包，但 **.venv 未安装 silero-vad**（pip list 无），该文件当前 import 即失败；server.py 也未引用它
 - **唤醒词**：wake.py 8 行，`listen_for_wakeword` 函数体为 `...`，docstring 规划"自训中文 KWS，Phase1 实现"
-- **备用路径**：服务端 sounddevice 固定录 12 秒 → 能量阈值裁剪首尾静音 → /voice，延迟不可接受，不推荐
+- **备用路径**：~~服务端 sounddevice 固定录 12 秒 → 能量阈值裁剪首尾静音 → /voice~~ **P0a-1 已废弃**（/voice 返回 410，`_record_simple` 已删除；sounddevice 依赖可在下一轮 requirements 整理时移除）
 
 #### 语音链路优化结论（2026-09-10 用户确认）
 
@@ -926,8 +926,8 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 **已知安全缺口**：
 - 成功执行路径未审计（只有失败/拒绝有日志）
 - 工具定义双轨制可能导致策略覆盖不全（内联 19 工具的 `_TOOL_POLICY` 与 schema 16 工具的 policy 字段两套元数据）
-- xiyue.json `browser.allowed_domains` 域名白名单未被 playwright_client.py 执行，浏览器工具可访问任意 URL（v1.1 新增）
-- 信任等级硬编码为 1，无法由用户/设置动态调整（v1.1 新增）
+- ~~xiyue.json `browser.allowed_domains` 域名白名单未被 playwright_client.py 执行~~ **✅ P0a-1 已修复**
+- ~~信任等级硬编码为 1，无法由用户/设置动态调整~~ **✅ P0a-1 已修复**（`security.trust_level`，暂无设置页 UI，需手改 xiyue.json）
 
 #### 安全模型优化结论（2026-09-10 用户确认）
 
@@ -1018,7 +1018,7 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 | 4 | **LLM 非流式 + 人工切片** | 首字延迟 = 完整推理时间，用户体验差，SSE 的 chunk 是假流式 | Agent 侧车调查 |
 | 5 | **tmp/ 和 tts/ 只写不删** | server.py 向 `data/tmp/in_*.wav`、`data/tts/` 写文件，侧车侧无清理机制；当前两个目录不存在（清理后干净，运行时会重新创建并积累） | Agent 侧车调查 |
 | 6 | **4 个 node-gyp 插件需本机编译** | 影响分发，用户需安装 Visual Studio Build Tools | Electron 层调查 |
-| 6b | **浏览器域名白名单未执行**（v1.1 新增） | xiyue.json `browser.allowed_domains` 无代码读取，Playwright 工具可访问任意 URL，与"本地为主/数据不出本机"原则相悖 | v1.1 审校 |
+| 6b | ~~**浏览器域名白名单未执行**~~（v1.1 新增） | **✅ P0a-1 已修复**：`playwright_client._check_url()` 强制校验 `allowed_domains`，7 项回归测试覆盖伪装/协议/留空场景 | v1.1 审校 |
 
 ### 5.2 中优先级（影响体验或可维护性）
 
@@ -1026,10 +1026,10 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 |---|---|---|---|
 | 7 | silero-vad **未安装**且未接入 | vad.py import 即失败；语音输入无端点检测，需手动控制录音时长；faster-whisper 内置 vad_filter 也未启用 | Agent 侧车调查（v1.1 修正："已装"不成立） |
 | 8 | 唤醒词是空 stub | 无语音唤醒能力 | Agent 侧车调查 |
-| 9 | working_memory.json `clear_expired()` 从未调用 | 过期条目读取时被过滤（功能不受影响），但文件持续积累；当前 1 条 source=test 过期测试条目 | Agent 侧车调查（v1.1 细化） |
-| 9b | `_run_agent_loop` 不剥离 qwen3 `<think>` 段（v1.1 新增） | `/chat/stream` 路径与 `/chat` 路径（`_llm_reply` 会剥离）行为不一致，流式回复可能夹带思考文本 | v1.1 审校 |
+| 9 | ~~working_memory.json `clear_expired()` 从未调用~~ | **✅ P0a-1 已修复**：`main()` 启动时清理，首次运行即清掉过期测试条目 | Agent 侧车调查（v1.1 细化） |
+| 9b | ~~`_run_agent_loop` 不剥离 qwen3 `<think>` 段~~（v1.1 新增） | **✅ P0a-1 已修复**：`_ollama_chat()` 统一 `think=False`，`_strip_think()` 两路共用 | v1.1 审校 |
 | 9c | volume-analyzer 半接入（v1.1 新增） | 有构建脚本 + 扩展注册，但主进程/渲染层零消费者，与孤儿插件同属"写了没接" | v1.1 审校 |
-| 9d | Tauri 时代 docstring 腐旧（v1.1 新增） | server.py 头部"由 Rust 外壳拉起"、policy.py"Rust 侧终审"、store.py"Rust 经 IPC 注入路径"——误导阅读者 | v1.1 审校 |
+| 9d | Tauri 时代 docstring 腐旧（v1.1 新增） | **P0a-1 已修 server.py 头部 + policy.py**；store.py 的"Rust 经 IPC 注入路径"留 P0b 随记忆替换一并处理 | v1.1 审校 |
 | 10 | 插件命名仍为 eisland 前缀 | 品牌不一致，14 个插件目录和 package.json 依赖名 | Electron 层调查 |
 | 11 | 4 个巨型文件（app.ts 2599 行等） | 可维护性差 | Electron 层调查 |
 | 12 | media volume 为 stub | `media:get-volume` 硬编码返回 0.5，`media:set-volume` 空实现（注释：SMTC 不支持应用级音量） | Electron 层调查（v1.1 查证） |
@@ -1055,19 +1055,22 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 
 #### P0a — 快赢与补洞（≤1 周，高确定性，不碰换脑；v1.2 拆分，⚠️ 待拍板）
 
-| 工作项 | 来源 | 说明 | 完成判据 |
-|---|---|---|---|
-| 浏览器域名白名单执行 | v1.1 新增 | playwright_client 读取 xiyue.json `allowed_domains` 并校验（约 20 行） | 白名单外 URL 被拒并审计 |
-| 信任等级可配 | v1.2 新增 | `_decide_tool` 的 `Ctx(current_level=1)` 改读设置 | 设置切 L0 后写类工具被拒 |
-| 审计补全成功路径 | 板块 10 | 成功/失败全记录，含 token/耗时/模型来源 | 每次工具调用一条完整记录 |
-| deny/ask 最小集 | 板块 10（v1.2 收敛） | 仅 `file.delete`、`cmd.exec` 弹确认，其余按只读/修改默认 | 破坏性工具无确认不执行 |
-| 工具 schema 重建 | 板块 6（v1.2 方案 B） | 以主进程执行器为事实源导出 19 工具 schema，MCP `annotations` 格式，policy.py 与 xiyueToolSchema.ts 同源加载 + 启动一致性校验 | 两侧元数据 diff 为空 |
-| `executeTool()` 收口 | v1.2 新增 | app.ts / localToolIpc.ts 两处终审调用点合并为单一执行入口 | 全仓只有一处调 xiyueFinalCheck |
-| ollama `think` 字段替代手工剥离 | v1.1→v1.2 | 删除两处 `<think>` 剥离，语音路径 `think=False`，文字路径 thinking 走 `thought` 事件 | 语音首字延迟下降可量化 |
-| TTS 不落盘 | 板块 9（v1.2 改法） | 渲染层直接播 `audio_b64` blob，侧车落盘改调试开关 | data/tts 不再增长 |
-| 渲染层 RMS 端点检测 | 板块 9（v1.2 方案 C） | `ScriptProcessorNode` 回调加 RMS 静音判停，设置可切手动/自动 | 说完 1.5s 内自动发送 |
-| `/voice` 标记废弃 | 板块 6 | 端点保留但返回 410 + 提示，下版本删除 | — |
-| 死 IPC 清理 | v1.2 新增 | 删除 11 个无调用方 channel（volume-analyzer 定案后再删 `extension:*`） | — |
+> 执行进度：**P0a-1（侧车安全三件套 + think + 清理）已完成**，见"状态"列；P0a-2 = Electron 主进程侧（审计/deny-ask/schema/executeTool/死 IPC），P0a-3 = 渲染层侧（TTS 不落盘/RMS 端点检测）。
+
+| 工作项 | 来源 | 说明 | 完成判据 | 状态 |
+|---|---|---|---|---|
+| 浏览器域名白名单执行 | v1.1 新增 | playwright_client 读取 xiyue.json `allowed_domains` 并校验（约 20 行） | 白名单外 URL 被拒并审计 | ✅ P0a-1：`_check_url()` 统一 6 入口，子域放行、前后缀伪装拒绝、仅 http/https；留空或 `*` 不限制 |
+| 信任等级可配 | v1.2 新增 | `_decide_tool` 的 `Ctx(current_level=1)` 改读设置 | 设置切 L0 后写类工具被拒 | ✅ P0a-1：`security.trust_level`（xiyue.json，默认 1；0 = 一切需确认）；`/identity` 暴露 |
+| 审计补全成功路径 | 板块 10 | 成功/失败全记录，含 token/耗时/模型来源 | 每次工具调用一条完整记录 | ⏳ P0a-2（Electron 侧） |
+| deny/ask 最小集 | 板块 10（v1.2 收敛） | 仅 `file.delete`、`cmd.exec` 弹确认，其余按只读/修改默认 | 破坏性工具无确认不执行 | ⏳ P0a-2（现状 policy 已对二者返回 CONFIRM，缺主进程侧强制） |
+| 工具 schema 重建 | 板块 6（v1.2 方案 B） | 以主进程执行器为事实源导出 19 工具 schema，MCP `annotations` 格式，policy.py 与 xiyueToolSchema.ts 同源加载 + 启动一致性校验 | 两侧元数据 diff 为空 | ⏳ P0a-2 |
+| `executeTool()` 收口 | v1.2 新增 | app.ts / localToolIpc.ts 两处终审调用点合并为单一执行入口 | 全仓只有一处调 xiyueFinalCheck | ⏳ P0a-2 |
+| ollama `think` 字段替代手工剥离 | v1.1→v1.2 | 删除两处 `<think>` 剥离，语音路径 `think=False`，文字路径 thinking 走 `thought` 事件 | 语音首字延迟下降可量化 | ✅ P0a-1（部分）：`_ollama_chat()` 统一三处调用 `think=False` + 不支持时回退；`_strip_think()` 两路共用安全网。`thought` 事件留 P0b 真流式 |
+| TTS 不落盘 | 板块 9（v1.2 改法） | 渲染层直接播 `audio_b64` blob，侧车落盘改调试开关 | data/tts 不再增长 | ⏳ P0a-3（渲染层） |
+| 渲染层 RMS 端点检测 | 板块 9（v1.2 方案 C） | `ScriptProcessorNode` 回调加 RMS 静音判停，设置可切手动/自动 | 说完 1.5s 内自动发送 | ⏳ P0a-3（渲染层） |
+| `/voice` 标记废弃 | 板块 6 | 端点保留但返回 410 + 提示，下版本删除 | — | ✅ P0a-1：410 + `deprecated: true`；`_record_simple` 及独占的 numpy/wave 依赖已删 |
+| 死 IPC 清理 | v1.2 新增 | 删除 11 个无调用方 channel（volume-analyzer 定案后再删 `extension:*`） | — | ⏳ P0a-2 |
+| working_memory 启动清理 | P0a-1 顺手 | `main()` 启动时调用 `clear_expired()`（此前导入但从未调用） | 过期条目不再积累 | ✅ P0a-1：首次启动即清掉那条过期 8 天的测试条目 |
 
 #### P0b — 换脑核心（让 AI 真正"有脑子"）
 
@@ -1267,6 +1270,7 @@ Xiyue 侧车当前是自写的 Phase 0 精简实现（server.py 622 行），存
 - ✅ 12 板块逐板块梳理确认并写入本文档
 - ✅ v1.1 源码审校：对 v1.0 的 40+ 项"实测"声明逐项对照源码复核，修正 15 项事实偏差、新增 7 项发现（见文首勘误摘要）
 - ✅ v1.2 定向补查 8 项（回收站/插件调用边界/ollama think/whisper VAD 默认值/录音管线/依赖成本/死 IPC/`/voice` 调用方）+ 抓取核实 7 个业界参考项目 + 12 板块增量建议 + 路线图 P0 拆分
+- ✅ **P0a-1 落地**（commit 见 git log `fix(agent): P0a-1`）：域名白名单强制执行、信任等级可配（`security.trust_level`）、ollama 原生 `think=False` + `<think>` 剥离统一、`/voice` 410 废弃并删除 `_record_simple`/numpy/wave、启动清理过期工作记忆、server.py/policy.py docstring 去 Rust；新增 `agent/tests/test_p0a_security.py`（7 项，无 pytest 依赖，`python agent/tests/test_p0a_security.py` 直接跑）；已通过 py_compile + 7/7 测试 + 备用端口启动烟雾（/health、/identity 暴露 trust_level、/voice 410）
 
 ### v1.1 审校方法与对本报告的意见
 

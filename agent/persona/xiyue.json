@@ -27,5 +27,8 @@
   },
   "browser": {
     "allowed_domains": ["example.com", "localhost", "127.0.0.1", "github.com"]
+  },
+  "security": {
+    "trust_level": 1
   }
 }

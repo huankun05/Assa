@@ -47,6 +47,12 @@ _DEFAULT: dict[str, Any] = {
         "enabled": True,
         "max_rounds_per_turn": 8,
     },
+    "browser": {
+        "allowed_domains": ["example.com", "localhost", "127.0.0.1", "github.com"],
+    },
+    "security": {
+        "trust_level": 1,
+    },
 }
 
 _cached: dict[str, Any] | None = None
@@ -171,6 +177,29 @@ def get_max_tool_rounds() -> int:
     return int(_load_json().get("tools", {}).get("max_rounds_per_turn", 8))
 
 
+def get_trust_level() -> int:
+    """当前信任等级（gate/policy.py 预检的 Ctx.current_level）。
+
+    0 = 所有工具调用均需用户确认（观察员 / 急停）
+    1 = 默认：只读工具自动放行，其余走确认
+    ≥2 = 预留（当前工具最高等级为 2 且均标 confirm，行为与 1 等价）
+    """
+    try:
+        return max(0, int(_load_json().get("security", {}).get("trust_level", 1)))
+    except (TypeError, ValueError):
+        return 1
+
+
+def get_browser_allowed_domains() -> list[str]:
+    """浏览器工具域名白名单；缺失、留空或含 "*" 表示不限制。"""
+    raw = _load_json().get("browser", {}).get("allowed_domains", [])
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return []
+    return [str(d).strip() for d in raw if str(d).strip()]
+
+
 # ---- 情绪状态（轻量全局状态，供 identity / server 共享）----
 _emotion_lock = threading.Lock()
 _current_emotion: str = ""
@@ -259,6 +288,8 @@ class XiyueIdentityReader:
             "max_history_turns": get_max_history_turns(),
             "tools_enabled": is_tools_enabled(),
             "max_tool_rounds": get_max_tool_rounds(),
+            "trust_level": get_trust_level(),
+            "browser_allowed_domains": get_browser_allowed_domains(),
             "current_emotion": get_current_emotion() if is_emotion_enabled() else "",
         }
 

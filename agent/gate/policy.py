@@ -2,10 +2,12 @@
 
 纯函数 `decide()`：输入工具元数据 + 参数 + 上下文，输出 ALLOW / CONFIRM / DENY。
 
-双闸门（设计 v1.2 定案）：
+双闸门：
 - 本模块是**提议侧预检**——避免提出必被拒的请求、决定何时弹确认 UI（体验层）。
-- Rust 侧在执行前用同一份 schemas/tool_schema.json **终审**（最终权威）。
-- 预检通过 ≠ 放行；两份逻辑共享单一事实源，语义必须一致。
+- Electron 主进程在执行前做**终审**（src/main/services/xiyueToolSchema.ts `xiyueFinalCheck`，最终权威）。
+- 预检通过 ≠ 放行；两侧工具元数据目前各自维护（server.py `_TOOL_POLICY` / xiyueToolSchema.ts），
+  统一 schema 后应同源加载并在启动时做一致性校验。
+- 当前信任等级来自 xiyue.json `security.trust_level`（identity.get_trust_level），默认 1。
 
 裁决顺序（详见 README 权限闸部分）：
 1. 凭据风险且未声明确认 → 强制 CONFIRM
