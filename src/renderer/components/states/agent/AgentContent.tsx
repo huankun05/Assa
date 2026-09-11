@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import useIslandStore from '../../../store/isLandStore';
 import type { AgentPhase } from './config/agentContentConfig';
@@ -36,6 +36,13 @@ import { useAgentAuthDecision } from './hooks/useAgentAuthDecision';
 import { AgentContentView } from './components/AgentContentView';
 import '../../../styles/agent/agent.css';
 
+/** Agent 岛内阶段 → hover 页汐月 mood */
+function phaseToMood(phase: AgentPhase): 'happy' | 'thinking' | 'confuse' | 'listening' {
+  if (phase === 'error') return 'confuse';
+  if (phase === 'thinking' || phase === 'connecting' || phase === 'toolCalling' || phase === 'answering') return 'thinking';
+  return 'happy';
+}
+
 /**
  * Agent 状态内容组件
  * @description 与 notification 尺寸一致（500×88），左侧状态图 + 右侧流式文本
@@ -43,6 +50,7 @@ import '../../../styles/agent/agent.css';
 export function AgentContent(): ReactElement {
   const agentPrompt = useIslandStore((s) => s.agentPrompt);
   const setIdle = useIslandStore((s) => s.setIdle);
+  const setAgentMood = useIslandStore((s) => s.setAgentMood);
 
   const [phase, setPhase] = useState<AgentPhase>('connecting');
   const [thinkText, setThinkText] = useState('');
@@ -55,6 +63,10 @@ export function AgentContent(): ReactElement {
   const thinkAccRef = useRef('');
   const traceIdRef = useRef('');
   const tokenRef = useRef('');
+
+  useEffect(() => {
+    setAgentMood(phaseToMood(phase));
+  }, [phase, setAgentMood]);
 
   useAgentAutoScroll({
     textRef,

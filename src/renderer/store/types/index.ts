@@ -374,6 +374,8 @@ export interface IslandSlice {
   notification: NotificationData;
   sttText: string;
   agentPrompt: string;
+  /** 汐月 AI 情绪/工作状态（hover 页头像与状态点） */
+  agentMood: 'happy' | 'thinking' | 'confuse' | 'listening';
 
   springAnimation: boolean;
   animationSpeed: AnimationSpeed;
@@ -391,6 +393,7 @@ export interface IslandSlice {
   setAgentVoiceInput: () => void;
   setStt: (text?: string) => void;
   setAgent: (prompt?: string) => void;
+  setAgentMood: (mood: IslandSlice['agentMood']) => void;
   setCli: () => void;
   toggleUiStateLock: () => boolean;
   setHoverTab: (tab: HoverTab) => void;

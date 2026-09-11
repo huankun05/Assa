@@ -197,10 +197,12 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
     };
 
     void start();
+    useIslandStore.getState().setAgentMood('listening');
 
     return () => {
       if (autoCutoffTimer) clearTimeout(autoCutoffTimer);
       stopAll();
+      useIslandStore.getState().setAgentMood('happy');
 
       // 结束：把积累的 PCM 拼成 wav，交给本地 faster-whisper 转写
       void (async () => {

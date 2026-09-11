@@ -71,6 +71,7 @@ export const createIslandSlice: StateCreator<
   notification: emptyNotification,
   sttText: '',
   agentPrompt: '',
+  agentMood: 'happy' as const,
   springAnimation: true,
   animationSpeed: 'medium' as const,
   shapeMode: 'notch' as const,
@@ -157,8 +158,10 @@ export const createIslandSlice: StateCreator<
     if (prev.uiStateLocked && prev.state !== 'agent') return prev;
     window.api?.expandWindowNotification(getIslandWindowShrinkDelay(prev.state, 'agent', prev.animationSpeed));
     window.api?.disableMousePassthrough();
-    return { state: 'agent' as const, agentPrompt: prompt ?? prev.sttText ?? '' };
+    return { state: 'agent' as const, agentPrompt: prompt ?? prev.sttText ?? '', agentMood: 'thinking' as const };
   }),
+
+  setAgentMood: (mood) => set({ agentMood: mood }),
 
   setCli: () => set((prev) => {
     if (prev.uiStateLocked && prev.state !== 'cli') return prev;

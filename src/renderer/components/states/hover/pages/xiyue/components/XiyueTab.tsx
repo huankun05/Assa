@@ -59,11 +59,11 @@ function openStandaloneChatWindow(): void {
 export function XiyueTab(): ReactElement {
   const { t } = useTranslation();
   const setAgentVoiceInput = useIslandStore((s) => s.setAgentVoiceInput);
+  const storeMood = useIslandStore((s) => s.agentMood);
   const [visibleName, setVisibleName] = useState<string>(getXiyueVisibleNameSync());
 
-  // TODO(agent-state): 接入真实 agent 状态后改为从 store 读取，例如
-  // const mood = useIslandStore((s) => s.agentMood) ?? 'happy';
-  const mood: AgentMood = 'happy';
+  // 接 store 真实状态：岛内 Agent 阶段变化会写入 agentMood
+  const mood: AgentMood = storeMood ?? 'happy';
 
   useEffect(() => {
     getXiyueVisibleName().then(setVisibleName).catch(() => {});
