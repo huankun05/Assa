@@ -20,6 +20,7 @@
 | 文档 | 大小 | 一句话要点 |
 |---|---|---|
 | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | 11 KB | 数据目录统一收口 + desk-pet hermes_core 记忆/情绪/人格模块移植（"换脑"），v1.0 草案待评审 |
+| [Xiyue_设计与改进建议_v1.0.md](./Xiyue_设计与改进建议_v1.0.md) | 约 12 KB | 技术债优先级 + 二次元形象 brief + UI 范式建议（许可卡片/状态反馈）+ 落地顺序，与全面调查报告互补 |
 
 ### 调查报告（2026-09-10 全面调查产出）
 
@@ -68,6 +69,7 @@
 | **项目整体现状/目标/方法** | [Xiyue_全面调查报告_v1.0.md](./Xiyue_全面调查报告_v1.0.md) | [Xiyue_Electron_Source_Audit.md](./Xiyue_Electron_Source_Audit.md) / [Xiyue_Agent_Voice_Source_Audit.md](./Xiyue_Agent_Voice_Source_Audit.md) |
 | **灵动岛各档位装什么、怎么交互** | [灵动岛分档改造计划书.md](./灵动岛分档改造计划书.md) | [design/DESIGN_STYLE_GUIDE.md](./design/DESIGN_STYLE_GUIDE.md) |
 | **UI 设计规范（颜色/圆角/动画）** | [design/DESIGN_STYLE_GUIDE.md](./design/DESIGN_STYLE_GUIDE.md) | [FRONTEND_STANDARDS.md](./FRONTEND_STANDARDS.md) |
+| **技术债优先级 / 形象 brief / UI 范式建议** | [Xiyue_设计与改进建议_v1.0.md](./Xiyue_设计与改进建议_v1.0.md) | [Xiyue_全面调查报告_v1.0.md](./Xiyue_全面调查报告_v1.0.md) |
 | **前端代码怎么写** | [FRONTEND_STANDARDS.md](./FRONTEND_STANDARDS.md) | [COMMENT_STANDARDS.md](./COMMENT_STANDARDS.md) |
 | **数据存在哪、怎么清理** | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | [Xiyue_Cleanup_Report_2026-09-10.md](./Xiyue_Cleanup_Report_2026-09-10.md)（已执行） |
 | **Agent 侧车"换脑"（hermes_core 移植）** | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | [Xiyue_Agent_Voice_Source_Audit.md](./Xiyue_Agent_Voice_Source_Audit.md) |

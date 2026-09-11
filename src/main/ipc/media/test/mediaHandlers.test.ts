@@ -26,8 +26,9 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { handleMock, getAllWindowsMock } = vi.hoisted(() => ({
+const { handleMock, onMock, getAllWindowsMock } = vi.hoisted(() => ({
   handleMock: vi.fn(),
+  onMock: vi.fn(),
   getAllWindowsMock: vi.fn(),
 }));
 
@@ -68,6 +69,7 @@ const {
 vi.mock('electron', () => ({
   ipcMain: {
     handle: handleMock,
+    on: onMock,
   },
   BrowserWindow: {
     getAllWindows: getAllWindowsMock,
@@ -125,6 +127,27 @@ describe('media ipc handlers', () => {
     nextMock.mockClear();
     previousMock.mockClear();
 
+    const sessionRuntime = new Map([
+      ['device-1', {
+        hasTitle: true,
+        isPlaying: false,
+        payload: {
+          title: 'Song',
+          artist: 'A',
+          album: '',
+          duration_ms: 1000,
+          position_ms: 0,
+          isPlaying: false,
+          canFastForward: false,
+          canSkip: false,
+          canLike: false,
+          canChangeVolume: false,
+          canSetOutput: false,
+          deviceId: 'device-1',
+        },
+      }],
+    ]);
+
     registerMediaIpcHandlers({
       getMainWindow: () => null,
       isWhitelisted: () => false,
@@ -134,14 +157,14 @@ describe('media ipc handlers', () => {
       clearPendingSourceSwitchEntry: vi.fn(),
       getCurrentDeviceId: () => 'device-1',
       setCurrentDeviceId: vi.fn(),
-      getSmtcSessionRuntime: () => new Map(),
+      getSmtcSessionRuntime: () => sessionRuntime,
     });
 
     handlers.get('media:play-pause')?.({});
     handlers.get('media:next')?.({});
     handlers.get('media:prev')?.({});
 
-    // 无播放会话时 isPlaying=false，应调用 play()
+    // 有会话且未播放时 play-pause 应调用 play()；next/prev 因未白名单被拒
     expect(playMock).toHaveBeenCalledTimes(1);
     expect(nextMock).not.toHaveBeenCalled();
     expect(previousMock).not.toHaveBeenCalled();

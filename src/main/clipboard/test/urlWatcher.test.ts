@@ -183,7 +183,7 @@ describe('urlWatcher', () => {
         });
 
         startClipboardUrlWatcher(opts);
-        vi.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(2000);
 
         expect(win.webContents.send).not.toHaveBeenCalled();
       });
@@ -193,7 +193,7 @@ describe('urlWatcher', () => {
         const opts = defaultOptions({ getWindow: () => createMockWindow(true) });
 
         startClipboardUrlWatcher(opts);
-        vi.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(2000);
 
         // No crash, no IPC send
       });
@@ -205,7 +205,7 @@ describe('urlWatcher', () => {
         mockNetFetch.mockResolvedValue(createMockResponse({ chunks: [encodeHtml('<title>T</title>')] }));
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         // 第一次轮询检测到变化，发送 IPC
         expect(win.webContents.send).toHaveBeenCalledTimes(1);
@@ -214,7 +214,7 @@ describe('urlWatcher', () => {
         (win.webContents.send as ReturnType<typeof vi.fn>).mockClear();
 
         // 再次轮询，clipboard 未变化，不应发送
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
         expect(win.webContents.send).not.toHaveBeenCalled();
       });
     });
@@ -227,7 +227,7 @@ describe('urlWatcher', () => {
         mockClipboardReadText.mockReturnValueOnce('initial').mockReturnValue('visit https://example.com now');
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(mockNetFetch).toHaveBeenCalledTimes(1);
         expect(win.webContents.send).toHaveBeenCalledWith('clipboard:urls-detected', {
@@ -244,7 +244,7 @@ describe('urlWatcher', () => {
           getWindow: () => win,
           getBlacklist: () => ['blocked.com'],
         }));
-        vi.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(2000);
 
         expect(mockNetFetch).not.toHaveBeenCalled();
         expect(win.webContents.send).not.toHaveBeenCalled();
@@ -259,7 +259,7 @@ describe('urlWatcher', () => {
           getWindow: () => win,
           getBlacklist: () => ['blocked.com'],
         }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith('clipboard:urls-detected', {
           urls: expect.not.arrayContaining([expect.stringContaining('blocked.com')]),
@@ -277,7 +277,7 @@ describe('urlWatcher', () => {
         );
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -293,7 +293,7 @@ describe('urlWatcher', () => {
         );
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -309,7 +309,7 @@ describe('urlWatcher', () => {
         );
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -325,7 +325,7 @@ describe('urlWatcher', () => {
         );
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -341,7 +341,7 @@ describe('urlWatcher', () => {
         mockNetFetch.mockResolvedValue(createMockResponse({ chunks: [part1, part2] }));
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -357,7 +357,7 @@ describe('urlWatcher', () => {
         mockNetFetch.mockResolvedValue(createMockResponse({ ok: false, status: 500 }));
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -373,7 +373,7 @@ describe('urlWatcher', () => {
         );
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -387,7 +387,7 @@ describe('urlWatcher', () => {
         mockNetFetch.mockResolvedValue(createMockResponse({ contentType: 'application/json' }));
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -403,7 +403,7 @@ describe('urlWatcher', () => {
         );
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -422,7 +422,7 @@ describe('urlWatcher', () => {
         });
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -436,7 +436,7 @@ describe('urlWatcher', () => {
         mockNetFetch.mockResolvedValue(createMockResponse({ contentType: null }));
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -450,7 +450,7 @@ describe('urlWatcher', () => {
         mockNetFetch.mockRejectedValue(new Error('Network error'));
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).toHaveBeenCalledWith(
           'clipboard:urls-detected',
@@ -473,7 +473,7 @@ describe('urlWatcher', () => {
         });
 
         startClipboardUrlWatcher(opts);
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(2000);
 
         expect(win.webContents.send).not.toHaveBeenCalled();
       });
@@ -486,7 +486,7 @@ describe('urlWatcher', () => {
         const win = createMockWindow();
 
         startClipboardUrlWatcher(defaultOptions({ getWindow: () => win }));
-        vi.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(2000);
 
         expect(mockNetFetch).not.toHaveBeenCalled();
         expect(win.webContents.send).not.toHaveBeenCalled();

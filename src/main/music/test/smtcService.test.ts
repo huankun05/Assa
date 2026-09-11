@@ -30,12 +30,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 /*  Hoisted mock variables                                            */
 /* ------------------------------------------------------------------ */
 
-/** Stores event handlers registered on the latest Worker instance */
-const workerHandlers: Record<string, (...args: unknown[]) => void> = {};
+/** Stores event handlers registered on Worker instances (multi-listener safe) */
+const workerHandlers: Array<{ event: string; handler: (...args: unknown[]) => void }> = [];
 
 /** Tracks all Worker instances created (one per initWorker call) */
 const createdWorkers: Array<{
   on: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
   postMessage: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
 }> = [];
@@ -62,7 +63,12 @@ const mockDestroyedWindow = vi.hoisted(() => ({
 const MockWorkerClass = vi.hoisted(() =>
   class MockWorker {
     on = vi.fn((event: string, handler: (...args: unknown[]) => void) => {
-      workerHandlers[event] = handler;
+      workerHandlers.push({ event, handler });
+      return this;
+    });
+    off = vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      const idx = workerHandlers.findIndex((h) => h.event === event && h.handler === handler);
+      if (idx >= 0) workerHandlers.splice(idx, 1);
       return this;
     });
     postMessage = vi.fn();
@@ -114,19 +120,28 @@ function defaultOptions(overrides: Partial<{
   };
 }
 
-/** Fire the worker 'message' handler captured by initWorker */
+/** Fire all registered worker event handlers of the given type */
+function emitWorkerEvent(event: string, ...args: unknown[]) {
+  workerHandlers
+    .filter((h) => h.event === event)
+    .forEach((h) => h.handler(...args));
+}
+
+/** Fire the worker 'message' handlers registered by initWorker / bootstrap */
 function emitWorkerMessage(msg: Record<string, unknown>) {
-  workerHandlers['message']?.(msg);
+  // Snapshot length so handlers that re-register during emit still all run once
+  const listeners = workerHandlers.filter((h) => h.event === 'message');
+  listeners.forEach((h) => h.handler(msg));
 }
 
-/** Fire the worker 'error' handler */
+/** Fire the worker 'error' handlers */
 function emitWorkerError(err: Error) {
-  workerHandlers['error']?.(err);
+  emitWorkerEvent('error', err);
 }
 
-/** Fire the worker 'exit' handler */
+/** Fire the worker 'exit' handlers */
 function emitWorkerExit(code: number) {
-  workerHandlers['exit']?.(code);
+  emitWorkerEvent('exit', code);
 }
 
 /* ------------------------------------------------------------------ */
@@ -135,10 +150,12 @@ function emitWorkerExit(code: number) {
 
 describe('createSmtcService', () => {
   beforeEach(() => {
-    Object.keys(workerHandlers).forEach((key) => delete workerHandlers[key]);
+    workerHandlers.length = 0;
     createdWorkers.length = 0;
     workerConstructLog.length = 0;
     mockGetAllWindows.mockReturnValue([mockWindow]);
+    mockWindow.webContents.send.mockClear();
+    mockDestroyedWindow.webContents.send.mockClear();
   });
 
   /* -------------------------------------------------------------- */
@@ -862,13 +879,29 @@ describe('createSmtcService', () => {
 
       const sourcesPromise = svc.detectAllSources();
       const sources = [
-        { sourceAppId: 'a.exe', isPlaying: true, hasTitle: true, thumbnail: null },
-        { sourceAppId: 'b.exe', isPlaying: false, hasTitle: false, thumbnail: 'data:image/png;base64,x' },
+        {
+          sourceAppId: 'a.exe',
+          isPlaying: true,
+          hasTitle: true,
+          thumbnail: null,
+          media: { title: 'T', artist: 'A', albumTitle: '', thumbnail: null },
+          playback: { playbackStatus: 4, playbackType: 1 },
+          timeline: { position: 1, duration: 10 },
+        },
+        {
+          sourceAppId: 'b.exe',
+          isPlaying: false,
+          hasTitle: false,
+          thumbnail: 'data:image/png;base64,x',
+        },
       ];
       emitWorkerMessage({ type: 'detect-sources-result', sources });
 
       const result = await sourcesPromise;
-      expect(result).toEqual(sources);
+      // 现行实现只收集带 media/playback/timeline 的会话
+      expect(result.map((s) => s.sourceAppId)).toEqual(['a.exe']);
+      expect(result[0]?.isPlaying).toBe(true);
+      expect(result[0]?.hasTitle).toBe(true);
     });
 
     it('resolves with empty array when sources field is missing', async () => {

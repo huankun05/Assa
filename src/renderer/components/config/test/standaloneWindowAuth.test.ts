@@ -20,7 +20,7 @@
 
 /**
  * @file standaloneWindowAuth.test.ts
- * @description 单元测试 - standaloneWindowAuth.ts
+ * @description 单元测试 - standaloneWindowAuth.ts（仅保留 musicProvidersLogin / none 意图）
  * @author 鸡哥
  */
 
@@ -39,24 +39,19 @@ let applyAuthIntent: (intent: unknown) => void;
 
 describe('applyAuthIntent', () => {
   beforeEach(async () => {
+    setStateMock.mockClear();
+    vi.resetModules();
+    vi.doMock('../../../store/slices', () => ({
+      default: { setState: setStateMock },
+    }));
     const mod = await import('../standaloneWindowAuth');
     applyAuthIntent = mod.applyAuthIntent;
   });
 
-  describe('login intent', () => {
-    it('should set state to "login" when intent is "login"', () => {
-      applyAuthIntent('login');
-      expect(setStateMock).toHaveBeenCalledWith({ state: 'login' });
-      expect(setStateMock).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('register intent', () => {
-    it('should set state to "register" when intent is "register"', () => {
-      applyAuthIntent('register');
-      expect(setStateMock).toHaveBeenCalledWith({ state: 'register' });
-      expect(setStateMock).toHaveBeenCalledTimes(1);
-    });
+  it('should set state to "musicProvidersLogin" when intent is "musicProvidersLogin"', () => {
+    applyAuthIntent('musicProvidersLogin');
+    expect(setStateMock).toHaveBeenCalledWith({ state: 'musicProvidersLogin' });
+    expect(setStateMock).toHaveBeenCalledTimes(1);
   });
 
   describe('none / reset intents', () => {
@@ -77,49 +72,37 @@ describe('applyAuthIntent', () => {
       expect(setStateMock).toHaveBeenCalledWith({ state: 'maxExpand' });
       expect(setStateMock).toHaveBeenCalledTimes(1);
     });
-  });
 
-  describe('unrecognized intents', () => {
     it('should not call setState when intent is undefined', () => {
       applyAuthIntent(undefined);
       expect(setStateMock).not.toHaveBeenCalled();
     });
+  });
 
-    it('should not call setState when intent is an arbitrary string', () => {
-      applyAuthIntent('someOtherValue');
+  describe('unsupported intents (platform auth removed)', () => {
+    it('ignores legacy login/register intents', () => {
+      applyAuthIntent('login');
+      applyAuthIntent('register');
       expect(setStateMock).not.toHaveBeenCalled();
     });
 
-    it('should not call setState when intent is a number', () => {
+    it('ignores arbitrary non-none strings and non-string values', () => {
+      applyAuthIntent('arbitrary');
       applyAuthIntent(42);
-      expect(setStateMock).not.toHaveBeenCalled();
-    });
-
-    it('should not call setState when intent is an object', () => {
-      applyAuthIntent({ action: 'login' });
-      expect(setStateMock).not.toHaveBeenCalled();
-    });
-
-    it('should not call setState when intent is boolean true', () => {
+      applyAuthIntent({});
       applyAuthIntent(true);
       expect(setStateMock).not.toHaveBeenCalled();
     });
   });
 
   describe('branch isolation', () => {
-    it('should only invoke setState once per call for valid intents', () => {
-      applyAuthIntent('login');
-      expect(setStateMock).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle sequential calls independently', () => {
-      applyAuthIntent('login');
+    it('handles sequential calls independently', () => {
+      applyAuthIntent('musicProvidersLogin');
       applyAuthIntent('register');
       applyAuthIntent('none');
-      expect(setStateMock).toHaveBeenCalledTimes(3);
-      expect(setStateMock).toHaveBeenNthCalledWith(1, { state: 'login' });
-      expect(setStateMock).toHaveBeenNthCalledWith(2, { state: 'register' });
-      expect(setStateMock).toHaveBeenNthCalledWith(3, { state: 'maxExpand' });
+      expect(setStateMock).toHaveBeenCalledTimes(2);
+      expect(setStateMock).toHaveBeenNthCalledWith(1, { state: 'musicProvidersLogin' });
+      expect(setStateMock).toHaveBeenNthCalledWith(2, { state: 'maxExpand' });
     });
   });
 });

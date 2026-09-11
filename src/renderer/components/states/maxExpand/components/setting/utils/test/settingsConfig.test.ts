@@ -89,82 +89,66 @@ describe('normalizeExpandNavLayoutConfig', () => {
   it('preserves ordering from input', () => {
     const input = [
       { id: 'tools', visible: true },
-      { id: 'song', visible: true },
-      { id: 'overview', visible: true },
       { id: 'translation', visible: true },
       { id: 'performanceMonitor', visible: true },
     ];
     const result = mod.normalizeExpandNavLayoutConfig(input);
     expect(result.map((i) => i.id)).toEqual([
       'tools',
-      'song',
-      'overview',
       'translation',
       'performanceMonitor',
     ]);
   });
 
-  it('keeps overview visible when raw tries to hide it', () => {
-    const input = [{ id: 'overview', visible: false }];
-    const result = mod.normalizeExpandNavLayoutConfig(input);
-    const overview = result.find((i) => i.id === 'overview');
-    expect(overview?.visible).toBe(true);
-  });
-
-  it('keeps overview visible when every expand page is hidden', () => {
-    const input = mod.EXPAND_CONFIGURABLE_TABS.map((id) => ({ id, visible: false }));
-    const result = mod.normalizeExpandNavLayoutConfig(input);
-    expect(result.find((i) => i.id === 'overview')?.visible).toBe(true);
-    expect(result.filter((i) => i.visible)).toHaveLength(1);
-  });
-
-  it('respects visible=false for non-always-visible tabs', () => {
+  it('respects visible=false for configurable tabs', () => {
     const input = [
-      { id: 'overview', visible: true },
-      { id: 'song', visible: false },
       { id: 'tools', visible: false },
+      { id: 'translation', visible: true },
       { id: 'performanceMonitor', visible: true },
     ];
     const result = mod.normalizeExpandNavLayoutConfig(input);
-    expect(result.find((i) => i.id === 'song')?.visible).toBe(false);
     expect(result.find((i) => i.id === 'tools')?.visible).toBe(false);
+    expect(result.find((i) => i.id === 'translation')?.visible).toBe(true);
+    expect(result.find((i) => i.id === 'performanceMonitor')?.visible).toBe(true);
+  });
+
+  it('allows every page to be hidden', () => {
+    const input = mod.EXPAND_CONFIGURABLE_TABS.map((id) => ({ id, visible: false }));
+    const result = mod.normalizeExpandNavLayoutConfig(input);
+    expect(result.filter((i) => i.visible)).toHaveLength(0);
   });
 
   it('defaults visible to true when not specified', () => {
-    const input = [{ id: 'song' }];
+    const input = [{ id: 'translation' }];
     const result = mod.normalizeExpandNavLayoutConfig(input);
-    expect(result.find((i) => i.id === 'song')?.visible).toBe(true);
+    expect(result.find((i) => i.id === 'translation')?.visible).toBe(true);
   });
 
   it('treats visible=undefined as true (visible !== false)', () => {
-    const input = [{ id: 'song', visible: undefined }];
+    const input = [{ id: 'translation', visible: undefined }];
     const result = mod.normalizeExpandNavLayoutConfig(input);
-    expect(result.find((i) => i.id === 'song')?.visible).toBe(true);
+    expect(result.find((i) => i.id === 'translation')?.visible).toBe(true);
   });
 
   it('appends missing configurable tabs at the end with visible=true', () => {
-    const input = [{ id: 'song', visible: false }];
+    const input = [{ id: 'translation', visible: false }];
     const result = mod.normalizeExpandNavLayoutConfig(input);
-    // 'song' first, then missing tabs appended
     const ids = result.map((i) => i.id);
-    expect(ids[0]).toBe('song');
-    // overview, tools, translation, performanceMonitor should be appended
-    expect(ids).toContain('overview');
+    expect(ids[0]).toBe('translation');
     expect(ids).toContain('tools');
-    expect(ids).toContain('translation');
     expect(ids).toContain('performanceMonitor');
     expect(result.length).toBe(mod.EXPAND_CONFIGURABLE_TABS.length);
   });
 
   it('deduplicates by id, keeping the first occurrence', () => {
     const input = [
-      { id: 'song', visible: true },
-      { id: 'song', visible: false },
+      { id: 'translation', visible: true },
+      { id: 'translation', visible: false },
     ];
     const result = mod.normalizeExpandNavLayoutConfig(input);
-    const songEntries = result.filter((i) => i.id === 'song');
-    expect(songEntries).toHaveLength(1);
-    expect(songEntries[0].visible).toBe(true);
+    const entries = result.filter((i) => i.id === 'translation');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].visible).toBe(true);
   });
 
   it('skips non-object items in the array', () => {
@@ -173,10 +157,10 @@ describe('normalizeExpandNavLayoutConfig', () => {
       undefined,
       'string',
       42,
-      { id: 'song', visible: true },
+      { id: 'translation', visible: true },
     ];
     const result = mod.normalizeExpandNavLayoutConfig(input);
-    expect(result.find((i) => i.id === 'song')?.visible).toBe(true);
+    expect(result.find((i) => i.id === 'translation')?.visible).toBe(true);
   });
 
   it('skips items with non-string id', () => {
@@ -192,16 +176,16 @@ describe('normalizeExpandNavLayoutConfig', () => {
   it('skips items with id not in EXPAND_CONFIGURABLE_TABS', () => {
     const input = [
       { id: 'unknownTab', visible: true },
-      { id: 'song', visible: true },
+      { id: 'translation', visible: true },
     ];
     const result = mod.normalizeExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'unknownTab')).toBeUndefined();
-    expect(result.find((i) => i.id === 'song')?.visible).toBe(true);
+    expect(result.find((i) => i.id === 'translation')?.visible).toBe(true);
   });
 
   it('returns all configurable tabs even when only partial input given', () => {
     const input = [
-      { id: 'song', visible: false },
+      { id: 'translation', visible: false },
       { id: 'tools', visible: false },
     ];
     const result = mod.normalizeExpandNavLayoutConfig(input);
@@ -217,7 +201,6 @@ describe('normalizeExpandNavLayoutConfig', () => {
     const result2 = mod.normalizeExpandNavLayoutConfig(null);
     expect(result1).toEqual(result2);
     expect(result1).not.toBe(result2);
-    // Mutating one should not affect the other
     result1[0].visible = false;
     expect(result2[0].visible).toBe(true);
   });
@@ -264,24 +247,25 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
 
   it('preserves ordering from input', () => {
     const input = [
-      { id: 'miniGame', visible: true },
       { id: 'todo', visible: true },
-      { id: 'aiChat', visible: true },
       { id: 'album', visible: true },
+      { id: 'urlFavorites', visible: true },
+      { id: 'mail', visible: true },
     ];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
-    expect(result.map((i) => i.id).slice(0, 4)).toEqual(['miniGame', 'todo', 'aiChat', 'album']);
+    expect(result.map((i) => i.id).slice(0, 4)).toEqual(['todo', 'album', 'urlFavorites', 'mail']);
   });
 
-  it('allows previously fixed tabs to be hidden', () => {
+  it('allows tabs to be hidden', () => {
     const input = [
-      { id: 'aiChat', visible: false },
-      { id: 'miniGame', visible: false },
-      { id: 'todo', visible: true },
+      { id: 'todo', visible: false },
+      { id: 'album', visible: false },
+      { id: 'mail', visible: true },
     ];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
-    expect(result.find((i) => i.id === 'aiChat')?.visible).toBe(false);
-    expect(result.find((i) => i.id === 'miniGame')?.visible).toBe(false);
+    expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
+    expect(result.find((i) => i.id === 'album')?.visible).toBe(false);
+    expect(result.find((i) => i.id === 'mail')?.visible).toBe(true);
   });
 
   it('respects visible=false when at least one page remains visible', () => {
@@ -289,7 +273,7 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
       { id: 'todo', visible: false },
       { id: 'album', visible: false },
       { id: 'mail', visible: false },
-      { id: 'aiChat', visible: true },
+      { id: 'toolbox', visible: true },
     ];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
@@ -304,10 +288,9 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
   });
 
   it('defaults missing tabs to visible=true', () => {
-    const input = [{ id: 'todo', visible: false }, { id: 'aiChat', visible: true }];
+    const input = [{ id: 'todo', visible: false }];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
-    // All other non-always-visible tabs should default to true
     expect(result.find((i) => i.id === 'urlFavorites')?.visible).toBe(true);
     expect(result.find((i) => i.id === 'album')?.visible).toBe(true);
     expect(result.find((i) => i.id === 'mail')?.visible).toBe(true);
@@ -335,7 +318,7 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
   });
 
   it('skips non-object items in the array', () => {
-    const input = [null, undefined, 'string', 42, { id: 'todo', visible: false }, { id: 'aiChat', visible: true }];
+    const input = [null, undefined, 'string', 42, { id: 'todo', visible: false }, { id: 'album', visible: true }];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
   });
@@ -361,7 +344,7 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
   });
 
   it('always returns all configurable tabs', () => {
-    const input = [{ id: 'todo', visible: false }, { id: 'aiChat', visible: true }];
+    const input = [{ id: 'todo', visible: false }, { id: 'album', visible: true }];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.length).toBe(mod.MAXEXPAND_CONFIGURABLE_TABS.length);
     mod.MAXEXPAND_CONFIGURABLE_TABS.forEach((tab) => {

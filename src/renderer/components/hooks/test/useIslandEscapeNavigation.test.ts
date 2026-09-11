@@ -31,7 +31,6 @@ describe('getEscapeNavigationTarget', () => {
   it('returns the previous interactive state for Escape navigation', () => {
     expect(getEscapeNavigationTarget('maxExpand')).toBe('expanded');
     expect(getEscapeNavigationTarget('expanded')).toBe('hover');
-    expect(getEscapeNavigationTarget('questionnaire')).toBe('hover');
     expect(getEscapeNavigationTarget('hover')).toBe('idle');
   });
 
@@ -39,5 +38,6 @@ describe('getEscapeNavigationTarget', () => {
     expect(getEscapeNavigationTarget('idle')).toBeNull();
     expect(getEscapeNavigationTarget('notification')).toBeNull();
     expect(getEscapeNavigationTarget('lyrics')).toBeNull();
+    expect(getEscapeNavigationTarget('questionnaire')).toBeNull();
   });
 });

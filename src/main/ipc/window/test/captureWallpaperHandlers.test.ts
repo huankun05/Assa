@@ -26,9 +26,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { handleMock, onMock } = vi.hoisted(() => ({
+const { handleMock, onMock, onceMock } = vi.hoisted(() => ({
   handleMock: vi.fn(),
   onMock: vi.fn(),
+  onceMock: vi.fn(),
 }));
 
 const {
@@ -81,6 +82,7 @@ const { execFileMock, capturePrimaryDisplayPngMock } = vi.hoisted(() => ({
 vi.mock('electron', () => ({
   app: {
     getPath: appGetPathMock,
+    once: onceMock,
   },
   clipboard: {
     writeImage: clipboardWriteImageMock,
@@ -178,7 +180,7 @@ describe('capture and wallpaper ipc handlers', () => {
 
   it('handles capture screenshot start/system/copy/save/cancel', async () => {
     const closeCaptureWindow = vi.fn();
-    const startRegionScreenshot = vi.fn().mockResolvedValue(undefined);
+    const triggerScreenshot = vi.fn().mockResolvedValue(undefined);
     const captureWindow = {
       isDestroyed: vi.fn(() => false),
       hide: vi.fn(),
@@ -206,11 +208,11 @@ describe('capture and wallpaper ipc handlers', () => {
     registerCaptureIpcHandlers({
       getCaptureWindow: () => captureWindow as never,
       closeCaptureWindow,
-      startRegionScreenshot,
+      triggerScreenshot,
     });
 
     await expect(handleHandlers.get('system:screenshot:region:start')?.({})).resolves.toBe(true);
-    startRegionScreenshot.mockRejectedValueOnce(new Error('boom'));
+    triggerScreenshot.mockRejectedValueOnce(new Error('boom'));
     await expect(handleHandlers.get('system:screenshot:region:start')?.({})).resolves.toBe(false);
 
     await expect(handleHandlers.get('system:screenshot')?.({})).resolves.toBe(Buffer.from('abc').toString('base64'));
@@ -232,7 +234,7 @@ describe('capture and wallpaper ipc handlers', () => {
     expect(closeCaptureWindow).toHaveBeenCalledTimes(1);
 
     await onHandlers.get('capture-save')?.({}, { dataURL: 'data:image/png;base64,BBB' });
-    expect(captureWindow.hide).toHaveBeenCalled();
+    expect(closeCaptureWindow).toHaveBeenCalledTimes(2);
     expect(writeFileSyncMock).toHaveBeenCalledWith('C:/Pictures/s1.png', pngBuffer);
 
     onHandlers.get('capture-cancel')?.({});

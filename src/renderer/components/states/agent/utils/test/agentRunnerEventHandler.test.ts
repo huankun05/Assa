@@ -30,14 +30,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 /*  hoisted mocks                                                     */
 /* ------------------------------------------------------------------ */
 
-const { resolveMihtnelisLocalToolResultMock, isClientLocalToolNameMock, isHighRiskLocalToolNameMock } = vi.hoisted(() => ({
-  resolveMihtnelisLocalToolResultMock: vi.fn(async () => {}),
+const { resolveXiyueLocalToolResultMock, isClientLocalToolNameMock, isHighRiskLocalToolNameMock } = vi.hoisted(() => ({
+  resolveXiyueLocalToolResultMock: vi.fn(async () => {}),
   isClientLocalToolNameMock: vi.fn(() => false),
   isHighRiskLocalToolNameMock: vi.fn(() => false),
 }));
 
-vi.mock('../../../../../api/ai/mihtnelisAgentStream', () => ({
-  resolveMihtnelisLocalToolResult: resolveMihtnelisLocalToolResultMock,
+vi.mock('../../../../../api/ai/xiyueLocalTool', () => ({
+  resolveXiyueLocalToolResult: resolveXiyueLocalToolResultMock,
 }));
 
 vi.mock('../agentToolPolicy', () => ({
@@ -293,7 +293,7 @@ describe('createAgentStreamEventHandler', () => {
       expect(isClientLocalToolNameMock).toHaveBeenCalledWith('remote/api');
       // Should not reach setAuthPending or resolveMihtnelisLocalToolResult
       expect(opts.setAuthPending).not.toHaveBeenCalled();
-      expect(resolveMihtnelisLocalToolResultMock).not.toHaveBeenCalled();
+      expect(resolveXiyueLocalToolResultMock).not.toHaveBeenCalled();
     });
 
     it('returns early when tool is local but requestId is empty', async () => {
@@ -301,7 +301,7 @@ describe('createAgentStreamEventHandler', () => {
       const { handler, opts } = await loadHandler();
       handler(makeEvent('tool_call_request', { tool: 'local/fs_read', purpose: 'read', requestId: '' }));
       expect(opts.setAuthPending).not.toHaveBeenCalled();
-      expect(resolveMihtnelisLocalToolResultMock).not.toHaveBeenCalled();
+      expect(resolveXiyueLocalToolResultMock).not.toHaveBeenCalled();
     });
 
     it('sets authPending when authorizationRequired is true', async () => {
@@ -429,7 +429,7 @@ describe('createAgentStreamEventHandler', () => {
 
         // The execution is async (fire-and-forget), so wait for it
         await vi.waitFor(() => {
-          expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
         });
 
         expect(executeAgentLocalTool).toHaveBeenCalledWith({
@@ -438,13 +438,11 @@ describe('createAgentStreamEventHandler', () => {
           workspaces: ['/workspace'],
         });
 
-        expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalledWith({
-          token: 'test-token',
+        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-auto',
           success: true,
           result: { data: 42 },
           error: '',
-          durationMs: 100,
         });
       });
 
@@ -462,16 +460,14 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalledWith({
-          token: 'test-token',
+        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-noapi',
           success: false,
           result: {},
           error: 'LOCAL_RUNTIME_UNAVAILABLE',
-          durationMs: 0,
         });
       });
 
@@ -489,16 +485,14 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalledWith({
-          token: 'test-token',
+        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-undef',
           success: false,
           result: {},
           error: 'LOCAL_RUNTIME_UNAVAILABLE',
-          durationMs: 0,
         });
       });
 
@@ -519,16 +513,14 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalledWith({
-          token: 'test-token',
+        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-fail',
           success: false,
           result: {},
           error: 'FILE_NOT_FOUND',
-          durationMs: 50,
         });
       });
 
@@ -548,16 +540,14 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalledWith({
-          token: 'test-token',
+        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-null',
           success: false,
           result: undefined,
           error: '',
-          durationMs: 0,
         });
       });
 
@@ -581,16 +571,16 @@ describe('createAgentStreamEventHandler', () => {
           expect(executeAgentLocalTool).toHaveBeenCalled();
         });
 
-        expect(resolveMihtnelisLocalToolResultMock).not.toHaveBeenCalled();
+        expect(resolveXiyueLocalToolResultMock).not.toHaveBeenCalled();
       });
 
-      it('silently catches resolveMihtnelisLocalToolResult exceptions', async () => {
+      it('silently catches resolveXiyueLocalToolResult exceptions', async () => {
         isClientLocalToolNameMock.mockReturnValue(true);
         isHighRiskLocalToolNameMock.mockReturnValue(false);
 
         const executeAgentLocalTool = vi.fn(async () => ({ success: true, result: {}, durationMs: 0 }));
         ((globalThis as Record<string, Record<string, unknown>>).window).api = { executeAgentLocalTool };
-        resolveMihtnelisLocalToolResultMock.mockRejectedValueOnce(new Error('network fail'));
+        resolveXiyueLocalToolResultMock.mockRejectedValueOnce(new Error('network fail'));
 
         const { handler } = await loadHandler();
 
@@ -602,7 +592,7 @@ describe('createAgentStreamEventHandler', () => {
 
         // Should not throw
         await vi.waitFor(() => {
-          expect(resolveMihtnelisLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
         });
       });
     });

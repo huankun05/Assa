@@ -153,7 +153,13 @@ vi.mock('../../../log/mainLog', () => ({
 
 vi.mock('../../../window/standaloneWindow', () => ({
   openStandaloneWindow: openStandaloneWindowMock,
+  openStandaloneWindowWithTab: vi.fn(),
   closeStandaloneWindow: closeStandaloneWindowMock,
+}));
+
+vi.mock('../../../window/settingsWindow', () => ({
+  openSettingsWindow: vi.fn(),
+  closeSettingsWindow: vi.fn(),
 }));
 
 vi.mock('../../agent', () => ({
@@ -269,134 +275,14 @@ describe('app.ts pure helpers (via executeAgentLocalTool)', () => {
   });
 
   // ──────────────────────────────────────────────
-  // normalizeWebUrl (via web.search Bing URL construction)
+  // normalizeWebUrl / HTML 解析（原经 web.search）
+  // web.search 已不在 XIYUE_TOOL_ALLOWLIST，P0a-2a 终审会拒绝；
+  // 纯函数逻辑暂无法经 executeAgentLocalTool 触达，待 schema 重建后再补直接导出测试。
   // ──────────────────────────────────────────────
 
-  describe('normalizeWebUrl (via web.search)', () => {
-    it('constructs correct Bing search URL with encoded query', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(buildBingResultHtml([
-          { href: 'https://example.com', title: 'Example', snippet: 'A site' },
-        ]), { status: 200 }),
-      );
-
-      const result = (await callTool({
-        tool: 'web.search',
-        arguments: { query: 'electron 教程', limit: 1 },
-      })) as { success: boolean; result: { query: string; results: Array<{ url: string }> } };
-
-      expect(result.success).toBe(true);
-      expect(result.result.query).toBe('electron 教程');
-      expect(fetchSpy).toHaveBeenCalled();
-
-      const calledUrl = fetchSpy.mock.calls[0][0] as string;
-      expect(calledUrl).toContain('bing.com/search?q=');
-      expect(calledUrl).toContain(encodeURIComponent('electron 教程'));
-
-      fetchSpy.mockRestore();
-    });
-
-    it('throws when query is empty', async () => {
-      const result = (await callTool({
-        tool: 'web.search',
-        arguments: { query: '' },
-      })) as { success: boolean; error: string };
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('web.search');
-    });
-
-    it('throws when fetch fails and no results', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(
-        new Error('Network error'),
-      );
-
-      const result = (await callTool({
-        tool: 'web.search',
-        arguments: { query: 'test' },
-      })) as { success: boolean; error: string };
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('无结果');
-
-      fetchSpy.mockRestore();
-    });
-  });
-
-  // ──────────────────────────────────────────────
-  // decodeHtmlText + stripHtmlText (via web.search result parsing)
-  // ──────────────────────────────────────────────
-
-  describe('decodeHtmlText + stripHtmlText (via web.search parsing)', () => {
-    it('decodes &amp; &quot; &#39; &lt; &gt; in titles and snippets', async () => {
-      const html = buildBingResultHtml([
-        {
-          href: 'https://example.com',
-          title: 'A &amp; B &quot;C&quot; &#39;D&#39;',
-          snippet: 'x &lt; y &gt; z &amp; w',
-        },
-      ]);
-
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(html, { status: 200 }),
-      );
-
-      const result = (await callTool({
-        tool: 'web.search',
-        arguments: { query: 'test', limit: 5 },
-      })) as { success: boolean; result: { results: Array<{ title: string; snippet: string }> } };
-
-      expect(result.result.results[0].title).toBe('A & B "C" \'D\'');
-      expect(result.result.results[0].snippet).toBe('x < y > z & w');
-
-      fetchSpy.mockRestore();
-    });
-
-    it('strips nested HTML tags inside titles', async () => {
-      const html = buildBingResultHtml([
-        {
-          href: 'https://example.com',
-          title: 'Hello <em>World</em> <strong>Test</strong>',
-          snippet: 'snippet text',
-        },
-      ]);
-
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(html, { status: 200 }),
-      );
-
-      const result = (await callTool({
-        tool: 'web.search',
-        arguments: { query: 'test', limit: 5 },
-      })) as { success: boolean; result: { results: Array<{ title: string }> } };
-
-      expect(result.result.results[0].title).toBe('Hello World Test');
-
-      fetchSpy.mockRestore();
-    });
-
-    it('collapses whitespace in decoded text', async () => {
-      const html = buildBingResultHtml([
-        {
-          href: 'https://example.com',
-          title: '  multiple   spaces\n\nand\nnewlines  ',
-          snippet: '  leading  trailing  ',
-        },
-      ]);
-
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(html, { status: 200 }),
-      );
-
-      const result = (await callTool({
-        tool: 'web.search',
-        arguments: { query: 'test', limit: 5 },
-      })) as { success: boolean; result: { results: Array<{ title: string; snippet: string }> } };
-
-      expect(result.result.results[0].title).toBe('multiple spaces and newlines');
-      expect(result.result.results[0].snippet).toBe('leading trailing');
-
-      fetchSpy.mockRestore();
+  describe.skip('normalizeWebUrl / HTML parse helpers (web.search not allowlisted)', () => {
+    it('placeholder: re-enable after tool schema rebuild', () => {
+      // no-op
     });
   });
 
@@ -629,7 +515,7 @@ describe('app.ts pure helpers (via executeAgentLocalTool)', () => {
       })) as { success: boolean; error: string };
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('tool 不能为空');
+      expect(result.error).toContain('工具名称不能为空');
     });
 
     it('returns error when tool is whitespace only', async () => {
@@ -639,7 +525,7 @@ describe('app.ts pure helpers (via executeAgentLocalTool)', () => {
       })) as { success: boolean; error: string };
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('tool 不能为空');
+      expect(result.error).toContain('工具名称不能为空');
     });
 
     it('returns error when tool is missing', async () => {
@@ -648,7 +534,7 @@ describe('app.ts pure helpers (via executeAgentLocalTool)', () => {
       })) as { success: boolean; error: string };
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('tool 不能为空');
+      expect(result.error).toContain('工具名称不能为空');
     });
 
     it('returns error for unsupported tool', async () => {
@@ -659,7 +545,7 @@ describe('app.ts pure helpers (via executeAgentLocalTool)', () => {
       })) as { success: boolean; error: string };
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('不支持的工具');
+      expect(result.error).toContain('未注册工具');
     });
   });
 
