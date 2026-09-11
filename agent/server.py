@@ -412,6 +412,9 @@ def _audio_b64(path: Path | None) -> str:
 
 
 class Handler(BaseHTTPRequestHandler):
+    # HTTP/1.1：与 SSE/keep-alive 兼容更好（HTTP/1.0 无 Content-Length 时部分客户端会挂起读 body）
+    protocol_version = "HTTP/1.1"
+
     def _send(self, obj: dict, code: int = 200) -> None:
         data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -521,7 +524,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
+        self.send_header("Connection", "close")
         self.end_headers()
 
         def emit(event_type: str, payload: dict) -> None:
