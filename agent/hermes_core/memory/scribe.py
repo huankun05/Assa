@@ -78,6 +78,11 @@ class Scribe:
         # 关系/约定（规则 → instruction）
         (re.compile(r"(?:记住|别忘了)\s*([^，。！？\n]{1,40})"), "用户希望记住：{}", 0.78, CATEGORY_RULE, MEM_TYPE_INSTRUCTION),
         (re.compile(r"(?:答应我|约定)\s*([^，。□]{1,40})"), "用户约定的内容是：{}", 0.75, CATEGORY_RULE, MEM_TYPE_INSTRUCTION),
+        # 汐月桌面场景补充：项目/路径/工具
+        (re.compile(r"(?:我的)?项目(?:名)?(?:叫|是)\s*([^，。！？\n]{1,30})"), "用户的项目是{}", 0.74, CATEGORY_FACT, MEM_TYPE_PERSONA),
+        (re.compile(r"(?:工作目录|项目目录|工作区)(?:是|：|:)\s*([^，。！？\n]{1,80})"), "工作目录是{}", 0.72, CATEGORY_FACT, MEM_TYPE_PERSONA),
+        (re.compile(r"(?:我常用|我习惯用|用)\s*([A-Za-z][A-Za-z0-9+.\-]{1,20})\s*(?:写代码|开发|编程|办公)"),
+         "用户常用{}", 0.68, CATEGORY_PREFERENCE, MEM_TYPE_PERSONA),
     ]
 
     def __init__(

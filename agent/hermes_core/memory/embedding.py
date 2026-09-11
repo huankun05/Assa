@@ -114,7 +114,7 @@ def get_embedder(provider: str = "local_hash", **kwargs) -> Embedder:
     """工厂函数：按名称获取 Embedding 实现。
 
     Args:
-        provider: 方案名称，当前仅支持 'local_hash'
+        provider: local_hash | ollama
         **kwargs: 额外参数
 
     Returns:
@@ -122,7 +122,59 @@ def get_embedder(provider: str = "local_hash", **kwargs) -> Embedder:
     """
     if provider == "local_hash":
         return LocalHashEmbedder(**kwargs)
+    if provider == "ollama":
+        return OllamaEmbedder(**kwargs)
     raise ValueError(f"Unknown embedding provider: {provider}")
+
+
+class OllamaEmbedder(Embedder):
+    """Ollama /api/embeddings（默认 bge-m3，中文强）。
+
+    - 超时或失败时由调用方决定是否回退 LocalHashEmbedder
+    - dim 由 model 决定（bge-m3=1024）
+    """
+
+    def __init__(
+        self,
+        model: str = "bge-m3",
+        base_url: str = "http://127.0.0.1:11434",
+        timeout_s: float = 8.0,
+        dim: int = 1024,
+    ):
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+        self.timeout_s = timeout_s
+        self._dim = dim
+
+    @property
+    def dim(self) -> int:
+        return self._dim
+
+    def embed(self, text: str) -> list[float]:
+        text = (text or "").strip()
+        if not text:
+            return [0.0] * self._dim
+        try:
+            import json
+            import urllib.error
+            import urllib.request
+
+            payload = json.dumps({"model": self.model, "prompt": text}).encode("utf-8")
+            req = urllib.request.Request(
+                f"{self.base_url}/api/embeddings",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:
+                obj = json.loads(resp.read().decode("utf-8"))
+            vec = obj.get("embedding") or []
+            if not isinstance(vec, list) or not vec:
+                raise RuntimeError("empty embedding")
+            self._dim = len(vec)
+            return [float(x) for x in vec]
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(f"ollama embed failed: {exc}") from exc
 
 
 # 默认 embedder 单例
@@ -130,8 +182,38 @@ _default_embedder: Embedder | None = None
 
 
 def get_default_embedder() -> Embedder:
-    """获取默认 embedder（懒加载）。"""
+    """获取默认 embedder（懒加载）。
+
+    优先 Ollama bge-m3（XIYUE_EMBED=local_hash 可强制离线哈希）；
+    Ollama 不可用时自动回退 LocalHashEmbedder。
+    """
     global _default_embedder
-    if _default_embedder is None:
-        _default_embedder = LocalHashEmbedder()
+    if _default_embedder is not None:
+        return _default_embedder
+
+    import os
+
+    pref = (os.environ.get("XIYUE_EMBED") or "ollama").strip().lower()
+    if pref != "local_hash":
+        try:
+            oll = OllamaEmbedder(
+                model=os.environ.get("XIYUE_EMBED_MODEL") or "bge-m3",
+                base_url=os.environ.get("XIYUE_OLLAMA_URL") or "http://127.0.0.1:11434",
+                timeout_s=float(os.environ.get("XIYUE_EMBED_TIMEOUT") or "8"),
+            )
+            # 探活一次，避免每条记忆都踩超时
+            probe = oll.embed("ping")
+            if probe:
+                _default_embedder = oll
+                return _default_embedder
+        except Exception:
+            pass
+
+    _default_embedder = LocalHashEmbedder()
     return _default_embedder
+
+
+def reset_default_embedder_cache() -> None:
+    """测试/配置变更时重置默认 embedder。"""
+    global _default_embedder
+    _default_embedder = None

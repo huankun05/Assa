@@ -467,6 +467,7 @@ class MemoryService:
         *,
         llm_fn: Callable[[list[dict[str, str]],], str] | None = None,
         use_llm: bool = False,
+        emotion_snapshot: dict[str, float] | None = None,
     ) -> list[dict[str, Any]]:
         """从一轮对话中抽取并保存记忆（离线优先）。
 
@@ -475,6 +476,7 @@ class MemoryService:
             assistant_text: 助手回复（可选，提升抽取质量）
             llm_fn: 可选同步 LLM 调用 (messages) -> str；提供时且 use_llm=True 启用 LLM 抽取
             use_llm: 是否启用 LLM 抽取（默认 False，使用离线规则抽取）
+            emotion_snapshot: 抽取时的情绪 PAD（写入碎片 meta）
 
         Returns:
             已保存的 L1 原子记忆的 API 字典列表（L0 原始对话落盘为副作用，不返回）
@@ -494,7 +496,9 @@ class MemoryService:
         if not items:
             # 离线规则抽取（无网络/模型依赖，稳定可用）
             try:
-                frags = self._scribe.extract_from_exchange(user_text, assistant_text)
+                frags = self._scribe.extract_from_exchange(
+                    user_text, assistant_text, emotion_snapshot=emotion_snapshot
+                )
                 items = [
                     {
                         "content": f.content,

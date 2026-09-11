@@ -81,15 +81,16 @@ class Librarian:
 
         query_vec = self.embedder.embed(query)
         query_tokens = set(self._tokenize(query))
+        qdim = len(query_vec)
 
         results: list[SearchResult] = []
         for frag in candidates:
-            # 向量相似度
-            frag_vec = (
-                frag.embedding
-                if frag.embedding
-                else self.embedder.embed(frag.content)
-            )
+            # 向量相似度；维度不一致（如从 local_hash 切到 bge-m3）则现场重嵌入
+            frag_vec = frag.embedding if frag.embedding else []
+            if frag_vec and len(frag_vec) != qdim:
+                frag_vec = []
+            if not frag_vec:
+                frag_vec = self.embedder.embed(frag.content)
             vector_score = cosine_similarity(query_vec, frag_vec)
 
             # 关键词重叠分数

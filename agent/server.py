@@ -144,13 +144,43 @@ def _memory_injection_block(query: str = "") -> str:
 
 
 def _memory_store_turn(user_text: str, assistant_text: str) -> None:
+    """沉淀记忆：hermes 优先；成功则不再写旧 working_memory（避免双写）。"""
     svc = _get_memory_service()
     if svc is None:
+        try:
+            _extract_and_store_facts(user_text, assistant_text)
+        except Exception:
+            pass
         return
     try:
-        svc.extract_and_store(user_text, assistant_text, use_llm=False)
+        snap = None
+        state = _get_emotion_state()
+        if state is not None:
+            try:
+                snap = {
+                    "pleasure": float(state.pad.pleasure),
+                    "arousal": float(state.pad.arousal),
+                    "dominance": float(state.pad.dominance),
+                }
+            except Exception:
+                snap = None
+        items = svc.extract_and_store(
+            user_text,
+            assistant_text,
+            use_llm=False,
+            emotion_snapshot=snap,
+        )
+        # 空闲自学习：累计 L1 后聚合 L2 场景 / L3 画像
+        try:
+            svc.maybe_autogenerate(new_count=len(items or []))
+        except Exception as e:
+            print(f"[xiyue-agent] 记忆自学习失败: {e}", flush=True)
     except Exception as e:
         print(f"[xiyue-agent] 记忆写入失败: {e}", flush=True)
+        try:
+            _extract_and_store_facts(user_text, assistant_text)
+        except Exception:
+            pass
 
 
 def _emotion_on_user(text: str) -> str:
@@ -475,12 +505,8 @@ def _llm_reply(user_text: str) -> str:
     _history.append({"role": "assistant", "content": reply})
     _save_history(_history)
 
-    # hermes 记忆沉淀（优先）；失败回退旧启发式
+    # hermes 记忆沉淀（内部含 working_memory 兜底，此处不再重复 _extract_and_store_facts）
     _memory_store_turn(user_text, reply)
-    try:
-        _extract_and_store_facts(user_text, reply)
-    except Exception:
-        pass
 
     return reply
 
@@ -690,10 +716,6 @@ class Handler(BaseHTTPRequestHandler):
             _save_history(_history)
 
             _memory_store_turn(text, reply)
-            try:
-                _extract_and_store_facts(text, reply)
-            except Exception:
-                pass
         except Exception as e:
             print(f"[server] /chat/stream 处理异常: {e}", flush=True)
             emit("error", {"message": str(e)})
