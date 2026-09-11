@@ -193,7 +193,7 @@ def _strip_think(text: str) -> str:
 
 
 def _ollama_chat(model: str, messages: list[dict], tools: list[dict] | None = None):
-    """统一 LLM 调用。
+    """统一 LLM 调用（非流式）。
 
     think=False：旧实现让 qwen3 先生成思考再剥离，纯浪费首字延迟；不支持该参数的模型自动回退。
     """
@@ -210,18 +210,73 @@ def _ollama_chat(model: str, messages: list[dict], tools: list[dict] | None = No
         raise
 
 
+def _ollama_chat_stream(
+    model: str,
+    messages: list[dict],
+    tools: list[dict] | None = None,
+    on_content=None,
+):
+    """流式 LLM 调用。on_content(text) 在收到内容增量时调用（可选）。
+
+    返回与 _ollama_chat 相同结构的 message 汇总（content + tool_calls）。
+    """
+    import ollama  # 局部导入，避免启动期依赖
+
+    kwargs: dict = {"model": model, "messages": messages, "stream": True}
+    if tools is not None:
+        kwargs["tools"] = tools
+    try:
+        stream = ollama.chat(**kwargs, think=False)
+    except Exception as e:
+        if "think" in str(e).lower():
+            stream = ollama.chat(**kwargs)
+        else:
+            raise
+
+    content_parts: list[str] = []
+    tool_calls: list[dict] = []
+    for part in stream or []:
+        msg = part.get("message") or {}
+        content = msg.get("content") or ""
+        if content:
+            content_parts.append(content)
+            if on_content is not None:
+                on_content(content)
+        tcs = msg.get("tool_calls") or []
+        if tcs:
+            tool_calls.extend(tcs)
+
+    return {
+        "message": {
+            "content": "".join(content_parts),
+            "tool_calls": tool_calls,
+        }
+    }
+
+
 def _run_agent_loop(messages: list[dict], emit) -> str:
-    """工具化 agent 循环：ollama + tools，最多 _MAX_TOOL_ROUNDS 轮。
+    """工具化 agent 循环：ollama 真流式 + tools，最多 _MAX_TOOL_ROUNDS 轮。
 
     emit(event_type, payload) 由调用方（SSE 处理器）注入。
+    内容增量实时经 chunk 下发；若随后出现 tool_calls，进入工具轮（UI 已在 toolCalling 态）。
     返回最终回答文本。
     """
     model = LLM_MODEL or _load_model_default()
+    final_reply = ""
+
     for _round in range(_MAX_TOOL_ROUNDS):
-        resp = _ollama_chat(model, messages, TOOL_DEFS)
+        parts: list[str] = []
+
+        def on_content(text: str, _sink=parts) -> None:
+            _sink.append(text)
+            # 真流式：逐增量推送。qwen 在请求工具时通常 content 为空，混发时也会进入 toolCalling UI。
+            emit("chunk", {"text": text})
+
+        resp = _ollama_chat_stream(model, messages, TOOL_DEFS, on_content=on_content)
         msg = resp["message"]
-        content = _strip_think(msg.get("content") or "")
+        content = _strip_think(msg.get("content") or "".join(parts))
         tool_calls = msg.get("tool_calls") or []
+        final_reply = content
         if not tool_calls:
             return content
 
@@ -249,9 +304,12 @@ def _run_agent_loop(messages: list[dict], emit) -> str:
                     result = {"success": False, "result": {}, "error": "工具执行超时或未获授权"}
             messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False)})
 
-    # 超出轮数：兜底再问一次
-    resp = _ollama_chat(model, messages, TOOL_DEFS)
-    return _strip_think(resp["message"].get("content") or "")
+    # 超出轮数：兜底再问一次（真流式）
+    def on_final(text: str) -> None:
+        emit("chunk", {"text": text})
+
+    resp = _ollama_chat_stream(model, messages, TOOL_DEFS, on_content=on_final)
+    return _strip_think(resp["message"].get("content") or final_reply)
 
 
 def _load_persona() -> str:
@@ -358,12 +416,14 @@ def _extract_and_store_facts(user_text: str, reply: str) -> None:
 
 
 def _tts(text: str) -> Path | None:
-    """已迁移至 voice.tts.speak()。"""
-    return _tts_module.speak(text)
+    """已迁移至 voice.tts。默认内存合成不落盘；XIYUE_TTS_DISK=1 时写 TTS_DIR。"""
+    if os.environ.get("XIYUE_TTS_DISK", "").strip() in ("", "0", "false", "False"):
+        return _tts_module.speak(text, keep_file=False)
+    return _tts_module.speak(text, keep_file=True)
 
 
 def _audio_b64(path: Path | None) -> str:
-    """读取 wav 转 base64，已迁移至 voice.tts.to_base64()。"""
+    """读取 wav 转 base64；内存合成时 path 为 None，走 last_bytes 旁路。"""
     return _tts_module.to_base64(path)
 
 
@@ -516,11 +576,7 @@ class Handler(BaseHTTPRequestHandler):
             emit("think", {"text": ""})
             reply = _run_agent_loop(messages, emit)
 
-            # 流式输出回答
-            step = 8
-            for i in range(0, len(reply), step):
-                emit("chunk", {"text": reply[i:i + step]})
-                time.sleep(0.02)
+            # 回答已由 agent 循环真流式 chunk 下发；此处只做 TTS + final
             audio = _tts(reply) if reply else None
             emit("final", {
                 "reply": reply,

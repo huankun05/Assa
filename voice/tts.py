@@ -74,31 +74,63 @@ def _synthesize_pyttsx3(text: str, out: Path) -> Path | None:
         return None
 
 
-def speak(text: str, engine: str = "kokoro") -> Path | None:
-    """合成 wav 到 TTS_DIR，返回路径；全部失败返回 None。"""
+def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None) -> Path | None:
+    """合成语音。
+
+    keep_file=True：写入 TTS_DIR 并返回路径。
+    keep_file=False：默认（推荐）——临时目录合成后删除，业务目录不落盘；返回 None。
+    keep_file=None：看环境变量 XIYUE_TTS_DISK（非空且非 0 时落盘）。
+    """
     if not text or not str(text).strip():
         return None
 
-    out = TTS_DIR / f"out_{int(time.time() * 1000)}.wav"
+    import os
+    import tempfile
 
-    if engine == "cosyvoice":
-        # TODO: 纳西妲 CosyVoice HTTP 客户端（地址待配置）
-        pass
+    if keep_file is None:
+        keep_file = os.environ.get("XIYUE_TTS_DISK", "").strip() not in ("", "0", "false", "False")
 
-    # Phase 0：kokoro -> pyttsx3
-    result = _synthesize_kokoro(text, out)
-    if result is not None:
+    if keep_file:
+        out = TTS_DIR / f"out_{int(time.time() * 1000)}.wav"
+        result = _synthesize_kokoro(text, out)
+        if result is None:
+            result = _synthesize_pyttsx3(text, out)
         return result
-    return _synthesize_pyttsx3(text, out)
+
+    with tempfile.TemporaryDirectory(prefix="xiyue-tts-") as td:
+        out = Path(td) / "out.wav"
+        result = _synthesize_kokoro(text, out)
+        if result is None:
+            result = _synthesize_pyttsx3(text, out)
+        if result is None or not result.exists():
+            return None
+        global last_bytes
+        last_bytes = result.read_bytes()
+    return None
+
+
+# 最近一次内存合成的 wav 字节（keep_file=False 时使用）
+last_bytes: bytes | None = None
+
+
+def synthesize_bytes(text: str, engine: str = "kokoro") -> bytes | None:
+    """在内存/临时目录中合成 wav 字节，不写业务目录。全部失败返回 None。"""
+    speak(text, engine=engine, keep_file=False)
+    return last_bytes
 
 
 def to_base64(path: Path | None) -> str:
     """读取 wav 转 base64（供 Electron 渲染层直接播放），失败返回空串。"""
-    if path is None or not path.exists():
-        return ""
-    try:
-        import base64
+    import base64
 
-        return base64.b64encode(path.read_bytes()).decode("ascii")
-    except Exception:
-        return ""
+    if path is not None and path.exists():
+        try:
+            return base64.b64encode(path.read_bytes()).decode("ascii")
+        except Exception:
+            return ""
+    if last_bytes:
+        try:
+            return base64.b64encode(last_bytes).decode("ascii")
+        except Exception:
+            return ""
+    return ""

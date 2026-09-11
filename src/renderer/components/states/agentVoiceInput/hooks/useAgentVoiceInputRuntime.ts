@@ -29,6 +29,8 @@ import {
   AGENT_VOICE_AUDIO_CONSTRAINTS,
   AGENT_VOICE_FRAME_SIZE,
   AGENT_VOICE_MAX_RECORDING_MS,
+  AGENT_VOICE_RMS_SILENCE_THRESHOLD,
+  AGENT_VOICE_SILENCE_STOP_MS,
 } from '../config/agentVoiceInputConfig';
 import { getAudioContextCtor } from '../utils/agentVoiceInputAudio';
 import { pushFloat32Frames } from '../utils/agentVoiceInputPcm';
@@ -87,6 +89,10 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
     let pcmBuffer: Int16Array[] = [];
     let hasError = false;
     let autoCutoffTimer: ReturnType<typeof setTimeout> | null = null;
+    /** 连续静音起始时间戳；听到语音时清零。0 = 尚未检测到静音段 */
+    let silenceStartedAt = 0;
+    /** 是否已听到过语音（避免开麦即静音被误停） */
+    let speechSeen = false;
 
     const stopAll = (): void => {
       active = false;
@@ -101,6 +107,15 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
         mediaStream = null;
       }
       if (moduleSttCleanup === stopAll) moduleSttCleanup = null;
+    };
+
+    /** 停止录音并退出语音态：卸载组件后 useEffect cleanup 会做转写 */
+    const finishRecording = (): void => {
+      if (!active) return;
+      stopAll();
+      requestAnimationFrame(() => {
+        useIslandStore.getState().setIdle();
+      });
     };
 
     if (moduleSttCleanup) {
@@ -137,6 +152,26 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
           if (!active) return;
           const input = event.inputBuffer.getChannelData(0);
           if (!input || input.length === 0) return;
+
+          // RMS 端点检测：说完约 1.5s 自动停止（零新依赖，帧级计算）
+          let sumSq = 0;
+          for (let i = 0; i < input.length; i += 1) {
+            sumSq += input[i] * input[i];
+          }
+          const rms = Math.sqrt(sumSq / input.length);
+          if (rms >= AGENT_VOICE_RMS_SILENCE_THRESHOLD) {
+            speechSeen = true;
+            silenceStartedAt = 0;
+          } else if (speechSeen) {
+            if (silenceStartedAt === 0) {
+              silenceStartedAt = performance.now();
+            } else if (performance.now() - silenceStartedAt >= AGENT_VOICE_SILENCE_STOP_MS) {
+              setStatusText('已捕捉到完整语音');
+              finishRecording();
+              return;
+            }
+          }
+
           const samples = new Float32Array(input.length) as Float32Array<ArrayBufferLike>;
           samples.set(input);
           pending = pushFloat32Frames({
@@ -154,7 +189,7 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
         autoCutoffTimer = setTimeout(() => {
           if (!active) return;
           setStatusText('已达最大录音时长（1分钟）');
-          stopAll();
+          finishRecording();
         }, AGENT_VOICE_MAX_RECORDING_MS);
       } catch {
         setStatusText('麦克风权限被拒绝或不可用');

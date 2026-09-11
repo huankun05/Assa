@@ -28,6 +28,10 @@ export const AGENT_VOICE_INITIAL_STATUS = '正在连接ASR服务';
 export const AGENT_VOICE_STT_LANGUAGE = 'zh-CN';
 export const AGENT_VOICE_FRAME_SIZE = 320;
 export const AGENT_VOICE_MAX_RECORDING_MS = 60_000;
+/** RMS 静音判定：低于该阈值视为静音帧（噪声抑制开启后经验初值） */
+export const AGENT_VOICE_RMS_SILENCE_THRESHOLD = 0.012;
+/** 连续静音超过该时长则自动停止录音并转写 */
+export const AGENT_VOICE_SILENCE_STOP_MS = 1500;
 
 export const AGENT_VOICE_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1,
