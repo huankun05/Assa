@@ -183,22 +183,85 @@ def _memory_store_turn(user_text: str, assistant_text: str) -> None:
             pass
 
 
+_PERSONALITY = None
+
+
+def _get_personality():
+    """汐月默认 HEXACO（与人设「直接、有分寸、不谄媚」对齐）。"""
+    global _PERSONALITY
+    if _PERSONALITY is not None:
+        return _PERSONALITY
+    try:
+        from agent.hermes_core.soul.personality import HEXACOPersonality
+
+        p = HEXACOPersonality(
+            honesty_humility=0.7,
+            emotionality=0.55,
+            extraversion=0.6,
+            agreeableness=0.72,
+            conscientiousness=0.68,
+            openness=0.7,
+        )
+        _PERSONALITY = p
+        return p
+    except Exception:
+        return None
+
+
+def _soul_style_block() -> str:
+    p = _get_personality()
+    if p is None:
+        return ""
+    try:
+        return "人格侧写：" + (p.describe() or "").strip().rstrip("。")
+    except Exception:
+        return ""
+
+
+def _circadian_hint() -> str:
+    try:
+        from agent.hermes_core.time.circadian import CircadianRhythm
+
+        cr = CircadianRhythm()
+        style = cr.style_modifier()
+        tone = (style or {}).get("tone", "")
+        tod = CircadianRhythm.get_time_of_day()
+        if tone:
+            return f"时段={tod}，说话风格偏「{tone}」"
+        return f"时段={tod}"
+    except Exception:
+        return ""
+
+
 def _emotion_on_user(text: str) -> str:
-    """按用户文本更新 PAD，并返回用于 system prompt 的中文描述。"""
+    """按用户文本更新 PAD（叠加人格/昼夜），并返回 system 用中文描述。"""
     emo = get_current_emotion()
     state = _get_emotion_state()
     if state is None:
         return emo
     try:
+        p = _get_personality()
+        if p is not None and state.baseline is None:
+            try:
+                state.baseline = p.pad_baseline_influence()
+            except Exception:
+                pass
         state.apply_event(text or "", intensity=0.35)
         state.drift()
         desc = state.describe()
-        # 同步到 identity 层（仅表达，不影响权限）
+        extra = []
+        soul = _soul_style_block()
+        if soul:
+            extra.append(soul)
+        circ = _circadian_hint()
+        if circ:
+            extra.append(circ)
+        if extra:
+            desc = (desc or "") + "；" + "；".join(extra)
         from agent.identity import set_current_emotion
 
-        label = state.get_mood_label()
         try:
-            set_current_emotion(label)
+            set_current_emotion(state.get_mood_label())
         except Exception:
             pass
         return desc or emo
@@ -784,9 +847,16 @@ def main() -> None:
             print(f"[xiyue-agent] 清理过期工作记忆 {removed} 条", flush=True)
     except Exception as e:
         print(f"[xiyue-agent] 清理过期工作记忆失败: {e}", flush=True)
-    # 预热 hermes 记忆（避免首条对话卡在表初始化）
+    # 预热 hermes 记忆 + L0 裁剪
     try:
-        _get_memory_service()
+        svc = _get_memory_service()
+        if svc is not None:
+            try:
+                removed = svc.store.prune_old_l0(keep=200)
+                if removed:
+                    print(f"[xiyue-agent] L0 裁剪 {removed} 条", flush=True)
+            except Exception:
+                pass
     except Exception as e:
         print(f"[xiyue-agent] hermes 记忆预热失败: {e}", flush=True)
     resolved_model = LLM_MODEL or _load_model_default()

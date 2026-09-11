@@ -73,7 +73,10 @@ class Librarian:
         if not query:
             return []
 
-        candidates = self.store.search_like(query, limit=self.DEFAULT_CANDIDATE_LIMIT)
+        # FTS5 优先（中文 trigram），失败/无结果回退 LIKE
+        candidates = self.store.search_fts(query, limit=self.DEFAULT_CANDIDATE_LIMIT)
+        if not candidates:
+            candidates = self.store.search_like(query, limit=self.DEFAULT_CANDIDATE_LIMIT)
         if layer is not None:
             candidates = [c for c in candidates if c.layer == layer]
         if not candidates:

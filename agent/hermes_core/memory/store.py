@@ -72,6 +72,7 @@ def init_tables() -> None:
 
     先以「仅原始列」创建表（兼容已存在的旧表），再迁移补齐新列，
     最后统一创建索引——避免 CREATE INDEX 引用尚未新增的列而报错。
+    FTS5（trigram，中文友好）可用时建全文索引并挂触发器。
     """
     with get_db() as db:
         db.executescript(
@@ -105,6 +106,58 @@ def init_tables() -> None:
             CREATE INDEX IF NOT EXISTS idx_memory_created_at ON memory_fragments(created_at);
             """
         )
+        _init_fts(db)
+
+
+_FTS_AVAILABLE = False
+
+
+def fts_enabled() -> bool:
+    return _FTS_AVAILABLE
+
+
+def _init_fts(db: sqlite3.Connection) -> None:
+    """创建 FTS5 索引（trigram，适合中文无空格分词）。不可用则静默降级 LIKE。"""
+    global _FTS_AVAILABLE
+    try:
+        db.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts
+            USING fts5(content, content='', content_rowid='id', tokenize='trigram')
+            """
+        )
+        # 外部内容同步触发器
+        db.executescript(
+            """
+            CREATE TRIGGER IF NOT EXISTS memory_fts_ai AFTER INSERT ON memory_fragments BEGIN
+                INSERT INTO memory_fts(rowid, content) VALUES (new.id, new.content);
+            END;
+            CREATE TRIGGER IF NOT EXISTS memory_fts_ad AFTER DELETE ON memory_fragments BEGIN
+                INSERT INTO memory_fts(memory_fts, rowid, content)
+                VALUES ('delete', old.id, old.content);
+            END;
+            CREATE TRIGGER IF NOT EXISTS memory_fts_au AFTER UPDATE OF content ON memory_fragments BEGIN
+                INSERT INTO memory_fts(memory_fts, rowid, content)
+                VALUES ('delete', old.id, old.content);
+                INSERT INTO memory_fts(rowid, content) VALUES (new.id, new.content);
+            END;
+            """
+        )
+        # 增量：把尚未入索引的行补齐（只对空索引或新建库做一次全量）
+        n_fts = db.execute("SELECT count(*) FROM memory_fts").fetchone()[0]
+        n_frag = db.execute("SELECT count(*) FROM memory_fragments").fetchone()[0]
+        if n_frag > 0 and n_fts == 0:
+            db.execute(
+                "INSERT INTO memory_fts(rowid, content) SELECT id, content FROM memory_fragments"
+            )
+        _FTS_AVAILABLE = True
+        logger_migrate(f"memory_fts (trigram) ready fragments={n_frag} fts={n_fts}")
+    except sqlite3.OperationalError as e:
+        _FTS_AVAILABLE = False
+        logger_migrate(f"FTS5 不可用，降级 LIKE: {e}")
+    except Exception as e:  # noqa: BLE001
+        _FTS_AVAILABLE = False
+        logger_migrate(f"FTS 初始化失败，降级 LIKE: {e}")
 
 
 def _migrate_schema(db: sqlite3.Connection) -> None:
@@ -417,6 +470,38 @@ class MemoryStore:
                 ids,
             )
         return len(ids)
+
+    def search_fts(
+        self,
+        query: str,
+        limit: int = 50,
+    ) -> list[MemoryFragment]:
+        """FTS5 全文检索（trigram）。不可用或无命中时返回空列表，由调用方回退 LIKE。"""
+        query = (query or "").strip()
+        if not query or not _FTS_AVAILABLE:
+            return []
+        # trigram 需要至少 3 个字符；过短则交给 LIKE
+        if len(query.replace(" ", "")) < 3:
+            return []
+        try:
+            # 转义 FTS 查询：用双引号包住整段，避免特殊符号
+            fts_q = '"' + query.replace('"', '""') + '"'
+            with get_db() as db:
+                rows = db.execute(
+                    """
+                    SELECT m.* FROM memory_fts f
+                    JOIN memory_fragments m ON m.id = f.rowid
+                    WHERE memory_fts MATCH ?
+                      AND m.character_id = ? AND m.user_id = ?
+                    ORDER BY bm25(memory_fts), m.importance DESC
+                    LIMIT ?
+                    """,
+                    (fts_q, self.character_id, self.user_id, limit),
+                ).fetchall()
+            return [_row_to_fragment(r) for r in rows]
+        except sqlite3.OperationalError as e:
+            logger_migrate(f"FTS 查询失败，回退 LIKE: {e}")
+            return []
 
     def search_like(
         self,

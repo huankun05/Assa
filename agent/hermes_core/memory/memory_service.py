@@ -149,6 +149,14 @@ class MemoryService:
         self._scribe = Scribe(store=self.store, config=ExtractionConfig())
         self.last_injection: dict | None = None
 
+    def _safe_embed(self, text: str) -> list[float]:
+        """写入向量：优先当前 embedder，失败返回空（检索时会重算）。"""
+        try:
+            return self.embedder.embed(text)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("embed 失败（写入空向量，检索时重算）: %s", exc)
+            return []
+
     # ============================================================
     # CRUD
     # ============================================================
@@ -196,7 +204,7 @@ class MemoryService:
             character_id=self.character_id,
             user_id=self.user_id,
         )
-        frag.embedding = self.embedder.embed(content)
+        frag.embedding = self._safe_embed(content)
         saved = self.store.add(frag)
         return saved.to_api_dict()
 
@@ -230,7 +238,7 @@ class MemoryService:
             character_id=self.character_id,
             user_id=self.user_id,
         )
-        frag.embedding = self.embedder.embed(content)
+        frag.embedding = self._safe_embed(content)
         saved = self.store.upsert_by_client_ref(frag)
         return saved.to_api_dict()
 
@@ -533,7 +541,7 @@ class MemoryService:
                 character_id=self.character_id,
                 user_id=self.user_id,
             )
-            frag.embedding = self.embedder.embed(content)
+            frag.embedding = self._safe_embed(content)
             saved.append(self.store.add(frag).to_api_dict())
         return saved
 
@@ -553,7 +561,7 @@ class MemoryService:
             character_id=self.character_id,
             user_id=self.user_id,
         )
-        frag.embedding = self.embedder.embed(raw)
+        frag.embedding = self._safe_embed(raw)
         self.store.add(frag)
         try:
             self.store.prune_old_l0(keep=self._scribe.config.l0_keep)
@@ -646,7 +654,7 @@ class MemoryService:
                 character_id=self.character_id,
                 user_id=self.user_id,
             )
-            frag.embedding = self.embedder.embed(summary)
+            frag.embedding = self._safe_embed(summary)
             saved = self.store.add(frag)
             for m in members:
                 m.meta = dict(m.meta)
@@ -735,7 +743,7 @@ class MemoryService:
             character_id=self.character_id,
             user_id=self.user_id,
         )
-        frag.embedding = self.embedder.embed(content)
+        frag.embedding = self._safe_embed(content)
         saved = self.store.add(frag)
         self._write_persona_file(content[:PERSONA_MAX_CHARS])
         return saved.to_api_dict()
