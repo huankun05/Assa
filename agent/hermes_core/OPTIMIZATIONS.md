@@ -17,11 +17,15 @@
 
 ## 推荐后续（未做，按收益排序）
 
-1. **SQLite FTS5**：`search_like` 仍以 LIKE 为主，中文长句召回偏弱；建 FTS 表 + RRF 融合（向量+FTS+importance）。
-2. **异步 embedding**：当前 HTTP 同步调用 Ollama；量大时可改线程池 + 批量 `/api/embed`，避免拖慢首包。
-3. **旧库迁移脚本**：从 `working_memory.json` / `history.json` 一次性迁入 L0/L1，避免新装用户「失忆」。
-4. **soul / time 接线**：HEXACO 人格与昼夜节律仅 vendor 未注入 system prompt。
-5. **学习调度器**：`learning_scheduler` 未在侧车启动，可空闲时跑衰减/归档（archivist）。
+| 项 | 状态 |
+|---|---|
+| SQLite FTS5（trigram）+ LIKE 降级 | ✅ e251fb1 |
+| embed 写入失败安全空向量 + 检索重算 | ✅ e251fb1 |
+| soul / time 注入情绪描述 | ✅ e251fb1 |
+| 旧记忆迁移脚本 | ✅ `scripts/migrate_hermes_memory.py` |
+| 启动 L0 裁剪 | ✅ prune_old_l0(200) |
+| 异步/批量 embedding | ⏳ 仍同步 HTTP；记忆量大再做线程池 + 批量 `/api/embed` |
+| learning_scheduler 空闲归档 | ⏳ archivist 未在侧车常驻 |
 
 ## 环境变量
 
