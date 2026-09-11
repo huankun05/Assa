@@ -5,8 +5,8 @@
 双闸门：
 - 本模块是**提议侧预检**——避免提出必被拒的请求、决定何时弹确认 UI（体验层）。
 - Electron 主进程在执行前做**终审**（src/main/services/xiyueToolSchema.ts `xiyueFinalCheck`，最终权威）。
-- 预检通过 ≠ 放行；两侧工具元数据目前各自维护（server.py `_TOOL_POLICY` / xiyueToolSchema.ts），
-  统一 schema 后应同源加载并在启动时做一致性校验。
+- 预检通过 ≠ 放行；两侧工具元数据**已同源**加载自 schemas/xiyue_tools.json
+  （server.py TOOL_DEFS/_TOOL_POLICY 与 xiyueToolSchema.ts 白名单）。
 - 当前信任等级来自 xiyue.json `security.trust_level`（identity.get_trust_level），默认 1。
 
 裁决顺序（详见 README 权限闸部分）：

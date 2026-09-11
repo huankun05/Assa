@@ -1,27 +1,5 @@
 {
-  "version": "0.1",
-  "default_level": 1,
-  "policy": {
-    "external_triggered_risky_force_confirm": true,
-    "credential_never_auto": true,
-    "delete_goes_to_trash": true
-  },
-  "tools": [
-    { "id": "fs.list",      "name": "列目录",   "level": 1, "risks": ["read"],            "scope": "safe_zone", "confirm": false },
-    { "id": "fs.read",      "name": "读文件",   "level": 1, "risks": ["read"],            "scope": "safe_zone", "confirm": false },
-    { "id": "fs.search",    "name": "搜索文件", "level": 1, "risks": ["read"],            "scope": "safe_zone", "confirm": false },
-    { "id": "fs.organize",  "name": "整理重命名","level": 1, "risks": ["write"],           "scope": "safe_zone", "confirm": true },
-    { "id": "fs.move",      "name": "移动文件", "level": 1, "risks": ["write"],            "scope": "safe_zone", "confirm": true },
-    { "id": "fs.trash",     "name": "删除(回收站)","level": 1,"risks": ["destructive"],    "scope": "safe_zone", "confirm": true, "note": "走回收站，非永久删" },
-    { "id": "app.launch",   "name": "打开应用", "level": 1, "risks": ["write"],            "scope": "any",       "confirm": false },
-    { "id": "app.close",    "name": "关闭应用", "level": 1, "risks": ["write"],            "scope": "any",       "confirm": false },
-    { "id": "sys.status",   "name": "系统状态", "level": 1, "risks": ["read"],            "scope": "any",       "confirm": false },
-    { "id": "reminder.set", "name": "设提醒",   "level": 1, "risks": ["write"],            "scope": "any",       "confirm": false },
-    { "id": "calendar.q",   "name": "查日程",   "level": 1, "risks": ["read"],            "scope": "any",       "confirm": false },
-    { "id": "shell.run",    "name": "运行命令", "level": 2, "risks": ["destructive","network"], "scope": "allowlist", "confirm": true, "note": "沙箱白名单" },
-    { "id": "browser.auto", "name": "浏览器自动化","level":2,"risks": ["network","write"], "scope": "any",       "confirm": true },
-    { "id": "fs.batch",     "name": "批量文件处理","level":2,"risks": ["write"],           "scope": "safe_zone", "confirm": true },
-    { "id": "code.assist",  "name": "代码辅助", "level": 2, "risks": ["write"],            "scope": "project_dir","confirm": true },
-    { "id": "msg.send",     "name": "代发消息", "level": 2, "risks": ["network","credential"],"scope": "any",    "confirm": true, "note": "确认后代发，绝不擅自" }
-  ]
+  "deprecated": true,
+  "replacedBy": "xiyue_tools.json",
+  "note": "本文件为设计期中文工具表（16 项），从未被运行时加载。现行单一事实源为 xiyue_tools.json（19 项，与主进程终审 / 侧车 policy 同源）。完整旧内容见 git 历史。"
 }

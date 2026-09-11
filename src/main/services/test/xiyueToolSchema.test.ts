@@ -23,20 +23,37 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { appendFileSyncMock, existsSyncMock, mkdirSyncMock } = vi.hoisted(() => ({
-  appendFileSyncMock: vi.fn(),
-  existsSyncMock: vi.fn(() => true),
-  mkdirSyncMock: vi.fn(),
-}));
+const { appendFileSyncMock, existsSyncMock, mkdirSyncMock, readFileSyncMock } = vi.hoisted(() => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const nodeFs = require('node:fs') as typeof import('node:fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const nodePath = require('node:path') as typeof import('node:path');
+  const schemaPath = nodePath.join(process.cwd(), 'schemas', 'xiyue_tools.json');
+  return {
+    appendFileSyncMock: vi.fn(),
+    existsSyncMock: vi.fn((p: string) => String(p).includes('xiyue_tools.json') || String(p).includes('logs')),
+    mkdirSyncMock: vi.fn(),
+    readFileSyncMock: vi.fn((p: string, enc?: string) => {
+      if (String(p).includes('xiyue_tools.json')) {
+        return nodeFs.readFileSync(schemaPath, (enc ?? 'utf-8') as BufferEncoding);
+      }
+      return '';
+    }),
+  };
+});
 
 vi.mock('electron', () => ({
-  app: { getPath: vi.fn(() => 'C:\\fake-user-data') },
+  app: {
+    getPath: vi.fn(() => 'C:\\fake-user-data'),
+    getAppPath: vi.fn(() => 'C:\\fake-app'),
+  },
 }));
 
 vi.mock('fs', () => ({
   appendFileSync: appendFileSyncMock,
   existsSync: existsSyncMock,
   mkdirSync: mkdirSyncMock,
+  readFileSync: readFileSyncMock,
 }));
 
 import {

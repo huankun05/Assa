@@ -59,9 +59,24 @@ const { execFileMock } = vi.hoisted(() => ({
   execFileMock: vi.fn(),
 }));
 
-const { existsSyncMock } = vi.hoisted(() => ({
-  existsSyncMock: vi.fn(),
-}));
+const { existsSyncMock, readFileSyncRealMock } = vi.hoisted(() => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const nodeFs = require('node:fs') as typeof import('node:fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const nodePath = require('node:path') as typeof import('node:path');
+  return {
+    existsSyncMock: vi.fn(() => true),
+    readFileSyncRealMock: vi.fn((p: string, enc?: string) => {
+      if (String(p).includes('xiyue_tools.json')) {
+        return nodeFs.readFileSync(
+          nodePath.join(process.cwd(), 'schemas', 'xiyue_tools.json'),
+          (enc ?? 'utf-8') as BufferEncoding,
+        );
+      }
+      return '';
+    }),
+  };
+});
 
 const { resolveMock, dirnameMock, basenameMock } = vi.hoisted(() => ({
   resolveMock: vi.fn((p: string) => p),
@@ -124,7 +139,10 @@ vi.mock('electron', () => ({
   },
 }));
 
-vi.mock('fs', () => ({ existsSync: existsSyncMock }));
+vi.mock('fs', () => ({
+  existsSync: existsSyncMock,
+  readFileSync: readFileSyncRealMock,
+}));
 
 vi.mock('fs/promises', () => ({
   appendFile: vi.fn(),
@@ -144,6 +162,7 @@ vi.mock('path', () => ({
   basename: basenameMock,
   dirname: dirnameMock,
   resolve: resolveMock,
+  join: (...parts: string[]) => parts.join('/'),
 }));
 
 vi.mock('../../../log/mainLog', () => ({

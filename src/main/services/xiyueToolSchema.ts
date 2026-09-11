@@ -21,19 +21,18 @@
  * @description 汐月工具终审闸门（双闸门之二，Electron 主进程为最终权威）。
  *
  * 职责：
- * - 维护汐月工具白名单 + 风险等级（与 agent/server.py TOOL_DEFS / _TOOL_POLICY 手动对齐）
- * - 终审 `xiyueFinalCheck`：拒绝未注册工具；写/删/命令/网络类工具在空工作区时拒绝；
+ * - 从 schemas/xiyue_tools.json 同源加载工具元数据（与 agent/server.py 共用）
+ * - 终审 `xiyueFinalCheck`：拒绝未注册工具；空工作区时拒绝高风险工具；
  *   `confirm: true` 的工具必须携带 `userConfirmed: true`（deny/ask 最小集，人在环）
- * - 单一执行入口 `xiyueExecuteTool`：规范化 → 终审 → 执行 → 无论成败都写审计。
- *   所有工具执行路径（渲染层 IPC、主进程 Ollama/自定义编排器）都必须经过它。
- * - 审计日志：append-only 写入 userData/logs/xiyue-tools.log，一行一条 JSON
+ * - 单一执行入口 `xiyueExecuteTool`：规范化 → 终审 → 执行 → 无论成败都写审计
+ * - 审计日志：append-only 写入 userData/logs/xiyue-tools.log
  */
 
 import { app } from 'electron';
-import { appendFileSync, existsSync, mkdirSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-/** 汐月工具风险分类（与 agent/server.py _TOOL_POLICY 对齐） */
+/** 汐月工具风险分类 */
 export type XiyueToolRisk = 'read' | 'write' | 'delete' | 'cmd' | 'clipboard' | 'sys' | 'monitor' | 'network';
 
 export interface XiyueToolMeta {
@@ -45,37 +44,81 @@ export interface XiyueToolMeta {
   requireWorkspaceWhenEmpty: boolean;
 }
 
-/** 汐月工具白名单（与 agent/server.py TOOL_DEFS + _TOOL_POLICY 保持手动同步） */
-const XIYUE_TOOL_ALLOWLIST: XiyueToolMeta[] = [
-  { id: 'file.read',      risks: ['read'],            confirm: false, needsWorkspace: true,  requireWorkspaceWhenEmpty: false },
-  { id: 'file.list',      risks: ['read'],            confirm: false, needsWorkspace: true,  requireWorkspaceWhenEmpty: false },
-  { id: 'file.stat',      risks: ['read'],            confirm: false, needsWorkspace: true,  requireWorkspaceWhenEmpty: false },
-  { id: 'file.search',    risks: ['read'],            confirm: false, needsWorkspace: true,  requireWorkspaceWhenEmpty: false },
-  { id: 'file.grep',      risks: ['read'],            confirm: false, needsWorkspace: true,  requireWorkspaceWhenEmpty: false },
-  { id: 'file.write',     risks: ['write'],           confirm: false, needsWorkspace: true,  requireWorkspaceWhenEmpty: true },
-  { id: 'file.delete',    risks: ['delete'],          confirm: true,  needsWorkspace: true,  requireWorkspaceWhenEmpty: true },
-  { id: 'cmd.exec',       risks: ['cmd', 'network'],  confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'clipboard.read', risks: ['clipboard'],       confirm: false, needsWorkspace: false, requireWorkspaceWhenEmpty: false },
-  { id: 'sys.info',       risks: ['sys'],             confirm: false, needsWorkspace: false, requireWorkspaceWhenEmpty: false },
-  { id: 'monitor.cpu',    risks: ['monitor'],         confirm: false, needsWorkspace: false, requireWorkspaceWhenEmpty: false },
-  { id: 'monitor.memory', risks: ['monitor'],         confirm: false, needsWorkspace: false, requireWorkspaceWhenEmpty: false },
-  { id: 'net.ping',       risks: ['network'],         confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'browser.open',    risks: ['network'],         confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'browser.screenshot', risks: ['network'],      confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'browser.navigate', risks: ['network'],        confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'browser.click',   risks: ['network'],         confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'browser.fill',    risks: ['network'],         confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-  { id: 'browser.scroll',  risks: ['network'],         confirm: true,  needsWorkspace: false, requireWorkspaceWhenEmpty: true },
-];
+interface SchemaXiyueBlock {
+  risks: string[];
+  confirm: boolean;
+  level: number;
+  scope: string;
+  needsWorkspace: boolean;
+  requireWorkspaceWhenEmpty: boolean;
+}
 
-const XIYUE_TOOL_INDEX = new Map<string, XiyueToolMeta>();
-for (const meta of XIYUE_TOOL_ALLOWLIST) {
-  XIYUE_TOOL_INDEX.set(meta.id, meta);
+interface SchemaToolEntry {
+  name: string;
+  xiyue: SchemaXiyueBlock;
+}
+
+interface XiyueToolsSchemaFile {
+  version: string;
+  tools: SchemaToolEntry[];
+}
+
+/**
+ * 定位并加载 schemas/xiyue_tools.json。
+ * 开发态 cwd = 仓库根；打包后从 app.getAppPath() 兜底。
+ */
+function loadXiyueToolsSchemaFile(): XiyueToolsSchemaFile {
+  const candidates: string[] = [
+    join(process.cwd(), 'schemas', 'xiyue_tools.json'),
+    join(__dirname, '..', '..', '..', 'schemas', 'xiyue_tools.json'),
+  ];
+  try {
+    candidates.push(join(app.getAppPath(), 'schemas', 'xiyue_tools.json'));
+  } catch {
+    /* 测试环境 app 可能是 mock */
+  }
+  for (const p of candidates) {
+    try {
+      if (existsSync(p)) {
+        return JSON.parse(readFileSync(p, 'utf-8')) as XiyueToolsSchemaFile;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  throw new Error('schemas/xiyue_tools.json not found (tried: ' + candidates.join('; ') + ')');
+}
+
+/** 从单一 schema 构建主进程白名单元数据 */
+function buildAllowlistFromSchema(): XiyueToolMeta[] {
+  const schema = loadXiyueToolsSchemaFile();
+  return schema.tools.map((t) => ({
+    id: t.name,
+    risks: t.xiyue.risks as XiyueToolRisk[],
+    confirm: Boolean(t.xiyue.confirm),
+    needsWorkspace: Boolean(t.xiyue.needsWorkspace),
+    requireWorkspaceWhenEmpty: Boolean(t.xiyue.requireWorkspaceWhenEmpty),
+  }));
+}
+
+/** 汐月工具白名单（同源：schemas/xiyue_tools.json；惰性加载，避免 import 期 IO） */
+let _allowlistCache: XiyueToolMeta[] | null = null;
+let _indexCache: Map<string, XiyueToolMeta> | null = null;
+
+function ensureToolRegistry(): { list: XiyueToolMeta[]; index: Map<string, XiyueToolMeta> } {
+  if (!_allowlistCache || !_indexCache) {
+    _allowlistCache = buildAllowlistFromSchema();
+    _indexCache = new Map<string, XiyueToolMeta>();
+    for (const meta of _allowlistCache) {
+      _indexCache.set(meta.id, meta);
+    }
+  }
+  return { list: _allowlistCache, index: _indexCache };
 }
 
 /** 只读快照，供 schema 导出 / 一致性校验使用 */
 export function listXiyueTools(): readonly XiyueToolMeta[] {
-  return XIYUE_TOOL_ALLOWLIST;
+  return ensureToolRegistry().list;
 }
 
 export interface XiyueFinalCheckResult {
@@ -147,7 +190,7 @@ export function xiyueFinalCheck(request: XiyueFinalCheckRequest): XiyueFinalChec
     return { allowed: false, denyReason: '工具名称不能为空' };
   }
 
-  const meta = XIYUE_TOOL_INDEX.get(tool);
+  const meta = ensureToolRegistry().index.get(tool);
   if (!meta) {
     return { allowed: false, denyReason: `未注册工具：${tool}` };
   }

@@ -1,0 +1,504 @@
+{
+  "version": "1.0.0",
+  "description": "汐月 Agent 工具单一事实源。主进程终审与 Python 侧车 policy/TOOL_DEFS 均由此加载；annotations 对齐 MCP tools 规范。",
+  "annotationsMapping": {
+    "readOnlyHint": "confirm=false（默认 allow）",
+    "destructiveHint": "confirm=true（默认 ask）",
+    "openWorldHint": "risks 含 network"
+  },
+  "tools": [
+    {
+      "name": "file.read",
+      "title": "读文件",
+      "description": "读取文本文件内容（UTF-8，支持中文）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "文件绝对路径" }
+        },
+        "required": ["path"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["read"],
+        "confirm": false,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "file.list",
+      "title": "列目录",
+      "description": "列出目录下的文件与子目录名",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "目录绝对路径" }
+        },
+        "required": ["path"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["read"],
+        "confirm": false,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "file.stat",
+      "title": "文件信息",
+      "description": "获取文件/目录元信息（大小、修改时间等）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "绝对路径" }
+        },
+        "required": ["path"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["read"],
+        "confirm": false,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "file.search",
+      "title": "搜索文件",
+      "description": "在目录中按名称搜索文件",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "目录绝对路径" },
+          "keyword": { "type": "string", "description": "文件名关键字" }
+        },
+        "required": ["path", "keyword"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["read"],
+        "confirm": false,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "file.grep",
+      "title": "内容搜索",
+      "description": "在目录文件中按正则搜索文本内容",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "目录绝对路径" },
+          "pattern": { "type": "string", "description": "正则表达式" }
+        },
+        "required": ["path", "pattern"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["read"],
+        "confirm": false,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "file.write",
+      "title": "写文件",
+      "description": "写入/覆盖文本文件（UTF-8）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "文件绝对路径" },
+          "content": { "type": "string", "description": "写入内容" }
+        },
+        "required": ["path", "content"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["write"],
+        "confirm": false,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "file.delete",
+      "title": "删除到回收站",
+      "description": "把文件或目录放入回收站（危险，需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "绝对路径" }
+        },
+        "required": ["path"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["delete"],
+        "confirm": true,
+        "level": 1,
+        "scope": "safe_zone",
+        "needsWorkspace": true,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "cmd.exec",
+      "title": "执行命令",
+      "description": "在 cmd 中执行一条命令并返回输出（危险，需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "command": { "type": "string", "description": "命令行" }
+        },
+        "required": ["command"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["cmd", "network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "clipboard.read",
+      "title": "读剪贴板",
+      "description": "读取系统剪贴板文本",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["clipboard"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "sys.info",
+      "title": "系统信息",
+      "description": "获取系统信息（OS/CPU/内存等）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "monitor.cpu",
+      "title": "CPU 使用率",
+      "description": "获取 CPU 使用率",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["monitor"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "monitor.memory",
+      "title": "内存使用",
+      "description": "获取内存使用情况",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["monitor"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "net.ping",
+      "title": "网络 Ping",
+      "description": "Ping 一个主机，返回延迟（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "host": { "type": "string", "description": "主机名或 IP" }
+        },
+        "required": ["host"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "browser.open",
+      "title": "打开网页",
+      "description": "打开一个网页并返回标题（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "网页 URL" }
+        },
+        "required": ["url"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "browser.screenshot",
+      "title": "网页截图",
+      "description": "打开一个网页并返回截图 base64（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "网页 URL" }
+        },
+        "required": ["url"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "browser.navigate",
+      "title": "网页导航",
+      "description": "在当前浏览器页面导航到新 URL（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "目标 URL" }
+        },
+        "required": ["url"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "browser.click",
+      "title": "网页点击",
+      "description": "打开页面并点击一个元素（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "网页 URL" },
+          "selector": { "type": "string", "description": "CSS 选择器" }
+        },
+        "required": ["url", "selector"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "browser.fill",
+      "title": "网页填表",
+      "description": "在输入框中填入文本（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "网页 URL" },
+          "selector": { "type": "string", "description": "输入框选择器" },
+          "text": { "type": "string", "description": "要填入的文本" }
+        },
+        "required": ["url", "selector", "text"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    },
+    {
+      "name": "browser.scroll",
+      "title": "网页滚动",
+      "description": "在当前页面滚动（需确认）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "网页 URL" },
+          "direction": { "type": "string", "description": "up/down" }
+        },
+        "required": ["url"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "xiyue": {
+        "risks": ["network"],
+        "confirm": true,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": true
+      }
+    }
+  ]
+}

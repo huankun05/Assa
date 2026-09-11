@@ -85,66 +85,50 @@ _TOOL_RESULT_TIMEOUT_S = float(os.environ.get("XIYUE_TOOL_TIMEOUT", "60"))
 _MAX_TOOL_ROUNDS = int(os.environ.get("XIYUE_TOOL_ROUNDS", "8"))
 
 
-def _tool_def(name: str, desc: str, props: dict, required: list[str]) -> dict:
+# ---- 工具定义（同源 schemas/xiyue_tools.json，与主进程 xiyueToolSchema.ts 共用）----
+def _load_tool_schema() -> dict:
+    p = ROOT / "schemas" / "xiyue_tools.json"
+    if not p.exists():
+        raise FileNotFoundError(f"missing tool schema: {p}")
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+_SCHEMA = _load_tool_schema()
+
+
+def _tool_def_from_schema(entry: dict) -> dict:
     return {
         "type": "function",
         "function": {
-            "name": name,
-            "description": desc,
-            "parameters": {"type": "object", "properties": props, "required": required},
+            "name": entry["name"],
+            "description": entry.get("description") or entry.get("title") or entry["name"],
+            "parameters": entry.get("inputSchema") or {"type": "object", "properties": {}, "required": []},
         },
     }
 
 
-def _path_prop(desc: str) -> dict:
-    return {"type": "string", "description": desc}
+TOOL_DEFS = [_tool_def_from_schema(e) for e in _SCHEMA["tools"]]
 
-
-# 工具定义（命名对齐渲染层 CLIENT_LOCAL_TOOL_PREFIXES 名单，主进程 app.ts 可执行）
-TOOL_DEFS = [
-    _tool_def("file.read", "读取文本文件内容（UTF-8，支持中文）", {"path": _path_prop("文件绝对路径")}, ["path"]),
-    _tool_def("file.list", "列出目录下的文件与子目录名", {"path": _path_prop("目录绝对路径")}, ["path"]),
-    _tool_def("file.stat", "获取文件/目录元信息（大小、修改时间等）", {"path": _path_prop("绝对路径")}, ["path"]),
-    _tool_def("file.search", "在目录中按名称搜索文件", {"path": _path_prop("目录绝对路径"), "keyword": {"type": "string", "description": "文件名关键字"}}, ["path", "keyword"]),
-    _tool_def("file.grep", "在目录文件中按正则搜索文本内容", {"path": _path_prop("目录绝对路径"), "pattern": {"type": "string", "description": "正则表达式"}}, ["path", "pattern"]),
-    _tool_def("file.write", "写入/覆盖文本文件（UTF-8）", {"path": _path_prop("文件绝对路径"), "content": {"type": "string", "description": "写入内容"}}, ["path", "content"]),
-    _tool_def("file.delete", "把文件或目录放入回收站（危险，需确认）", {"path": _path_prop("绝对路径")}, ["path"]),
-    _tool_def("cmd.exec", "在 cmd 中执行一条命令并返回输出（危险，需确认）", {"command": {"type": "string", "description": "命令行"}}, ["command"]),
-    _tool_def("clipboard.read", "读取系统剪贴板文本", {}, []),
-    _tool_def("sys.info", "获取系统信息（OS/CPU/内存等）", {}, []),
-    _tool_def("monitor.cpu", "获取 CPU 使用率", {}, []),
-    _tool_def("monitor.memory", "获取内存使用情况", {}, []),
-    _tool_def("net.ping", "Ping 一个主机，返回延迟", {"host": {"type": "string", "description": "主机名或 IP"}}, ["host"]),
-    _tool_def("browser.open", "打开一个网页并返回标题", {"url": {"type": "string", "description": "网页 URL"}}, ["url"]),
-    _tool_def("browser.screenshot", "打开一个网页并返回截图 base64", {"url": {"type": "string", "description": "网页 URL"}}, ["url"]),
-    _tool_def("browser.navigate", "在当前浏览器页面导航到新 URL", {"url": {"type": "string", "description": "目标 URL"}}, ["url"]),
-    _tool_def("browser.click", "打开页面并点击一个元素", {"url": {"type": "string", "description": "网页 URL"}, "selector": {"type": "string", "description": "CSS 选择器"}}, ["url", "selector"]),
-    _tool_def("browser.fill", "在输入框中填入文本", {"url": {"type": "string", "description": "网页 URL"}, "selector": {"type": "string", "description": "输入框选择器"}, "text": {"type": "string", "description": "要填入的文本"}}, ["url", "selector", "text"]),
-    _tool_def("browser.scroll", "在当前页面滚动", {"url": {"type": "string", "description": "网页 URL"}, "direction": {"type": "string", "description": "up/down"}}, ["url"]),
-]
-
-# 工具 → 权限元数据（policy.py 裁决）
-_TOOL_POLICY = {
-    "file.read": ("read", ["read"], False),
-    "file.list": ("read", ["read"], False),
-    "file.stat": ("read", ["read"], False),
-    "file.search": ("read", ["read"], False),
-    "file.grep": ("read", ["read"], False),
-    "file.write": ("write", ["write"], False),
-    "file.delete": ("delete", ["destructive"], True),
-    "cmd.exec": ("cmd", ["destructive", "network"], True),
-    "clipboard.read": ("clipboard", ["read"], False),
-    "sys.info": ("sys", ["read"], False),
-    "monitor.cpu": ("monitor", ["read"], False),
-    "monitor.memory": ("monitor", ["read"], False),
-    "net.ping": ("net", ["network"], True),
-    "browser.open": ("browser", ["network"], True),
-    "browser.screenshot": ("browser", ["network"], True),
-    "browser.navigate": ("browser", ["network"], True),
-    "browser.click": ("browser", ["network"], True),
-    "browser.fill": ("browser", ["network"], True),
-    "browser.scroll": ("browser", ["network"], True),
-}
+# 工具 → 权限元数据（policy.py 裁决）；与主进程白名单同源
+_TOOL_POLICY: dict[str, tuple[str, list[str], bool]] = {}
+for _entry in _SCHEMA["tools"]:
+    _xy = _entry.get("xiyue") or {}
+    _name = _entry["name"]
+    _risks = list(_xy.get("risks") or ["read"])
+    _confirm = bool(_xy.get("confirm", False))
+    # policy.Risk 枚举用 destructive，schema 用 delete/cmd —— 映射到 policy 可识别集合
+    _policy_risks: list[str] = []
+    for r in _risks:
+        if r in ("delete", "cmd"):
+            _policy_risks.append("destructive")
+        elif r in ("read", "write", "clipboard", "sys", "monitor", "network"):
+            _policy_risks.append(r)
+        else:
+            _policy_risks.append(r)
+    if _xy.get("openWorldHint") or "network" in _risks:
+        if "network" not in _policy_risks:
+            _policy_risks.append("network")
+    _TOOL_POLICY[_name] = (_name.split(".")[0], _policy_risks, _confirm)
 
 
 def _decide_tool(tool_name: str):
