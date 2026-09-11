@@ -85,6 +85,113 @@ _TOOL_RESULT_TIMEOUT_S = float(os.environ.get("XIYUE_TOOL_TIMEOUT", "60"))
 _MAX_TOOL_ROUNDS = int(os.environ.get("XIYUE_TOOL_ROUNDS", "8"))
 
 
+# ---- hermes_core 换脑：记忆 / PAD 情绪（懒加载）----
+_memory_svc = None
+_memory_ready = False
+_emotion_state = None
+_emotion_lock = threading.Lock()
+
+
+def _get_memory_service():
+    """惰性初始化 hermes MemoryService（失败则返回 None，对话不阻塞）。"""
+    global _memory_svc, _memory_ready
+    if _memory_ready:
+        return _memory_svc
+    with _lock:
+        if _memory_ready:
+            return _memory_svc
+        try:
+            from agent.hermes_core import get_memory_service as _gm
+            from agent.hermes_core.memory.store import init_tables as _init_tables
+
+            _init_tables()
+            _memory_svc = _gm()
+            print("[xiyue-agent] hermes MemoryService 就绪", flush=True)
+        except Exception as e:
+            print(f"[xiyue-agent] hermes 记忆初始化失败，降级为空: {e}", flush=True)
+            _memory_svc = None
+        _memory_ready = True
+    return _memory_svc
+
+
+def _get_emotion_state():
+    """惰性 PAD 情绪对象（进程内单例）。"""
+    global _emotion_state
+    if _emotion_state is not None:
+        return _emotion_state
+    with _emotion_lock:
+        if _emotion_state is not None:
+            return _emotion_state
+        try:
+            from agent.hermes_core import EmotionState
+
+            _emotion_state = EmotionState()
+        except Exception as e:
+            print(f"[xiyue-agent] hermes 情绪初始化失败: {e}", flush=True)
+            _emotion_state = None
+    return _emotion_state
+
+
+def _memory_injection_block(query: str = "") -> str:
+    svc = _get_memory_service()
+    if svc is None:
+        return ""
+    try:
+        return (svc.build_injection_prompt(query) or "").strip()
+    except Exception as e:
+        print(f"[xiyue-agent] 记忆注入失败: {e}", flush=True)
+        return ""
+
+
+def _memory_store_turn(user_text: str, assistant_text: str) -> None:
+    svc = _get_memory_service()
+    if svc is None:
+        return
+    try:
+        svc.extract_and_store(user_text, assistant_text, use_llm=False)
+    except Exception as e:
+        print(f"[xiyue-agent] 记忆写入失败: {e}", flush=True)
+
+
+def _emotion_on_user(text: str) -> str:
+    """按用户文本更新 PAD，并返回用于 system prompt 的中文描述。"""
+    emo = get_current_emotion()
+    state = _get_emotion_state()
+    if state is None:
+        return emo
+    try:
+        state.apply_event(text or "", intensity=0.35)
+        state.drift()
+        desc = state.describe()
+        # 同步到 identity 层（仅表达，不影响权限）
+        from agent.identity import set_current_emotion
+
+        label = state.get_mood_label()
+        try:
+            set_current_emotion(label)
+        except Exception:
+            pass
+        return desc or emo
+    except Exception:
+        return emo
+
+
+def _emotion_tts_speed() -> float:
+    """情绪 → TTS 语速（开心加速、低落减速）；失败返回 1.0。"""
+    state = _get_emotion_state()
+    if state is None:
+        return 1.0
+    try:
+        p = float(state.pad.pleasure)
+        if p > 0.25:
+            return 1.1
+        if p < -0.25:
+            return 0.92
+        return 1.0
+    except Exception:
+        return 1.0
+
+
 # ---- 工具定义（同源 schemas/xiyue_tools.json，与主进程 xiyueToolSchema.ts 共用）----
 def _load_tool_schema() -> dict:
     p = ROOT / "schemas" / "xiyue_tools.json"
@@ -344,17 +451,21 @@ def _transcribe(wav: Path) -> str:
 
 def _llm_reply(user_text: str) -> str:
     model = LLM_MODEL or _load_model_default()
-    emotion = get_current_emotion()
-    system = _build_system(emotion_state=emotion)
-    
-    # 注入工作记忆（L1）
-    try:
-        facts = get_active_facts(min_importance=1, max_items=10)
-        if facts:
-            system += "\n\n[相关记忆]\n" + "\n".join(f"- {f}" for f in facts)
-    except Exception:
-        pass
-    
+    emotion_desc = _emotion_on_user(user_text)
+    system = _build_system(emotion_state=emotion_desc)
+
+    # hermes 分层记忆注入（优先）；失败回退旧 working_memory
+    mem_block = _memory_injection_block(user_text)
+    if mem_block:
+        system += "\n\n" + mem_block
+    else:
+        try:
+            facts = get_active_facts(min_importance=1, max_items=10)
+            if facts:
+                system += "\n\n[相关记忆]\n" + "\n".join(f"- {f}" for f in facts)
+        except Exception:
+            pass
+
     messages = [{"role": "system", "content": system}] + _history[-get_max_history_turns():] + [
         {"role": "user", "content": user_text}
     ]
@@ -363,13 +474,14 @@ def _llm_reply(user_text: str) -> str:
     _history.append({"role": "user", "content": user_text})
     _history.append({"role": "assistant", "content": reply})
     _save_history(_history)
-    
-    # 从回复中提取事实，写入工作记忆
+
+    # hermes 记忆沉淀（优先）；失败回退旧启发式
+    _memory_store_turn(user_text, reply)
     try:
         _extract_and_store_facts(user_text, reply)
     except Exception:
         pass
-    
+
     return reply
 
 
@@ -541,22 +653,26 @@ class Handler(BaseHTTPRequestHandler):
             return _request_tool_result(request_id)
 
         try:
-            emotion = get_current_emotion()
+            emotion_desc = _emotion_on_user(text)
             system = _build_system(
                 "你是本地 AI 管家，可以调用提供的工具帮用户做事。"
                 "需要文件/系统/网络信息时优先调用工具；工具结果拿到后再组织回答。"
                 "回复用中文，口语化，必要时用简短 markdown。",
-                emotion_state=emotion,
+                emotion_state=emotion_desc,
             )
-            
-            # 注入工作记忆（L1）
-            try:
-                facts = get_active_facts(min_importance=1, max_items=10)
-                if facts:
-                    system += "\n\n[相关记忆]\n" + "\n".join(f"- {f}" for f in facts)
-            except Exception:
-                pass
-            
+
+            # hermes 分层记忆注入（优先）；失败回退旧 working_memory
+            mem_block = _memory_injection_block(text)
+            if mem_block:
+                system += "\n\n" + mem_block
+            else:
+                try:
+                    facts = get_active_facts(min_importance=1, max_items=10)
+                    if facts:
+                        system += "\n\n[相关记忆]\n" + "\n".join(f"- {f}" for f in facts)
+                except Exception:
+                    pass
+
             messages = [{"role": "system", "content": system}] + _history[-get_max_history_turns():] + [
                 {"role": "user", "content": text}
             ]
@@ -572,8 +688,8 @@ class Handler(BaseHTTPRequestHandler):
             _history.append({"role": "user", "content": text})
             _history.append({"role": "assistant", "content": reply})
             _save_history(_history)
-            
-            # 从回复中提取事实，写入工作记忆
+
+            _memory_store_turn(text, reply)
             try:
                 _extract_and_store_facts(text, reply)
             except Exception:
@@ -646,6 +762,11 @@ def main() -> None:
             print(f"[xiyue-agent] 清理过期工作记忆 {removed} 条", flush=True)
     except Exception as e:
         print(f"[xiyue-agent] 清理过期工作记忆失败: {e}", flush=True)
+    # 预热 hermes 记忆（避免首条对话卡在表初始化）
+    try:
+        _get_memory_service()
+    except Exception as e:
+        print(f"[xiyue-agent] hermes 记忆预热失败: {e}", flush=True)
     resolved_model = LLM_MODEL or _load_model_default()
     print(f"[xiyue-agent] listening on 127.0.0.1:{PORT} (llm={resolved_model}, "
           f"stt={WHISPER_MODEL}, trust_level={get_trust_level()}, data={DATA_DIR})", flush=True)
