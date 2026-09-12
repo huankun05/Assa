@@ -113,23 +113,8 @@ export function restartApp(): void {
     safeLogError('[App] restart cleanup error:', err);
   }
 
-  /** 退出前清理本项目 dev 残留（按路径匹配；用系统 node，不用 electron） */
-  try {
-    const script = join(app.getAppPath(), 'scripts', 'clean-xiyue-dev-processes.ts');
-    const systemNode = 'E:/software/Nodejs/node.exe';
-    if (existsSync(script)) {
-      spawn(systemNode, [script], {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true,
-      }).unref();
-    }
-  } catch {
-    // ignore
-  }
-
   showRestartToast();
-  // 尽快退出，缩短 restarter 等待与单实例锁占用窗口
+  // 尽快退出：electron-vite 父进程会随本进程结束而退出，restarter 等它释放端口后再拉起
   setTimeout(() => app.exit(0), 600);
 }
 

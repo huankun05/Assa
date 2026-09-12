@@ -7,10 +7,12 @@
  */
 
 import { execSync } from 'child_process';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-/** 当前项目根：从 scripts/ 向上两级到仓库根 */
-const PROJECT_ROOT = join(__dirname, '..', '..');
+const __filename_esm = fileURLToPath(import.meta.url);
+/** 当前项目根：scripts/ 的上级目录 = 仓库根（随目录移动自动变化） */
+const PROJECT_ROOT = join(dirname(__filename_esm), '..');
 const PROJECT_ROOT_SLASH = PROJECT_ROOT.replace(/\\/g, '/');
 const PROJECT_ROOT_BACK = PROJECT_ROOT.replace(/\//g, '\\');
 
@@ -22,8 +24,8 @@ interface WinProc {
 
 function listProcesses(): WinProc[] {
   const json = execSync(
-    'powershell -NoProfile -Command "Get-CimInstance Win32_Process | Select-Object ProcessId,Name,CommandLine | ConvertTo-Json -Compress"',
-    { encoding: 'utf-8', maxBuffer: 16 * 1024 * 1024 },
+    'powershell -NoProfile -WindowStyle Hidden -Command "Get-CimInstance Win32_Process | Select-Object ProcessId,Name,CommandLine | ConvertTo-Json -Compress"',
+    { encoding: 'utf-8', maxBuffer: 16 * 1024 * 1024, windowsHide: true },
   );
   const data = JSON.parse(json) as WinProc | WinProc[];
   return Array.isArray(data) ? data : [data];
@@ -48,7 +50,7 @@ function main(): void {
   }
   for (const p of targets) {
     try {
-      execSync(`taskkill /PID ${p.ProcessId} /T /F`, { stdio: 'ignore' });
+      execSync(`taskkill /PID ${p.ProcessId} /T /F`, { stdio: 'ignore', windowsHide: true });
       console.log(`[clean-xiyue] killed ${p.ProcessId} ${p.Name}`);
     } catch {
       console.log(`[clean-xiyue] skip ${p.ProcessId} ${p.Name}`);
