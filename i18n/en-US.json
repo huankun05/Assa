@@ -3961,7 +3961,19 @@
     "memory": {
       "title": "Xiyue Memory (read-only)",
       "hint": "Working memories distilled from chats. Full delete UI comes later.",
-      "empty": "No memories yet. Chat a bit and they will appear here."
+      "empty": "No memories yet. Chat a bit and they will appear here.",
+      "clear": "Clear memories",
+      "delete": "Delete"
+    },
+    "sessionPass": {
+      "title": "Session pass",
+      "hint": "While on, non-delete/non-cmd confirmations auto-pass this session. Delete and shell still need explicit allow. Turns off on app restart.",
+      "toggle": "Enable session pass"
+    },
+    "browser": {
+      "title": "Browser automation",
+      "hint": "Off by default. When on, the model may propose browser.* tools still subject to trust level and confirmation policy.",
+      "toggle": "Allow browser tools (restart chat/sidecar session to fully apply)"
     }
   },
   "idle": {

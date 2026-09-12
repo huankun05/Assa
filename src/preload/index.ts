@@ -176,6 +176,12 @@ const api = {
   xiyueAuditLogList: (limit?: number): Promise<unknown[]> => ipcRenderer.invoke('xiyue:audit-log:list', limit),
   xiyueMemoryList: (): Promise<{ items?: unknown[] }> => ipcRenderer.invoke('xiyue:memory-list'),
   xiyueEmotionGet: (): Promise<{ state?: string; mood?: string } | null> => ipcRenderer.invoke('xiyue:emotion-get'),
+  xiyueMemoryDelete: (id: number): Promise<unknown> => ipcRenderer.invoke('xiyue:memory-delete', id),
+  xiyueMemoryClear: (): Promise<unknown> => ipcRenderer.invoke('xiyue:memory-clear'),
+  xiyueBrowserEnabledGet: (): Promise<boolean> => ipcRenderer.invoke('xiyue:browser-enabled:get'),
+  xiyueBrowserEnabledSet: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('xiyue:browser-enabled:set', enabled),
+  xiyueSessionPassGet: (): Promise<boolean> => ipcRenderer.invoke('xiyue:session-pass:get'),
+  xiyueSessionPassSet: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('xiyue:session-pass:set', enabled),
   showWindow: (): void => {
     ipcRenderer.send('window:show');
   },

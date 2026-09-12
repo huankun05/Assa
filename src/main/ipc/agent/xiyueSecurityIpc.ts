@@ -69,6 +69,13 @@ function readAuditTail(limit: number): unknown[] {
   }
 }
 
+/** 会话通行证：本会话内对「仅缺 userConfirmed 的中低风险」自动放行 */
+let sessionPassEnabled = false;
+
+export function isXiyueSessionPassEnabled(): boolean {
+  return sessionPassEnabled;
+}
+
 export function registerXiyueSecurityIpcHandlers(): void {
   ipcMain.handle('xiyue:trust-level:get', () => readTrustLevel());
 
@@ -107,5 +114,46 @@ export function registerXiyueSecurityIpcHandlers(): void {
     } catch {
       return null;
     }
+  });
+
+  async function agentPost(path: string, body: unknown): Promise<unknown> {
+    try {
+      const { getXiyueAgentPort } = await import('../../services/xiyueAgentService');
+      const port = getXiyueAgentPort();
+      const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body ?? {}),
+      });
+      return await res.json();
+    } catch {
+      return { ok: false, error: 'agent offline' };
+    }
+  }
+
+  ipcMain.handle('xiyue:memory-delete', (_e, id: number) => agentPost('/memory/delete', { id }));
+
+  ipcMain.handle('xiyue:memory-clear', () => agentPost('/memory/clear', {}));
+
+  ipcMain.handle('xiyue:browser-enabled:get', () => {
+    const data = readPersonaJson();
+    const browser = data.browser as Record<string, unknown> | undefined;
+    return Boolean(browser?.enabled);
+  });
+
+  ipcMain.handle('xiyue:browser-enabled:set', (_e, enabled: boolean) => {
+    const data = readPersonaJson();
+    const browser = (data.browser ?? {}) as Record<string, unknown>;
+    browser.enabled = Boolean(enabled);
+    data.browser = browser;
+    writePersonaJson(data);
+    invalidateIdentityCache();
+    return Boolean(enabled);
+  });
+
+  ipcMain.handle('xiyue:session-pass:get', () => sessionPassEnabled);
+  ipcMain.handle('xiyue:session-pass:set', (_e, enabled: boolean) => {
+    sessionPassEnabled = Boolean(enabled);
+    return sessionPassEnabled;
   });
 }

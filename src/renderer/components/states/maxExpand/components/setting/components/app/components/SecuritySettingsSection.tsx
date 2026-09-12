@@ -35,6 +35,14 @@ export function SecuritySettingsSection(): ReactElement {
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
   const [memories, setMemories] = useState<MemoryRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [sessionPass, setSessionPass] = useState(false);
+  const [browserOn, setBrowserOn] = useState(false);
+
+  const loadMemories = (): void => {
+    window.api?.xiyueMemoryList?.()
+      .then((res) => setMemories((res?.items ?? []) as MemoryRow[]))
+      .catch(() => setMemories([]));
+  };
 
   const loadAudit = (): void => {
     window.api?.xiyueAuditLogList?.(30)
@@ -47,9 +55,9 @@ export function SecuritySettingsSection(): ReactElement {
       .then((level) => setTrustLevel(Math.max(0, Math.min(3, level)) as TrustLevelInternal))
       .catch(() => {});
     loadAudit();
-    window.api?.xiyueMemoryList?.()
-      .then((res) => setMemories((res?.items ?? []) as MemoryRow[]))
-      .catch(() => setMemories([]));
+    loadMemories();
+    window.api?.xiyueSessionPassGet?.().then(setSessionPass).catch(() => {});
+    window.api?.xiyueBrowserEnabledGet?.().then(setBrowserOn).catch(() => {});
   }, []);
 
   const currentCard = TRUST_LEVEL_CARDS.find((c) => c.level === trustLevel);
@@ -150,6 +158,17 @@ export function SecuritySettingsSection(): ReactElement {
             })}
           </div>
         </div>
+        <div className="settings-card-inline-row">
+          <button
+            className="settings-card-action-btn"
+            type="button"
+            onClick={() => {
+              window.api?.xiyueMemoryClear?.().then(() => loadMemories()).catch(() => {});
+            }}
+          >
+            {t('settings.memory.clear', { defaultValue: '清空记忆' })}
+          </button>
+        </div>
         {memories.length === 0 ? (
           <div className="settings-hide-selected-empty">
             {t('settings.memory.empty', { defaultValue: '暂无记忆。多聊几句后会出现在这里。' })}
@@ -160,10 +179,74 @@ export function SecuritySettingsSection(): ReactElement {
               <div className="settings-audit-row" key={String(m.id ?? i)}>
                 <span className="settings-audit-tool">{m.content ?? '—'}</span>
                 {m.category ? <span className="settings-audit-time">{String(m.category)}</span> : null}
+                <button
+                  className="settings-card-action-btn"
+                  type="button"
+                  onClick={() => {
+                    const id = Number(m.id);
+                    if (Number.isFinite(id)) {
+                      window.api?.xiyueMemoryDelete?.(id).then(() => loadMemories()).catch(() => {});
+                    }
+                  }}
+                >
+                  {t('settings.memory.delete', { defaultValue: '删除' })}
+                </button>
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      <div className="settings-card">
+        <div className="settings-card-header">
+          <div className="settings-card-title">
+            {t('settings.sessionPass.title', { defaultValue: '会话通行证' })}
+          </div>
+          <div className="settings-card-subtitle">
+            {t('settings.sessionPass.hint', {
+              defaultValue: '开启后，本会话内非删除/非命令类需确认操作可自动通过；删除与命令仍需点允许。重启应用后自动关闭。',
+            })}
+          </div>
+        </div>
+        <div className="settings-card-inline-row">
+          <label className="settings-card-check">
+            <input
+              type="checkbox"
+              checked={sessionPass}
+              onChange={(e) => {
+                setSessionPass(e.target.checked);
+                window.api?.xiyueSessionPassSet?.(e.target.checked).catch(() => {});
+              }}
+            />
+            {t('settings.sessionPass.toggle', { defaultValue: '启用会话通行证' })}
+          </label>
+        </div>
+      </div>
+
+      <div className="settings-card">
+        <div className="settings-card-header">
+          <div className="settings-card-title">
+            {t('settings.browser.title', { defaultValue: '浏览器自动化' })}
+          </div>
+          <div className="settings-card-subtitle">
+            {t('settings.browser.hint', {
+              defaultValue: '默认关闭。开启后模型可提议 browser.* 工具，仍需信任等级与确认策略约束。',
+            })}
+          </div>
+        </div>
+        <div className="settings-card-inline-row">
+          <label className="settings-card-check">
+            <input
+              type="checkbox"
+              checked={browserOn}
+              onChange={(e) => {
+                setBrowserOn(e.target.checked);
+                window.api?.xiyueBrowserEnabledSet?.(e.target.checked).catch(() => {});
+              }}
+            />
+            {t('settings.browser.toggle', { defaultValue: '允许浏览器工具（需重启对话/侧车会话后完全生效）' })}
+          </label>
+        </div>
       </div>
     </div>
   );

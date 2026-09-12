@@ -9,6 +9,7 @@ CosyVoice HTTP 模式后续接在 speak() 前面，生命周期与汐月解耦�
 """
 from __future__ import annotations
 
+import json
 import time
 import wave
 from pathlib import Path
@@ -37,6 +38,35 @@ def _get_kokoro_pipeline():
     except Exception as e:  # noqa: BLE001
         print(f"[tts] kokoro 不可用，回退 pyttsx3: {e}", flush=True)
         _pipeline = False
+        return None
+
+
+def _synthesize_cosyvoice_http(text: str, out: Path, speed: float = 1.0) -> Path | None:
+    """可选：外部 CosyVoice HTTP 服务（XIYUE_COSYVOICE_URL）。失败返回 None。"""
+    import os
+    import urllib.request
+
+    url = (os.environ.get("XIYUE_COSYVOICE_URL") or "").strip()
+    if not url:
+        return None
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps({"text": text, "speed": speed}, ensure_ascii=False).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        wav_b64 = payload.get("audio_b64") or payload.get("audio") or ""
+        if not wav_b64:
+            return None
+        import base64
+
+        out.write_bytes(base64.b64decode(wav_b64))
+        return out
+    except Exception as e:  # noqa: BLE001
+        print(f"[tts] cosyvoice http 失败: {e}", flush=True)
         return None
 
 
@@ -94,14 +124,18 @@ def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None, spee
 
     if keep_file:
         out = TTS_DIR / f"out_{int(time.time() * 1000)}.wav"
-        result = _synthesize_kokoro(text, out, speed=speed)
+        result = _synthesize_cosyvoice_http(text, out, speed=speed)
+        if result is None:
+            result = _synthesize_kokoro(text, out, speed=speed)
         if result is None:
             result = _synthesize_pyttsx3(text, out)
         return result
 
     with tempfile.TemporaryDirectory(prefix="xiyue-tts-") as td:
         out = Path(td) / "out.wav"
-        result = _synthesize_kokoro(text, out, speed=speed)
+        result = _synthesize_cosyvoice_http(text, out, speed=speed)
+        if result is None:
+            result = _synthesize_kokoro(text, out, speed=speed)
         if result is None:
             result = _synthesize_pyttsx3(text, out)
         if result is None or not result.exists():

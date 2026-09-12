@@ -738,6 +738,32 @@ class Handler(BaseHTTPRequestHandler):
                     "audio": str(audio) if audio else "",
                     "audio_b64": _audio_b64(audio),
                 })
+            elif self.path == "/memory/delete":
+                try:
+                    svc = _get_memory_service()
+                    if svc is None:
+                        self._send({"ok": False, "error": "memory offline"}, 503)
+                        return
+                    fid = int(body.get("id") or 0)
+                    ok = bool(svc.delete_memory(fid)) if fid else False
+                    self._send({"ok": ok})
+                except Exception as e:
+                    self._send({"error": str(e)}, 500)
+            elif self.path == "/memory/clear":
+                try:
+                    svc = _get_memory_service()
+                    if svc is None:
+                        self._send({"ok": False, "error": "memory offline"}, 503)
+                        return
+                    items = svc.list_memories(enabled=True)
+                    n = 0
+                    for it in items:
+                        mid = it.get("id")
+                        if mid is not None and svc.delete_memory(int(mid)):
+                            n += 1
+                    self._send({"ok": True, "deleted": n})
+                except Exception as e:
+                    self._send({"error": str(e)}, 500)
             elif self.path == "/transcribe":
                 # 渲染层录音结束后的本地转写（faster-whisper），替代云端 STT
                 audio_b64 = body.get("audio_b64") or ""

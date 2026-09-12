@@ -31,6 +31,7 @@
 import { app } from 'electron';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { isXiyueSessionPassEnabled } from '../ipc/agent/xiyueSecurityIpc';
 
 /** 汐月工具风险分类 */
 export type XiyueToolRisk = 'read' | 'write' | 'delete' | 'cmd' | 'clipboard' | 'sys' | 'monitor' | 'network';
@@ -207,6 +208,11 @@ export function xiyueFinalCheck(request: XiyueFinalCheckRequest): XiyueFinalChec
   }
 
   if (meta.confirm && request.userConfirmed !== true) {
+    /** 会话通行证：仅自动放行「非删除/非命令」的 confirm 工具；delete/cmd 仍须点确认 */
+    const highRisk = meta.risks.includes('delete') || meta.risks.includes('cmd');
+    if (isXiyueSessionPassEnabled() && !highRisk) {
+      return { allowed: true };
+    }
     return {
       allowed: false,
       requiresConfirmation: true,

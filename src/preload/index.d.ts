@@ -109,6 +109,12 @@ declare global {
       xiyueAuditLogList: (limit?: number) => Promise<unknown[]>;
       xiyueMemoryList: () => Promise<{ items?: unknown[]; error?: string }>;
       xiyueEmotionGet: () => Promise<{ state?: string; mood?: string } | null>;
+      xiyueMemoryDelete: (id: number) => Promise<unknown>;
+      xiyueMemoryClear: () => Promise<unknown>;
+      xiyueBrowserEnabledGet: () => Promise<boolean>;
+      xiyueBrowserEnabledSet: (enabled: boolean) => Promise<boolean>;
+      xiyueSessionPassGet: () => Promise<boolean>;
+      xiyueSessionPassSet: (enabled: boolean) => Promise<boolean>;
       showWindow: () => void;
       moveWindowDelta: (dx: number, dy: number) => void;
       getMousePosition: () => Promise<Point>;
