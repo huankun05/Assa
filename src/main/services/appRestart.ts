@@ -37,21 +37,18 @@ import { spawn } from 'child_process';
 import { appendFileSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
-/** stdout 管道断开时 console.log 会抛 EPIPE，会把托盘点击整个打崩 */
+/** 重启路径禁止碰 console/stdout——管道断开时异步 EPIPE 会崩主进程 */
 function safeLog(...args: unknown[]): void {
   try {
-    console.log(...args);
+    const msg = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+    appendFileSync(join(app.getPath('temp'), 'xiyue-dev-restart.log'), `[app] ${msg}\n`);
   } catch {
-    // EPIPE etc.
+    // ignore
   }
 }
 
 function safeLogError(...args: unknown[]): void {
-  try {
-    console.error(...args);
-  } catch {
-    // EPIPE etc.
-  }
+  safeLog(...args);
 }
 
 /** 等待旧实例退出的轮询上限（约 2 分钟），防止隐藏脚本无限循环 */

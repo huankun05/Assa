@@ -141,6 +141,14 @@ import {
 } from './config/storeConfig';
 import type { IslandPositionOffset } from './config/storeConfig';
 
+/** stdout/stderr 管道断开时会异步抛 EPIPE；不挂 error 处理器会崩主进程 */
+try {
+  process.stdout?.on?.('error', () => {});
+  process.stderr?.on?.('error', () => {});
+} catch {
+  // ignore
+}
+
 /** 防止 Electron 创建多个实例 */
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
