@@ -100,7 +100,8 @@ export function restartApp(): void {
   }
 
   showRestartToast();
-  setTimeout(() => app.exit(0), RESTART_TOAST_DELAY_MS);
+  // 尽快退出，缩短 restarter 等待与单实例锁占用窗口
+  setTimeout(() => app.exit(0), 600);
 }
 
 /**
@@ -192,14 +193,19 @@ function portFree(p) {
   try {
     writeFileSync(scriptPath, script, 'utf-8');
     appendFileSync(logFile, `===== scheduled pid=${pid} script=${scriptPath} =====\n`);
-    const child = spawn(systemNode, [scriptPath], {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true,
-      cwd: projectRoot,
-    });
+    // cmd start 再开一层，脱离 Electron Job Object（仅 node 仍可能被连带杀掉）
+    const child = spawn(
+      'cmd.exe',
+      ['/d', '/c', 'start', '/b', '', systemNode, scriptPath],
+      {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+        cwd: projectRoot,
+      },
+    );
     child.unref();
-    console.log(`[App] dev restarter scheduled via node (log: ${logFile})`);
+    console.log(`[App] dev restarter scheduled via cmd+node (log: ${logFile})`);
   } catch (err) {
     console.error('[App] node restarter spawn failed:', err);
     try {
