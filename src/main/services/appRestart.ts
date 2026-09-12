@@ -37,6 +37,23 @@ import { spawn } from 'child_process';
 import { appendFileSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
+/** stdout 管道断开时 console.log 会抛 EPIPE，会把托盘点击整个打崩 */
+function safeLog(...args: unknown[]): void {
+  try {
+    console.log(...args);
+  } catch {
+    // EPIPE etc.
+  }
+}
+
+function safeLogError(...args: unknown[]): void {
+  try {
+    console.error(...args);
+  } catch {
+    // EPIPE etc.
+  }
+}
+
 /** 等待旧实例退出的轮询上限（约 2 分钟），防止隐藏脚本无限循环 */
 const RESTARTER_MAX_TRIES = 120;
 
@@ -75,7 +92,7 @@ const RESTART_TOAST_DELAY_MS = 1000;
 export function restartApp(): void {
   if (restarting) return;
   restarting = true;
-  console.log('[App] restartApp start', {
+  safeLog('[App] restartApp start', {
     packaged: app.isPackaged,
     hasRendererUrl: Boolean(process.env.ELECTRON_RENDERER_URL),
     appPath: app.getAppPath(),
@@ -90,13 +107,13 @@ export function restartApp(): void {
       app.relaunch();
     }
   } catch (err) {
-    console.error('[App] restart relaunch error:', err);
+    safeLogError('[App] restart relaunch error:', err);
   }
 
   try {
     restartCleanup?.();
   } catch (err) {
-    console.error('[App] restart cleanup error:', err);
+    safeLogError('[App] restart cleanup error:', err);
   }
 
   showRestartToast();
@@ -117,7 +134,7 @@ function showRestartToast(): void {
       body: '应用将关闭以完成重启，结束后会自动重新打开，请稍候。'
     }).show();
   } catch (err) {
-    console.error('[App] restart toast error:', err);
+    safeLogError('[App] restart toast error:', err);
   }
 }
 
@@ -211,9 +228,9 @@ function waitPortFree(port) {
       cwd: projectRoot,
     });
     child.unref();
-    console.log(`[App] dev restarter scheduled via wscript port=${rendererPort || 'none'} (log: ${logFile})`);
+    safeLog(`[App] dev restarter scheduled via wscript port=${rendererPort || 'none'} (log: ${logFile})`);
   } catch (err) {
-    console.error('[App] restarter schedule failed:', err);
+    safeLogError('[App] restarter schedule failed:', err);
     try {
       app.relaunch();
     } catch {

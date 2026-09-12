@@ -119,10 +119,9 @@ function createTray(mainWindowGetter: () => BrowserWindow | null): Tray {
       label: '重启灵动岛',
       click: () => {
         try {
-          console.log('[Tray] restart requested');
           restartApp();
-        } catch (err) {
-          console.error('[Tray] restart error:', err);
+        } catch {
+          // EPIPE/console 已在 appRestart 内保护；此处不再打日志
         }
       }
     },
