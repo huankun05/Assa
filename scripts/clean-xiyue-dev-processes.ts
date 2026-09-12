@@ -1,15 +1,18 @@
 /**
  * @file scripts/clean-xiyue-dev-processes.ts
- * @description 只清理「本项目路径」的 dev 残留进程（electron-vite / node / electron / xiyue-dev-restart）。
- * 按命令行包含 F:\Work\Create\Assa\Xiyue 匹配，不会误杀其它项目。
- * 用法：node scripts/clean-xiyue-dev-processes.ts
+ * @description 只清理「当前项目目录」的 dev 残留进程。
+ * 项目根 = 本脚本所在目录的上级（scripts/..），随仓库移动自动变化，不写死盘符。
+ * 匹配：进程命令行包含该根路径（含反斜杠/正斜杠），不会误杀其它项目。
+ * 用法：npm run clean:dev-processes  或  node --experimental-strip-types scripts/clean-xiyue-dev-processes.ts
  */
 
 import { execSync } from 'child_process';
 import { join } from 'path';
 
-const PROJECT_ROOT = join(__dirname, '..', '..').replace(/\\/g, '/');
-/** 也可显式：const PROJECT_ROOT = 'F:/Work/Create/Assa/Xiyue'; */
+/** 当前项目根：从 scripts/ 向上两级到仓库根 */
+const PROJECT_ROOT = join(__dirname, '..', '..');
+const PROJECT_ROOT_SLASH = PROJECT_ROOT.replace(/\\/g, '/');
+const PROJECT_ROOT_BACK = PROJECT_ROOT.replace(/\//g, '\\');
 
 interface WinProc {
   ProcessId: number;
@@ -28,14 +31,11 @@ function listProcesses(): WinProc[] {
 
 function isXiyueProc(p: WinProc): boolean {
   if (!p.CommandLine) return false;
-  const cmd = p.CommandLine.toLowerCase();
-  const root = PROJECT_ROOT.toLowerCase();
-  // 仅本项目路径相关
-  return (
-    cmd.includes(root)
-    || cmd.includes('xiyue-dev-restart')
-    || (cmd.includes('electron') && cmd.includes('assaxiyue'))
-  );
+  const cmd = p.CommandLine;
+  const rootFwd = PROJECT_ROOT_SLASH.toLowerCase();
+  const rootBack = PROJECT_ROOT_BACK.toLowerCase();
+  // 仅当前项目根路径（正斜杠 / 反斜杠）
+  return cmd.toLowerCase().includes(rootFwd) || cmd.toLowerCase().includes(rootBack);
 }
 
 function main(): void {
