@@ -205,7 +205,7 @@
 | **M-A1** | ✅ | 设置「隐私与安全 · AI 信任与审计」：L0–L3 卡片可写 `xiyue.json`；工具审计只读列表；identity mtime 热重载 |
 | **M-A2** | ✅ | Kokoro `speed` 接 `_emotion_tts_speed`；`/emotion` 返回 mood；final 带 emotionMood；hover 在 happy 时按情绪微调 calm/confuse（不覆盖 agent 工作态） |
 | **M-A3** | ✅ | `GET /memory/list` + 设置页只读记忆列表 |
-| **M-A4** | ⏸ 未做 | Silero VAD / barge-in 仍后置 |
+| **M-A4** | ✅ 部分 | barge-in：开麦/abort 停 TTS；Silero 为 `XIYUE_VAD=1` 可选二次确认（默认关） |
 | **M-A5** | ✅ | `browser.enabled` 默认 **false**；关闭时不向 LLM 暴露 browser.*；_decide_tool 直接 deny |
 
 **相关文件**：`xiyueSecurityIpc.ts`、`SecuritySettingsSection.tsx`、`identity.py`、`server.py`、`tts.py`、`xiyue.json`。

@@ -751,6 +751,17 @@ class Handler(BaseHTTPRequestHandler):
                     TMP_DIR.mkdir(parents=True, exist_ok=True)
                     path = TMP_DIR / f"in_{int(time.time()*1000)}.wav"
                     path.write_bytes(raw)
+                    # 可选增强 VAD（默认关）：Silero 确认有语音再转写
+                    if os.environ.get("XIYUE_VAD", "").strip() in ("1", "true", "True"):
+                        try:
+                            from voice.vad import detect_speech
+
+                            stamps = detect_speech(str(path))
+                            if not stamps:
+                                self._send({"text": "", "vadEmpty": True})
+                                return
+                        except Exception as e:
+                            print(f"[server] VAD 跳过: {e}", flush=True)
                     text = _transcribe(path)
                     self._send({"text": text})
                 except Exception as e:

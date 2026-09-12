@@ -1,27 +1,9 @@
-/*
- * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
- * https://github.com/JNTMTMTM/eIsland
- *
- * Copyright (C) 2026 JNTMTMTM
- * Copyright (C) 2026 pyisland.com
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
-
 /**
  * @file xiyueLocalAgent.ts
  * @description 汐月 Hermes 本地 Agent 流封装
  * @description 经主进程 SSE 桥消费侧车 /chat/stream，把事件翻译成原生
- *   MihtnelisAgentStreamEvent（think/chunk/tool_call_request/tool_call_result/final/error），
- *   并自动播放 TTS（final 事件携带 audio_b64）。
+ *   MihtnelisAgentStreamEvent，并自动播放 TTS（final 事件携带 audio_b64）。
+ *   支持语音打断：abort / 新语音输入时 stopXiyueTtsPlayback()。
  */
 
 import type { MihtnelisAgentStreamEvent } from './types';
@@ -42,6 +24,40 @@ interface StreamEventPayload {
   reply?: unknown;
   audio_b64?: unknown;
   message?: unknown;
+}
+
+/** 当前 TTS 播放句柄（barge-in 用） */
+let currentTtsAudio: HTMLAudioElement | null = null;
+
+/**
+ * 停止正在播放的 TTS（语音打断 / 新会话前调用）
+ */
+export function stopXiyueTtsPlayback(): void {
+  if (currentTtsAudio) {
+    try {
+      currentTtsAudio.pause();
+      currentTtsAudio.currentTime = 0;
+    } catch {
+      // ignore
+    }
+    currentTtsAudio = null;
+  }
+}
+
+function playTtsBase64(b64: string): void {
+  stopXiyueTtsPlayback();
+  try {
+    const audio = new Audio(`data:audio/wav;base64,${b64}`);
+    currentTtsAudio = audio;
+    audio.onended = (): void => {
+      if (currentTtsAudio === audio) currentTtsAudio = null;
+    };
+    audio.play().catch(() => {
+      if (currentTtsAudio === audio) currentTtsAudio = null;
+    });
+  } catch {
+    // ignore
+  }
 }
 
 function emit(
@@ -65,21 +81,16 @@ export async function streamXiyueAgent(request: StreamXiyueAgentRequest): Promis
   const { message, signal, onEvent } = request;
   const sessionId = `xiyue-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+  /** 用户打断：停 TTS + 通知侧车 abort */
   const onAbort = (): void => {
+    stopXiyueTtsPlayback();
     window.api.xiyueStreamAbort(sessionId).catch(() => {});
   };
   signal?.addEventListener('abort', onAbort, { once: true });
 
-  let unsubscribed = false;
-  const unsubscribe = (): void => {
-    if (!unsubscribed) {
-      unsubscribed = true;
-      window.api.onXiyueStreamEvent(sessionId, () => {}).catch(() => {});
-    }
-  };
-
   try {
     const handler = (raw: unknown): void => {
+      if (signal?.aborted) return;
       const payload = (raw as StreamEventPayload | null) ?? {};
       switch ((raw as { type?: string } | null)?.type) {
         case 'think':
@@ -104,13 +115,8 @@ export async function streamXiyueAgent(request: StreamXiyueAgentRequest): Promis
           emit(onEvent, { type: 'tool_call_result', payload: {} });
           break;
         case 'final':
-          if (str(payload.audio_b64)) {
-            try {
-              const audio = new Audio(`data:audio/wav;base64,${str(payload.audio_b64)}`);
-              audio.play().catch(() => {});
-            } catch {
-              // ignore playback failure
-            }
+          if (str(payload.audio_b64) && !signal?.aborted) {
+            playTtsBase64(str(payload.audio_b64));
           }
           emit(onEvent, { type: 'final', payload: {} });
           break;

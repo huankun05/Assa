@@ -35,6 +35,7 @@ import {
 import { getAudioContextCtor } from '../utils/agentVoiceInputAudio';
 import { pushFloat32Frames } from '../utils/agentVoiceInputPcm';
 import { readEffectiveAudioVolume } from '../../../../utils/audio/volume';
+import { stopXiyueTtsPlayback } from '../../../../api/ai/xiyueLocalAgent';
 
 interface UseAgentVoiceInputRuntimeOptions {
   setStatusText: React.Dispatch<React.SetStateAction<string>>;
@@ -125,6 +126,8 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
     moduleSttCleanup = stopAll;
 
     const start = async (): Promise<void> => {
+      /** 语音打断：开麦时先停掉正在播的 TTS */
+      stopXiyueTtsPlayback();
       const targetVolume = await readEffectiveAudioVolume('effect').catch(() => 1);
       const triggerSound = new Audio('./audio/AGENT.wav');
       triggerSound.volume = targetVolume;
