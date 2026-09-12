@@ -34,4 +34,6 @@ export interface AgentLocalToolRequest {
   workspaces?: unknown;
   /** 用户已在 UI 上确认本次调用；白名单中 confirm: true 的工具缺少它会被终审拒绝 */
   userConfirmed?: unknown;
+  /** 与侧车 route_log / tool_call_request 串联的请求 ID（可选） */
+  requestId?: unknown;
 }

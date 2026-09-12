@@ -126,12 +126,12 @@ export function registerIslandIpcHandlers(options: RegisterIslandIpcHandlersOpti
   ipcMain.handle('island:idle-click-expand:get', () => {
     try {
       const filePath = join(options.storeDir, `${options.idleClickExpandStoreKey}.json`);
-      if (!existsSync(filePath)) return false;
+      if (!existsSync(filePath)) return true;
       const raw = readFileSync(filePath, 'utf-8');
       const data = JSON.parse(raw);
-      return typeof data === 'boolean' ? data : false;
+      return typeof data === 'boolean' ? data : true;
     } catch {
-      return false;
+      return true;
     }
   });
 

@@ -1,7 +1,14 @@
 # Xiyue（eIsland）设计风格指南
 
+> **⚠ 本文部分章节已过时。**  
+> **UI 开发请优先阅读并遵循：[`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)**（颜色 token、图标保色/遮罩、岛不抢焦点、汐月角色替换恐龙、Lucide 策略）。  
+> 角色素材见：[`CHARACTER_ASSET_CHECKLIST.md`](./CHARACTER_ASSET_CHECKLIST.md)。  
+> 本文件仍可作为**尺寸/圆角/动画曲线/组件 CSS 片段**的速查；但以下内容已废弃：  
+> - 「像素小恐龙」作为产品形象（§1、§4.2、§9）→ 主形象为**汐月少女**  
+> - 「浮层必须 backdrop-filter」一刀切（§2.6）→ **岛体有意不透明**；仅桌面浮层强制玻璃  
+>
 > 适用：灵动岛（Dynamic Island）、截图工具栏、贴图浮窗、启动屏、设置面板等所有 Xiyue 浮层 UI。
-> 本文档基于 `src/renderer/styles/`、`resources/capture.css`、`resources/pin.css`、灵动岛状态组件（`src/renderer/components/states/agent`）、AGENT_*.png 资源综合提炼。后续任何 UI 改动请先回看本文档，再参照各模块源码。
+> 本文档基于 `src/renderer/styles/`、`resources/capture.css`、`resources/pin.css`、灵动岛状态组件（`src/renderer/components/states/agent`）综合提炼。
 
 ---
 
@@ -19,9 +26,10 @@ Xiyue 是 **Apple Dynamic Island 复刻** 的 Windows 浮层工具，整体语�
    - 玻璃拟态（backdrop-filter blur + saturate）
    - 文字按主题色自适应的 rgba(var(--color-text-rgb), α) 写法
 
-3. **暖色像素拟物角色注入温度**
-   - AI 用「像素小恐龙」（AGENT_DEFAULT/THINKING/TOOL_CALLING/FINAL_ANSWER/CONFUSE）作为吉祥物
-   - 暖色（橙黄）打破冷色玻璃面板的科技感，让 AI 拟人、可亲
+3. **暖色汐月角色注入温度**
+   - **主形象：二次元可爱少女（汐月）**，多 mood 差分；见 `CHARACTER_ASSET_CHECKLIST.md`
+   - 像素恐龙（AGENT_*.png）为 eIsland 遗产，**非产品人格**，计划整体替换
+   - 暖色打破冷色玻璃的科技感，让 AI 拟人、可亲
 
 > **设计铁律：UI 冷、角色暖。冷暖对冲，永远不要让 UI 和角色都冷、都暖。**
 
@@ -153,7 +161,9 @@ backdrop-filter: blur(<n>px) saturate(1.4);
 | 贴图工具条 | `16px` | `1.4` |
 | 尺寸角标/底部提示 | `10px ~ 14px` | `1.2 ~ 1.3` |
 
-**铁律**：浮层必须带 `backdrop-filter` 才是 Xiyue 风；裸 `background` 是「未完成」。
+**铁律（修订）**：  
+- **桌面浮层**（截图/贴图/OCR/设置面板等）必须带 `backdrop-filter: blur + saturate(1.4)` 才是 Xiyue 风；裸 `background` 视为未完成。  
+- **灵动岛壳**（idle/hover/agent）**有意不透明实底**，不强制 backdrop-filter（对齐 iOS，保可读性与性能）。详见 `DESIGN_SYSTEM.md` §4.1。
 
 ---
 
@@ -394,4 +404,5 @@ CSS（`agent.css`）：
 
 ## 9. 一句话风格总结
 
-> **iOS Dynamic Island 的极简骨架 + 深色玻璃拟态 + 像素小恐龙的温度。任何 UI 元素都该长这样：冷面板、暖角色、弹性形变、细圆角、玻璃薄层。**
+> **iOS Dynamic Island 的极简骨架 + 深色玻璃拟态 + 汐月少女角色的温度。冷面板、暖角色、弹性形变、细圆角；桌面浮层玻璃、岛体实底；功能图标单色可主题化，品牌与插画保原色。**  
+> 完整规范见 `DESIGN_SYSTEM.md`。

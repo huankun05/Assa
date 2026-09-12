@@ -86,12 +86,12 @@ vi.mock('../../../utils/broadcast', () => ({
   broadcastSettingChange: broadcastSettingChangeMock,
 }));
 
-vi.mock('@eisland/windows-volume-helper', () => ({
+vi.mock('@xiyue/windows-volume-helper', () => ({
   getMute: getMuteMock,
   setMute: setMuteMock,
 }));
 
-vi.mock('@eisland/windows-smtc-helper', () => ({
+vi.mock('@xiyue/windows-smtc-helper', () => ({
   play: playMock,
   pause: pauseMock,
   next: nextMock,

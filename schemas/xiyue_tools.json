@@ -267,6 +267,205 @@
       }
     },
     {
+      "name": "volume.mute",
+      "title": "静音",
+      "description": "将系统音量静音",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "volume.unmute",
+      "title": "取消静音",
+      "description": "取消系统静音",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "brightness.set",
+      "title": "设置亮度",
+      "description": "设置系统屏幕亮度（0-100）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "level": { "type": "integer", "description": "亮度 0-100" }
+        },
+        "required": ["level"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "media.play_pause",
+      "title": "播放/暂停",
+      "description": "切换当前媒体播放/暂停（SMTC）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "media.next",
+      "title": "下一首",
+      "description": "切换到下一首媒体（SMTC）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "media.prev",
+      "title": "上一首",
+      "description": "切换到上一首媒体（SMTC）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "volume.set",
+      "title": "设置音量",
+      "description": "设置系统音量（0-100）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "level": { "type": "integer", "description": "音量 0-100" }
+        },
+        "required": ["level"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
+      "name": "sys.launch",
+      "title": "启动应用或打开路径",
+      "description": "启动应用（app），或用应用打开文件/URL（app+target），或直接打开 target",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "app": { "type": "string", "description": "应用名，如 notepad、微信" },
+          "target": { "type": "string", "description": "可选：文件/URL/路径" }
+        },
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "xiyue": {
+        "risks": ["sys"],
+        "confirm": false,
+        "level": 1,
+        "scope": "any",
+        "needsWorkspace": false,
+        "requireWorkspaceWhenEmpty": false
+      }
+    },
+    {
       "name": "monitor.cpu",
       "title": "CPU 使用率",
       "description": "获取 CPU 使用率",

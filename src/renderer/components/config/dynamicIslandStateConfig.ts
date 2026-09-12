@@ -49,7 +49,8 @@ export const STATE_CONFIGS: Record<IslandState, StateConfig> = {
     name: 'hover',
     mousePassthrough: false,
     expanded: true,
-    enterDelay: 60,
+    /** 悬停展开前停留时长：默认已改为点击展开，此值仅在用户关掉点击展开后生效 */
+    enterDelay: 250,
     leaveDelay: 80,
   },
   expanded: {

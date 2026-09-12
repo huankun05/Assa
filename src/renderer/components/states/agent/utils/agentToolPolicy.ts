@@ -28,6 +28,7 @@ const CLIENT_LOCAL_TOOL_PREFIXES = [
   'file.', 'cmd.', 'sys.', 'win.', 'clipboard.', 'notification.', 'net.',
   'monitor.', 'volume.', 'brightness.', 'display.', 'power.', 'wifi.',
   'registry.', 'service.', 'schedule.', 'firewall.', 'defender.', 'island.', 'alarm.', 'todolist.',
+  'media.',
 ] as const;
 
 const CLIENT_LOCAL_TOOL_EXACT_NAMES = new Set(['web.search']);

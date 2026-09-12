@@ -117,3 +117,10 @@ Verification: `grep -rn "defaultValue" src/renderer/components/<changed-dir>/` s
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+
+---
+
+## Platform
+
+汐月 is developed exclusively for Windows. Do not add macOS/Apple ports. Keep new system能力 in the Electron shell (src/main + plugins/*); keep gent/ free of Win32/UI coupling (multi-platform discipline, see docs/产品定位讨论报告_v1.0.md).

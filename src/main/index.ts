@@ -84,7 +84,7 @@ import { createAutoHideWatcher } from './system/autoHideWatcher';
 import { createExternalAgentWatcher } from './system/externalAgentWatcher';
 import { createClaudeCodeStatusService } from './system/claudeCodeStatusService';
 import { createCodexStatusService } from './system/codexStatusService';
-import { play, pause, next } from '@eisland/windows-smtc-helper';
+import { play, pause, next } from '@xiyue/windows-smtc-helper';
 import {
   queryFocusedWindow,
   queryOpenWindowsWithIcons,
@@ -155,7 +155,7 @@ function detectAnyFullscreenWindow(): boolean {
   if (process.platform !== 'win32') return false;
   if (cachedFullscreenDetector === undefined) {
     try {
-      cachedFullscreenDetector = require('@eisland/windows-fullscreen-detector') as { isAnyFullscreenWindow: () => boolean };
+      cachedFullscreenDetector = require('@xiyue/windows-fullscreen-detector') as { isAnyFullscreenWindow: () => boolean };
     } catch (err) {
       cachedFullscreenDetector = null;
       console.warn('[FullscreenDetector] unavailable:', err);
@@ -859,7 +859,7 @@ registerAppLifecycleHandlers({
  * 应用就绪入口，初始化窗口、注册 IPC 处理器并响应 macOS dock 点击重建窗口
  */
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.eisland.app');
+  electronApp.setAppUserModelId('com.xiyue.app');
 
   /** 汐月 Hermes Python 侧车：启动 + IPC 桥 */
   startXiyueAgent();

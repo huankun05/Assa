@@ -66,12 +66,19 @@
 
 /* 头像：SVG 与 <img> 共用同一套尺寸与主题适配 */
 .xiyue-avatar {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
   filter: brightness(0) invert(var(--icon-invert));
+}
+
+/* 图片模式：彩色头像不应用 SVG 的黑白 invert filter */
+img.xiyue-avatar {
+  filter: none;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
 .xiyue-text-block {

@@ -53,7 +53,7 @@ export const WEATHER_LOCATION_PRIORITY_OPTIONS: Array<{ value: WeatherLocationPr
 
 export const SETTINGS_TABS = ['index', 'app', 'network', 'mail', 'weather', 'music', 'shortcut', 'update', 'pluginMarket', 'about'] as const;
 export type SettingsSidebarTabKey = (typeof SETTINGS_TABS)[number];
-export type AppSettingsPageKey = 'layout-preview' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
+export type AppSettingsPageKey = 'layout-preview' | 'hover-layout' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
 export type WeatherSettingsPageKey = 'location' | 'provider';
 export type MailSettingsPageKey = 'account' | 'imap' | 'preferences';
 export type MusicSettingsPageKey = 'whitelist' | 'lyrics' | 'smtc' | 'providers' | 'like';

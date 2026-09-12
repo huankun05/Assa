@@ -42,6 +42,9 @@ from agent.memory.store import resolve_data_dir  # noqa: E402
 from agent.memory.history import load_history as _load_history, save_history as _save_history  # noqa: E402
 from agent.memory.working import add_fact, get_active_facts, clear_expired  # noqa: E402
 from voice import tts as _tts_module  # noqa: E402 公共 TTS 模块（kokoro+pyttsx3）
+from agent.router import execute_rule_path as _router_execute  # noqa: E402
+from agent.router.log import write_dict as _route_write_dict  # noqa: E402
+from agent.router.types import TIER_RULE  # noqa: E402
 
 # 情绪状态（统一从 identity 读取，避免重复定义）
 from agent.identity import (  # noqa: E402
@@ -344,11 +347,15 @@ def _decide_tool(tool_name: str):
 
 
 def _request_tool_result(request_id: str) -> dict | None:
-    """等待渲染层投递工具执行结果；超时返回 None"""
+    """等待渲染层投递工具执行结果；超时返回 None。
+
+    若调用方尚未注册队列，则在此注册，避免 agent 循环漏注册导致必超时。
+    """
     with _tool_queues_lock:
         q = _tool_queues.get(request_id)
-    if q is None:
-        return None
+        if q is None:
+            q = queue.Queue()
+            _tool_queues[request_id] = q
     try:
         item = q.get(timeout=_TOOL_RESULT_TIMEOUT_S)
         return item
@@ -473,6 +480,9 @@ def _run_agent_loop(messages: list[dict], emit) -> str:
             request_id = uuid.uuid4().hex[:16]
             auth_required, denied = _decide_tool(name)
             purpose = args.get("purpose") or f"调用 {name}"
+            # 先注册结果队列，再发 tool_call_request，避免与 /tool-result 竞态
+            with _tool_queues_lock:
+                _tool_queues[request_id] = queue.Queue()
             emit("tool_call_request", {
                 "requestId": request_id,
                 "tool": name,
@@ -481,6 +491,8 @@ def _run_agent_loop(messages: list[dict], emit) -> str:
                 "authorizationRequired": auth_required,
             })
             if denied:
+                with _tool_queues_lock:
+                    _tool_queues.pop(request_id, None)
                 result = {"success": False, "result": {}, "error": "权限不足：该工具被拒绝"}
             else:
                 result = _request_tool_result(request_id)
@@ -488,7 +500,23 @@ def _run_agent_loop(messages: list[dict], emit) -> str:
                     result = {"success": False, "result": {}, "error": "工具执行超时或未获授权"}
             messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False)})
 
-    # 超出轮数：兜底再问一次（真流式）
+    # 超出轮数：兜底再问一次（真流式）；云端默认关，记 cloud_disabled_fallback
+    try:
+        _route_write_dict({
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "tier": "local_llm",
+            "reason": "tool_rounds_exhausted",
+            "cloud": {"used": False, "confirmed": False, "fallback": "cloud_disabled"},
+            "ok": False,
+        })
+    except Exception:
+        pass
+
+    messages.append({
+        "role": "user",
+        "content": "[系统] 工具轮次已用尽，云端路由当前关闭。请基于已有信息给出简短结论，或告诉用户可开启云端/缩小任务范围。",
+    })
+
     def on_final(text: str) -> None:
         emit("chunk", {"text": text})
 
@@ -662,6 +690,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not text:
                     self._send({"error": "empty text"}, 400)
                     return
+                # 规则短路仅在 /chat/stream（有 tool_call_request→/tool-result 闭环）；
+                # 旧 /chat 保持 LLM 路径，避免无工具回传时假成功。
                 reply = _llm_reply(text)
                 audio = _tts(reply)
                 self._send({
@@ -742,6 +772,43 @@ class Handler(BaseHTTPRequestHandler):
             return _request_tool_result(request_id)
 
         try:
+            # Router：闭集规则短路（不进 Hermes/LLM）
+            def _wait_rule_result(request_id: str) -> dict | None:
+                with _tool_queues_lock:
+                    _tool_queues[request_id] = queue.Queue()
+                return _request_tool_result(request_id)
+
+            def _emit_rule(event_type: str, payload: dict) -> None:
+                emit(event_type, payload)
+
+            rule_out = _router_execute(
+                text,
+                emit=_emit_rule,
+                wait_result=_wait_rule_result,
+                make_request_id=lambda: uuid.uuid4().hex[:16],
+                decide=_decide_tool,
+            )
+            if rule_out is not None and rule_out.tier == TIER_RULE and rule_out.reply:
+                emit("chunk", {"text": rule_out.reply})
+                audio = _tts(rule_out.reply)
+                emit("final", {
+                    "reply": rule_out.reply,
+                    "audio_b64": _audio_b64(audio),
+                    "tier": "rule",
+                    "rule_id": rule_out.rule_id,
+                })
+                _history.append({"role": "user", "content": text})
+                _history.append({"role": "assistant", "content": rule_out.reply})
+                _save_history(_history)
+                _memory_store_turn(text, rule_out.reply)
+                return
+            if rule_out is not None and rule_out.tier in ("denied", "rule"):
+                reply = rule_out.reply or "这个操作没有执行。"
+                emit("chunk", {"text": reply})
+                audio = _tts(reply)
+                emit("final", {"reply": reply, "audio_b64": _audio_b64(audio), "tier": rule_out.tier})
+                return
+
             emotion_desc = _emotion_on_user(text)
             system = _build_system(
                 "你是本地 AI 管家，可以调用提供的工具帮用户做事。"

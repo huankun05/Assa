@@ -60,7 +60,7 @@ export function BehaviorSettingsPage({
 
   const [standaloneWindowMode, setStandaloneWindowMode] = useState<'integrated' | 'standalone'>('integrated');
   const [hoverScreenshotMode, setHoverScreenshotMode] = useState<HoverScreenshotMode>('region');
-  const [idleClickExpand, setIdleClickExpand] = useState<boolean>(false);
+  const [idleClickExpand, setIdleClickExpand] = useState<boolean>(true);
   const [shapeMode, setShapeMode] = useState<IslandShapeMode>('notch');
 
   useEffect(() => {

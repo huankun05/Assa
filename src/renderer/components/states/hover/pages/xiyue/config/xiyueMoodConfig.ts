@@ -123,8 +123,8 @@ export function getSubtitle(mood: AgentMood, d: Date = new Date()): string {
  * };
  */
 export const AVATAR_IMAGE_MAP: Partial<Record<AgentMood, string>> = {
-  // happy: 'image/AGENT_DEFAULT.png',
-  // thinking: 'image/AGENT_THINKING.png',
-  // confuse: 'image/AGENT_CONFUSE.png',
-  // listening: 'image/AGENT_DEFAULT.png',
+  happy: 'image/agent/xiyue_happy.png',
+  // thinking: 'image/agent/xiyue_thinking.png',
+  // confuse: 'image/agent/xiyue_confuse.png',
+  // listening: 'image/agent/xiyue_listening.png',
 };

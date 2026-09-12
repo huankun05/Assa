@@ -65,6 +65,7 @@ const CLIENT_LOCAL_TOOL_PREFIXES = [
   'island.',
   'alarm.',
   'todolist.',
+  'media.',
 ] as const;
 
 const CLIENT_LOCAL_TOOL_EXACT_NAMES = new Set(['web.search']);

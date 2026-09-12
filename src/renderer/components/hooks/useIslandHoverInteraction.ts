@@ -158,6 +158,7 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
               setMousePassthrough(false);
             }
           } else {
+            /** 真·悬停展开：需停留 enterDelay 才触发，避免扫过顶部误抢焦点 */
             enterTimerRef.current = setTimeout(() => {
               enterTimerRef.current = null;
               if (aborted || isHoveringRef.current) return;
@@ -170,7 +171,7 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
               if (state === 'lyrics' || state === 'lyricsTranslation') {
                 setHoverTab('lyrics');
               }
-            });
+            }, Math.max(0, config.enterDelay ?? 0));
           }
         }
       } else {

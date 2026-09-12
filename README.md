@@ -1,20 +1,30 @@
 <div align="center">
-  <h1><img src="assets/eisland.svg" alt="eIsland Logo" height="32" style="vertical-align: middle;" />&nbsp;汐月 Xiyue</h1>
-  <p><strong>本地常驻 AI 管家 · Dynamic Island 风格（基于 eIsland 衍生）</strong></p>
-  <p>Built with Electron + React + TypeScript</p>
-  <p>Supports real-time weather, synced lyrics, timers, and quick system utility actions</p>
-  <p>NetEase Cloud Music login integration for accurate like status and precise lyrics matching</p>
+  <h1>汐月 Xiyue</h1>
+  <p><strong>Windows 顶栏的本地 AI 工具箱 · Dynamic Island 形态</strong></p>
+  <p>信息一眼可见，杂事一句话可办；模型跑在你的电脑上，文件不离开这台机器。</p>
+  <p>Built with Electron + React + TypeScript · Python Agent sidecar</p>
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
-[![Electron](https://img.shields.io/badge/Electron-35-47848F?logo=electron\&logoColor=white)](https://www.electronjs.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react\&logoColor=white)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript\&logoColor=white)](https://www.typescriptlang.org/)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](#platform-restriction)
+[![Electron](https://img.shields.io/badge/Electron-35-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 </div>
 
 ***
 
-> License note: This project is open-sourced under GPLv3 with additional clauses and supplements (see `LICENSE` for details).
+## 这是什么
+
+**汐月**是一款运行在 Windows 顶栏的开源桌面应用：
+
+- **灵动岛工具箱**：天气、歌词/网易云、系统控制、剪贴板、待办、工具箱等常驻能力
+- **本地 AI**：默认本地推理（Ollama + faster-whisper + kokoro），日常任务可走规则直达，数据以不出本机为主
+- **可选角色**：出厂为中性助手；可在设置中开启汐月人格与情绪回应（可关）
+
+开源、不以盈利为目的；品牌与产品叙事独立。
+
+> License note: GPLv3，含上游附加条款与 Windows 平台限制，见 `LICENSE`。
 
 ## UI Preview
 
@@ -59,6 +69,16 @@
 </div>
 
 ***
+
+## 致谢 / Credits
+
+汐月的桌面形态与部分系统能力设计自 [eIsland](https://github.com/JNTMTMTM/eIsland) 获得启发；本项目代码史上基于其 GPL-3.0 开源实现演化而来。感谢 JNTMTMTM 与 pyisland.com 的工作。完整许可与附加条款见 `LICENSE`。
+
+### 技术要点（汐月侧）
+
+- **本地 Agent 侧车**：`agent/server.py`（HTTP `127.0.0.1:8765`），本地 Ollama + faster-whisper STT + kokoro TTS
+- **网易云真实进度**：内置 netease-watcher，经本地 WebSocket 提供播放进度，用于歌词对齐
+- **运行环境**：Python 3.12 venv（`.venv/`）；whisper 模型需自行放入或从备份复制；部分 node-gyp 插件需 `npm run plugins:build`
 
 ## Icon Credits
 
@@ -109,25 +129,3 @@ Under GPLv3 Section 7(b), limited additional terms apply: the following author a
 This prohibition applies to all forks, derivative works, and redistributions. Any such work must retain this restriction notice in full. Violations will be subject to legal action.
 
 For full terms (including the standard GPLv3 text and additional clauses), see the `LICENSE` file in the repository root.
-
-***
-
-## 汐月 Xiyue —— 衍生版说明
-
-本仓库是 **eIsland**（[JNTMTMTM/eIsland](https://github.com/JNTMTMTM/eIsland)，GPL-3.0-or-later + 附加条款）的衍生版本，用于「汐月」本地常驻 AI 管家：
-
-- **保留**：eIsland 全部功能（灵动岛形态、音乐/SMTC、天气、截图、OCR 等）与 13 个原生插件。
-
-- **已完成（汐月换芯）**：
-
-  1. **原生 Agent 换芯**：`useAgentRunner` 与 `useChatSend`（岛内紧凑条 + 完整对话页）只跑汐月 Hermes，移除 mihtnelis 云平台（含登录）、Ollama 直连、自定义 API 三路由；
-  2. **Python 侧车**：`agent/server.py`（HTTP 127.0.0.1:8765）由 Electron `child_process` 拉起，`/health` `/chat` `/voice` `/transcribe` 四端点，走本地 Ollama（`qwen3-4b-32k`）+ faster-whisper + kokoro TTS，数据不出本机；
-  3. **语音全本地化**：语音输入球录音 → PCM → 侧车 `/transcribe`（faster-whisper），腾讯实时 STT 已移除；回答自动 TTS 朗读（base64 直放）；
-  4. **入口**：hover 灵动岛 →「汐月」导航点 → 原生 Agent 面板。
-
-- **网易云真实进度（汐月收敛）**：网易云注册的 SMTC 无时间轴、界面 UIA 无障碍树为空，均无法提供实时播放进度。改为内置 **netease-watcher**（Rust 钩子，随应用自启自停）通过本地 **WebSocket** **`/ws`** **推送**获取真实进度/歌曲 ID，用于歌词精确对齐与喜欢状态判定；已移除窗口标题 2s 轮询（titleFallback）与 UIA 进度兜底等旧方案，避免空转轮询导致的卡顿。
-
-- **环境**：Python 3.12 venv（`.venv/`，含全部依赖）；whisper 模型在 `data/models/faster-whisper-base/`（gitignored，需自行放入或从备份复制）；4 个 node-gyp 插件需本机 `npm run plugins:build` 编译（fullscreen/processes/toast/perfmon）。
-
-- **合规**：保留全部上游署名（JNTMTMTM / pyisland.com）与 Windows-only 限制声明，见 `LICENSE`。
-

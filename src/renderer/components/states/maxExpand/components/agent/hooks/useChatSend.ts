@@ -337,7 +337,7 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
                     await resolveXiyueLocalToolResult({ requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
                     return;
                   }
-                  const execution = await executor({ tool, arguments: argumentsPayload, workspaces: aiConfig.workspaces });
+                  const execution = await executor({ tool, arguments: argumentsPayload, workspaces: aiConfig.workspaces, requestId });
                   await resolveXiyueLocalToolResult({
                     requestId,
                     success: Boolean(execution?.success),

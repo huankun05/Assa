@@ -37,10 +37,11 @@ import { openStandaloneWindow, openStandaloneWindowWithTab, closeStandaloneWindo
 import { openSettingsWindow } from '../../window/settingsWindow';
 import { registerAgentIpcHandlers } from '../agent';
 import { xiyueExecuteTool } from '../../services/xiyueToolSchema';
+import { restartApp } from '../../services/appRestart';
 import { queryOpenWindowsWithIcons, type RunningWindowInfo } from '../../system/runningProcesses';
 import { broadcastSettingChange } from '../../utils/broadcast';
 import { getSmtcNowPlaying } from '../../music/smtcAccessor';
-import { getIconByPath, getIconByShortcutPath } from '@eisland/windows-application-icon-helper';
+import { getIconByPath, getIconByShortcutPath } from '@xiyue/windows-application-icon-helper';
 import type { LocalFileSearchItem, LocalFileSearchOptions, AgentLocalToolRequest } from './types';
 import {
   MAX_LOCAL_FILE_READ_BYTES,
@@ -1278,7 +1279,7 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
 
     if (tool === 'notification.send') {
       const { Notification: ElectronNotification } = await import('electron');
-      const title = getStringArg(args, 'title') || 'eIsland Agent';
+      const title = getStringArg(args, 'title') || '汐月 Agent';
       const body = getStringArg(args, 'body');
       if (!body) throw new Error('notification.send 需要 body');
       new ElectronNotification({ title, body }).show();
@@ -1461,6 +1462,17 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
       return { success: true, result: { level, set: true }, error: '', durationMs: Date.now() - startedAt };
     }
 
+    if (tool === 'volume.mute' || tool === 'volume.unmute') {
+      const muted = tool === 'volume.mute';
+      const psScript = `Add-Type -TypeDefinition 'using System.Runtime.InteropServices; [Guid("5CDF2C82-841E-4546-9722-0CF74078229A"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IAudioEndpointVolume { int _0(); int _1(); int _2(); int _3(); int SetMasterVolumeLevelScalar(float fLevel, System.Guid pguidEventContext); int _5(); int GetMasterVolumeLevelScalar(out float pfLevel); int SetMute(bool bMute, System.Guid pguidEventContext); int GetMute(out bool pbMute); } [Guid("D666063F-1587-4E43-81F1-B948E807363F"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IMMDevice { int Activate(ref System.Guid iid, int dwClsCtx, IntPtr pActivationParams, [MarshalAs(UnmanagedType.IUnknown)] out object ppInterface); } [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IMMDeviceEnumerator { int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice ppDevice); } [ComImport,Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] class MMDeviceEnumerator {}'; $e = New-Object MMDeviceEnumerator; $d = $null; [void]$e.GetDefaultAudioEndpoint(0,1,[ref]$d); $iid=[Guid]'5CDF2C82-841E-4546-9722-0CF74078229A'; $v=$null; [void]$d.Activate([ref]$iid,1,[IntPtr]::Zero,[ref]$v); [void]$v.SetMute($${muted},[Guid]::Empty)`;
+      await new Promise<void>((res, rej) => {
+        execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', psScript],
+          { windowsHide: true, timeout: 10000, maxBuffer: 64 * 1024 },
+          (err) => { if (err) rej(new Error(err.message)); else res(); });
+      });
+      return { success: true, result: { muted }, error: '', durationMs: Date.now() - startedAt };
+    }
+
     if (tool === 'brightness.get') {
       const psScript = `(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness).CurrentBrightness`;
       const output = await new Promise<string>((res, rej) => {
@@ -1484,6 +1496,29 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
       return { success: true, result: { brightness: level, set: true }, error: '', durationMs: Date.now() - startedAt };
     }
 
+    // ── 媒体（SMTC / 系统媒体键）──
+
+    if (tool === 'media.play_pause') {
+      // 系统媒体键切换播放/暂停（不依赖当前 SMTC 会话状态）
+      const psScript = `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class XiyueMediaKey { [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo); }'; [XiyueMediaKey]::keybd_event(0xB3,0,0,[UIntPtr]::Zero); [XiyueMediaKey]::keybd_event(0xB3,0,2,[UIntPtr]::Zero)`;
+      await new Promise<void>((res, rej) => {
+        execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', psScript],
+          { windowsHide: true, timeout: 5000, maxBuffer: 16 * 1024 },
+          (err) => { if (err) rej(new Error(err.message)); else res(); });
+      });
+      return { success: true, result: { action: 'play_pause' }, error: '', durationMs: Date.now() - startedAt };
+    }
+
+    if (tool === 'media.next' || tool === 'media.prev') {
+      const smtc = await import('@xiyue/windows-smtc-helper');
+      if (tool === 'media.next') {
+        smtc.next();
+        return { success: true, result: { action: 'next' }, error: '', durationMs: Date.now() - startedAt };
+      }
+      smtc.previous();
+      return { success: true, result: { action: 'prev' }, error: '', durationMs: Date.now() - startedAt };
+    }
+
     // ── 显示器 / 电源 / Wi-Fi ──
 
     if (tool === 'display.list') {
@@ -1502,8 +1537,8 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
       const action = tool.split('.')[1];
       let cmd: string;
       if (action === 'sleep') cmd = 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0';
-      else if (action === 'shutdown') cmd = 'shutdown /s /t 5 /c "eIsland Agent 关机"';
-      else cmd = 'shutdown /r /t 5 /c "eIsland Agent 重启"';
+      else if (action === 'shutdown') cmd = 'shutdown /s /t 5 /c "汐月 Agent 关机"';
+      else cmd = 'shutdown /r /t 5 /c "汐月 Agent 重启"';
       await new Promise<void>((res, rej) => {
         execFile('cmd.exe', ['/c', cmd], { windowsHide: true, timeout: 10000 },
           (err) => { if (err) rej(new Error(err.message)); else res(); });
@@ -1802,7 +1837,7 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
     }
 
     if (tool === 'island.restart') {
-      setTimeout(() => { app.relaunch(); app.exit(0); }, 500);
+      setTimeout(() => restartApp(), 500);
       return { success: true, result: { restarting: true }, error: '', durationMs: Date.now() - startedAt };
     }
 
@@ -2279,7 +2314,7 @@ export function registerAppIpcHandlers(): void {
       const content = typeof data.content === 'string' ? data.content : '';
       const defaultPath = typeof data.defaultPath === 'string' && data.defaultPath.trim()
         ? data.defaultPath.trim()
-        : 'eIsland-export.txt';
+        : 'xiyue-export.txt';
       const filters = Array.isArray(data.filters)
         ? data.filters
           .map((filter) => {
@@ -2384,8 +2419,7 @@ export function registerAppIpcHandlers(): void {
 
   ipcMain.handle('app:restart', () => {
     try {
-      app.relaunch();
-      app.exit(0);
+      restartApp();
       return true;
     } catch (err) {
       console.error('[App] restart error:', err);

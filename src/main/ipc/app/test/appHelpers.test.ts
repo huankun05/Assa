@@ -197,7 +197,7 @@ vi.mock('../../../music/smtcAccessor', () => ({
   getSmtcNowPlaying: getSmtcNowPlayingMock,
 }));
 
-vi.mock('@eisland/windows-application-icon-helper', () => ({
+vi.mock('@xiyue/windows-application-icon-helper', () => ({
   getIconByPath: vi.fn().mockResolvedValue(null),
   getIconByShortcutPath: vi.fn().mockResolvedValue(null),
 }));

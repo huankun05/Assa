@@ -69,6 +69,9 @@ describe('isClientLocalToolName', () => {
       'island.show',
       'alarm.create',
       'todolist.add',
+      'media.play_pause',
+      'media.next',
+      'media.prev',
     ];
 
     it.each(prefixTools)('returns true for "%s"', (tool) => {

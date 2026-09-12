@@ -34,13 +34,13 @@ import {
   setBrightnessAsync,
   onBrightnessChanged,
   stopDaemon as stopBrightnessDaemon,
-} from '@eisland/windows-brightness-helper';
+} from '@xiyue/windows-brightness-helper';
 import {
   getVolumeAsync,
   setVolumeAsync,
   onVolumeChanged,
   stopDaemon as stopVolumeDaemon,
-} from '@eisland/windows-volume-helper';
+} from '@xiyue/windows-volume-helper';
 
 interface PerformanceSnapshot {
   timestamp: number;

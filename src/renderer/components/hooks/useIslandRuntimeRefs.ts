@@ -63,7 +63,8 @@ export function useIslandRuntimeRefs(options: UseIslandRuntimeRefsOptions): Isla
   const setNotificationRef = useRef(setNotification);
   const expandLeaveIdleRef = useRef(false);
   const maxExpandLeaveIdleRef = useRef(false);
-  const idleClickExpandRef = useRef(false);
+  /** 与主进程默认一致：新装/无配置时点击才展开，避免加载完成前误触 hover */
+  const idleClickExpandRef = useRef(true);
   const pendingAnnouncementAfterGuideRef = useRef(false);
   const pendingAnnouncementAppVersionRef = useRef('');
   const startupAutoCheckHandledRef = useRef(false);

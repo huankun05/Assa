@@ -28,6 +28,7 @@ import { Tray, Menu, nativeImage, BrowserWindow, app, shell } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { openSettingsWindow } from './window/settingsWindow';
+import { restartApp } from './services/appRestart';
 
 let tray: Tray | null = null;
 let getMainWindowRef: (() => BrowserWindow | null) | null = null;
@@ -118,8 +119,7 @@ function createTray(mainWindowGetter: () => BrowserWindow | null): Tray {
       label: '重启灵动岛',
       click: () => {
         try {
-          app.relaunch();
-          app.exit(0);
+          restartApp();
         } catch (err) {
           console.error('[Tray] restart error:', err);
         }

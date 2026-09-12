@@ -142,6 +142,8 @@ export interface XiyueToolExecuteRequest {
   arguments?: unknown;
   workspaces?: unknown;
   userConfirmed?: unknown;
+  /** 与侧车 route_log / tool_call_request 串联的请求 ID（可选） */
+  requestId?: unknown;
 }
 
 export interface XiyueToolExecuteResult {
@@ -165,6 +167,8 @@ export interface XiyueToolAuditRecord {
   gate?: 'allow' | 'deny';
   /** 调用来源（renderer-ipc / ollama-orchestrator / custom-direct 等） */
   source?: string;
+  /** 与侧车 route_log / tool_call_request 串联的请求 ID */
+  requestId?: string;
 }
 
 /** 规范化原始请求：工具名小写去空白，参数对象化，工作区字符串化 */
@@ -236,6 +240,7 @@ export function xiyueAuditLog(record: XiyueToolAuditRecord): void {
   try {
     const line = JSON.stringify({
       t: new Date().toISOString(),
+      requestId: record.requestId,
       tool: record.tool,
       source: record.source,
       gate: record.gate ?? (record.success ? 'allow' : undefined),
@@ -271,7 +276,11 @@ export async function xiyueExecuteTool(
 ): Promise<XiyueToolExecuteResult> {
   const startedAt = Date.now();
   const normalized = normalizeXiyueToolRequest(request);
+  const requestId = typeof request.requestId === 'string' && request.requestId.trim()
+    ? request.requestId.trim()
+    : undefined;
   const base = {
+    requestId,
     tool: normalized.tool,
     arguments: normalized.arguments,
     workspaces: normalized.workspaces,
