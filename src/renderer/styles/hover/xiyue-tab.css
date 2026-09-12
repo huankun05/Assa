@@ -30,11 +30,19 @@
  *
  * ⚠ 高度硬约束：hover 态灵动岛只有 60px（pill 态 72px），而 .xiyue-tab 带
  *   `contain: layout paint`，超出会被直接裁掉（表现为「内容跑到岛外 / 显示不全」）。
- *   当前最高元素为 34px 头像，60px 岛上下各留 13px，安全。
+ *   当前最高元素为 44px 头像，60px 岛上下各留 8px，安全。
  *   任何新增元素都必须重新核算总高，不得超过 60px。
  *
  * 主题适配：图标统一走 `filter: brightness(0) invert(var(--icon-invert))`，
  *   与 Xiyue 的 action-btn / SvgIcon 体系一致；文字用 --color-island-text。
+ *
+ * 头像微动系统（P0）：
+ *   - 基础呼吸感：所有状态通用，极轻微 scale(1.015)，模拟"活着"的感觉
+ *   - 状态联动微动：每个状态独特动作（calm 浮动 / happy 跳动 / thinking 摇晃 /
+ *     tool 点头 / listening 侧倾 / confuse 抖动 / speaking 节奏跳）
+ *   - 全部控制在 2px / 2° 以内，避免 44px 圆裁溢出
+ *   - 只用 transform + opacity，GPU 加速，不触发重排
+ *   - 尊重 prefers-reduced-motion
  *
  * @author 鸡哥
  */
@@ -81,6 +89,99 @@ img.xiyue-avatar {
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
+/* ========== 头像微动系统（P0） ========== */
+
+/* 基础呼吸感：所有状态通用，极轻微 scale，模拟"活着"的感觉 */
+.xiyue-avatar {
+  animation: xiyue-breathe 4s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@keyframes xiyue-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.015); }
+}
+
+/* 情绪切换：切换时先淡出微下移，再淡入（由 JS 加 .switching 类） */
+.xiyue-avatar.switching {
+  opacity: 0;
+  transform: translateY(2px) scale(0.98);
+}
+
+/* 各状态独特微动 —— 全部控制在 2px / 2° 以内，避免 44px 圆裁溢出 */
+
+/* calm 待机：呼吸 + 极轻微上下浮动（更慵懒） */
+.xiyue-avatar.mood-calm {
+  animation: xiyue-calm 6s ease-in-out infinite;
+}
+@keyframes xiyue-calm {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.012) translateY(1px); }
+}
+
+/* happy 开心：呼吸 + 轻微弹性跳动（更活泼） */
+.xiyue-avatar.mood-happy {
+  animation: xiyue-happy 2s ease-in-out infinite;
+}
+@keyframes xiyue-happy {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.02) translateY(-2px); }
+}
+
+/* thinking 思考：呼吸 + 左右轻晃（像在琢磨） */
+.xiyue-avatar.mood-thinking {
+  animation: xiyue-thinking 3s ease-in-out infinite;
+}
+@keyframes xiyue-thinking {
+  0%, 100% { transform: rotate(-1.2deg) scale(1); }
+  50%      { transform: rotate(1.2deg) scale(1.015); }
+}
+
+/* tool 操作：呼吸 + 极轻微点头（像在专注操作） */
+.xiyue-avatar.mood-tool {
+  animation: xiyue-tool 2.5s ease-in-out infinite;
+}
+@keyframes xiyue-tool {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50%      { transform: rotate(-0.8deg) scale(1.01); }
+}
+
+/* listening 聆听：呼吸 + 头侧倾保持 + 轻微点头（像在"嗯嗯"听） */
+.xiyue-avatar.mood-listening {
+  animation: xiyue-listening 2s ease-in-out infinite;
+}
+@keyframes xiyue-listening {
+  0%, 100% { transform: rotate(3deg) scale(1); }
+  50%      { transform: rotate(2deg) scale(1.012); }
+}
+
+/* confuse 困惑：呼吸 + 快速小幅度歪头抖动（像"啊？"） */
+.xiyue-avatar.mood-confuse {
+  animation: xiyue-confuse 1.5s ease-in-out infinite;
+}
+@keyframes xiyue-confuse {
+  0%, 100% { transform: rotate(-1.5deg) scale(1); }
+  50%      { transform: rotate(1.5deg) scale(1.01); }
+}
+
+/* speaking 说话：呼吸 + 快节奏轻微跳动（模拟说话节奏） */
+.xiyue-avatar.mood-speaking {
+  animation: xiyue-speaking 0.45s ease-in-out infinite;
+}
+@keyframes xiyue-speaking {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.015) translateY(-1px); }
+}
+
+/* 系统开启"减少动画"时，全部禁用微动 */
+@media (prefers-reduced-motion: reduce) {
+  .xiyue-avatar {
+    animation: none !important;
+  }
+}
+
 .xiyue-text-block {
   display: flex;
   flex-direction: column;
@@ -103,10 +204,13 @@ img.xiyue-avatar {
 
 /**
  * 状态点：颜色 + 呼吸频率随 mood 变化
+ *   calm      灰 #8e8e93 待机（慢呼吸 2.5s）
  *   happy     绿 #34c759 在线（慢呼吸 1.8s）
  *   thinking  蓝 #409cff 思考中（快呼吸 1.0s）
- *   confuse   黄 #ff9500 待澄清（中速 1.4s）
+ *   tool      紫 #af52de 操作中（中速 1.2s）
  *   listening 红 #ff3b30 收音中（急促 0.8s）
+ *   confuse   黄 #ff9500 待澄清（中速 1.4s）
+ *   speaking  青 #5ac8fa 说话中（快节奏 0.6s）
  * 用独立的 --dot-glow* 变量而非 color-mix()，避免旧版 Chromium 不支持。
  */
 .xiyue-status-dot {
@@ -117,6 +221,13 @@ img.xiyue-avatar {
   flex-shrink: 0;
   background: var(--dot-color);
   animation: xiyue-dot-pulse 1.8s ease-in-out infinite;
+}
+
+.xiyue-status-dot--calm {
+  --dot-color: #8e8e93;
+  --dot-glow: rgba(142, 142, 147, 0.28);
+  --dot-glow-soft: rgba(142, 142, 147, 0.08);
+  animation-duration: 2.5s;
 }
 
 .xiyue-status-dot--happy {
@@ -133,11 +244,11 @@ img.xiyue-avatar {
   animation-duration: 1s;
 }
 
-.xiyue-status-dot--confuse {
-  --dot-color: #ff9500;
-  --dot-glow: rgba(255, 149, 0, 0.3);
-  --dot-glow-soft: rgba(255, 149, 0, 0.08);
-  animation-duration: 1.4s;
+.xiyue-status-dot--tool {
+  --dot-color: #af52de;
+  --dot-glow: rgba(175, 82, 222, 0.3);
+  --dot-glow-soft: rgba(175, 82, 222, 0.08);
+  animation-duration: 1.2s;
 }
 
 .xiyue-status-dot--listening {
@@ -145,6 +256,20 @@ img.xiyue-avatar {
   --dot-glow: rgba(255, 59, 48, 0.32);
   --dot-glow-soft: rgba(255, 59, 48, 0.08);
   animation-duration: 0.8s;
+}
+
+.xiyue-status-dot--confuse {
+  --dot-color: #ff9500;
+  --dot-glow: rgba(255, 149, 0, 0.3);
+  --dot-glow-soft: rgba(255, 149, 0, 0.08);
+  animation-duration: 1.4s;
+}
+
+.xiyue-status-dot--speaking {
+  --dot-color: #5ac8fa;
+  --dot-glow: rgba(90, 200, 250, 0.32);
+  --dot-glow-soft: rgba(90, 200, 250, 0.08);
+  animation-duration: 0.6s;
 }
 
 @keyframes xiyue-dot-pulse {

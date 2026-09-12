@@ -43,43 +43,68 @@
 
 ### 2.3 表情差分清单
 
-| 表情 | 对应情绪/状态 | 使用场景 |
-|---|---|---|
-| happy 开心 | PAD 愉悦高 | 日常待机、完成任务 |
-| sad 悲伤 | PAD 愉悦低 | 安慰用户、共情 |
-| anxious 焦虑 | PAD 唤醒高+愉悦低 | 处理复杂任务、等待 |
-| calm 平静 | PAD 中性 | 默认待机 |
-| excited 兴奋 | PAD 愉悦+唤醒双高 | 好消息、庆祝 |
-| angry 愤怒 | PAD 愉悦低+支配高 | （较少用，可做吐槽表情） |
-| tired 疲惫 | PAD 唤醒低 | 深夜、长时间运行 |
-| gentle 温和 | PAD 愉悦中+支配低 | 温柔回复、关心用户 |
-| thinking 思考中 | 工作状态 | LLM 推理中 |
-| listening 聆听中 | 工作状态 | 语音输入中 |
+#### P0 已完成（7 种工作状态，2026-09-12）
 
-> 小尺寸对策：岛内默认用简化头肩；完整聊天窗/设置页可用更精细立绘。`AVATAR_IMAGE_MAP` 支持按 mood 换图，无需改组件结构。
+| 表情 | 对应状态 | 使用场景 | 头像特征 | 状态点颜色 |
+|---|---|---|---|---|
+| calm 待机 | 默认/连接中 | 日常待机 | 双手交叠，中性平静，无笑意 | 灰 #8e8e93 |
+| happy 开心 | 任务完成/日常 | 完成任务、问候 | 挥手，开心微笑，腮红 | 绿 #34c759 |
+| thinking 思考中 | LLM 推理 | 正在理解问题 | 手托下巴，视线偏上 | 蓝 #409cff |
+| tool 操作中 | 工具调用 | 正在执行操作 | 食指指下方，视线向下 | 紫 #af52de |
+| listening 聆听中 | 语音输入 | 正在收音 | 手放耳边，头侧倾，睁大眼 | 红 #ff3b30 |
+| confuse 困惑 | 出错/没听懂 | 需要澄清 | 挠头，眉一高一低，小o嘴 | 黄 #ff9500 |
+| speaking 说话中 | TTS 播报 | 正在回答 | 手张开解释，嘴张开 | 青 #5ac8fa |
+
+#### P1/P2 待做（情绪类，换脑后接入情绪系统）
+
+| 表情 | 对应情绪 | 优先级 |
+|---|---|---|
+| sad 悲伤 | PAD 愉悦低 | P2 |
+| anxious 焦虑 | PAD 唤醒高+愉悦低 | P2 |
+| excited 兴奋 | PAD 愉悦+唤醒双高 | P2 |
+| tired 疲惫 | PAD 唤醒低 | P1（深夜自动切换） |
+| gentle 温和 | PAD 愉悦中+支配低 | P2 |
+| blush 害羞 | 情绪触发 | P2 |
+| surprised 惊讶 | 情绪触发 | P2 |
+| sigh 吐槽 | 情绪触发 | P2 |
+
+> 设计决策：P0 优先做**工作状态**表情（用户能直接感知"她在干什么"），情绪类表情等换脑后接入 hermes_core 情绪系统再做。小尺寸对策：岛内默认用简化头肩特写；完整聊天窗/设置页可用更精细立绘。`AVATAR_IMAGE_MAP` 支持按 mood 换图，无需改组件结构。
 
 ### 2.4 尺寸规格
 
-| 尺寸 | 用途 | 位置 |
-|---|---|---|
-| 40x40 | 灵动岛 hover 态头像 | XiyueTab |
-| 48x48 | 聊天界面消息头像 | ChatMessageRow |
-| 80x80 | 大面板/设置页头像 | 大面板 AI 页 |
-| 256x256 | 关于页/形象展示 | 设置页关于 |
+| 源文件尺寸 | 用途 | 显示尺寸 | 位置 |
+|---|---|---|---|
+| 512×512 PNG | 所有头像源文件（统一） | 44px | 灵动岛 hover 态头像（XiyueTab） |
+| 512×512 PNG | 同上 | 48px | 聊天界面消息头像 |
+| 512×512 PNG | 同上 | 80px+ | 大面板/设置页头像 |
+| 512×512 PNG | 同上 | 256px | 关于页/形象展示 |
 
-### 2.5 格式与存储
+> 源文件统一 512×512，比 brief 的 256×256 更清晰，适配大面板和关于页的大尺寸显示。44px 圆裁下脸占约 65-75%，表情和手部动作清晰可辨。
 
-- **格式**：PNG（透明背景，日常使用）+ SVG（矢量，源文件）
-- **内置默认**：`src/renderer/assets/avatar/`（替换当前 T.jpg）
+### 2.5 格式与存储（已完成）
+
+- **格式**：PNG（透明背景，已抠图）
+- **存储位置**：`src/renderer/public/image/agent/`
+- **文件命名**：`xiyue_{mood}.png`（如 `xiyue_happy.png`、`xiyue_thinking.png`）
+- **配置**：`xiyueMoodConfig.ts` 的 `AVATAR_IMAGE_MAP` 已配置全部 7 种状态路径
+- **生成 brief**：`docs/AVATAR_P0_GENERATION_BRIEF.md`（含提示词、参数、验收标准）
 - **用户自定义**：`%APPDATA%\xiyue\data\custom\avatar\`
 - **切换机制**：沿用现有 AVATAR_IMAGE_MAP 双轨设计，用户上传后自动切到图片模式
 
-### 2.6 当前问题
+### 2.6 当前状态（2026-09-12 更新）
 
-1. 头像是极简线条（圆框+眼嘴），非二次元小姑娘
-2. 只有 4 种表情（happy/thinking/confuse/listening），换脑后不够用
-3. `assets/avatar/T.jpg`（139.6KB）用途不明，需确认是否为临时占位
-4. `agent/persona/xiyue.md` 中"无形象，靠声音+状态点"的表述已落后，需更新
+✅ **已完成**：
+1. 7 张二次元差分头像已生成并接入（calm/happy/thinking/tool/listening/confuse/speaking）
+2. 统一 512×512 PNG，透明底，存放 `src/renderer/public/image/agent/`
+3. `xiyueMoodConfig.ts` 扩展为 7 种状态，全部配置图片路径
+4. CSS 微动系统 P0 已实现（呼吸感 + 7 种状态独特微动 + 状态点 7 色）
+5. `XiyueAvatar.tsx` 组件支持 mood class，SVG 兜底扩展为 7 种表情
+
+📋 **待后续**：
+1. `assets/avatar/T.jpg`（139.6KB）用途不明，需确认是否为临时占位
+2. `agent/persona/xiyue.md` 中"无形象，靠声音+状态点"的表述已落后，需更新
+3. P1 眨眼/说话口型（需 PNG 分层）
+4. P2 交互/环境感知
 
 ### 2.7 角色动态效果与"活人感"设计（2026-09-11 新增）
 
@@ -92,15 +117,24 @@
 - **状态联动是关键**——用户能感知到"她现在在干什么"（thinking/listening/speaking），比单纯的待机动画更重要
 - **分阶段渐进**——P0 先做基础生命体征，P1 做眨眼口型，P2 做交互环境感知
 
-#### P0（立即做，约 80 行 CSS）：基础生命体征 + 状态联动
+#### P0（已实现，2026-09-12）：基础生命体征 + 7 状态联动
+
+实现位置：`src/renderer/styles/hover/xiyue-tab.css` + `XiyueAvatar.tsx`（mood class）
 
 | 动态效果 | 实现方式 | 参数 | 效果 |
 |---|---|---|---|
-| **呼吸感** | `@keyframes breathe`，`scale(1.0~1.02)` + 透明度微变 | 4秒周期，ease-in-out，无限循环 | 最基础的"活着"信号 |
-| **情绪切换过渡** | 表情变化时 `opacity` 淡入淡出 + `translateY` 轻微位移 | 300ms 过渡 | 避免硬切的割裂感 |
-| **思考中微动** | thinking 状态加 `@keyframes thinking-sway`，左右轻晃 | 1.5px，2秒周期 | 表现"正在思考" |
-| **聆听中反馈** | listening 状态头像轻微放大 + 光晕呼吸 | `scale(1.05)` + `box-shadow` | 表现"正在听你说话" |
-| **状态点联动** | 4色状态点（idle绿/thinking蓝/listening红/tool黄）与头像表情同步 | 已有，需接线 | 用户知道"她在干什么" |
+| **呼吸感** | `@keyframes xiyue-breathe`，`scale(1→1.015→1)` | 4秒周期，ease-in-out，无限循环 | 最基础的"活着"信号 |
+| **情绪切换过渡** | `.switching` 类：`opacity 0→1` + `translateY(2px)` + `scale(0.98)` | 300ms 过渡 | 避免硬切的割裂感（JS 控制加类） |
+| **calm 待机** | `xiyue-calm`：`scale + translateY(1px)` 浮动 | 6秒周期，更慵懒 | 安静待机 |
+| **happy 开心** | `xiyue-happy`：`scale(1.02) + translateY(-2px)` 弹性跳 | 2秒周期 | 活泼开心 |
+| **thinking 思考** | `xiyue-thinking`：`rotate(-1.2°→+1.2°)` 左右轻晃 | 3秒周期 | 正在琢磨 |
+| **tool 操作** | `xiyue-tool`：`rotate(-0.8°)` 极轻微点头 | 2.5秒周期 | 专注操作 |
+| **listening 聆听** | `xiyue-listening`：`rotate(3°→2°)` 侧倾保持+微点头 | 2秒周期 | 认真在听 |
+| **confuse 困惑** | `xiyue-confuse`：`rotate(-1.5°→+1.5°)` 快速小幅度抖动 | 1.5秒周期 | 迷茫"啊？" |
+| **speaking 说话** | `xiyue-speaking`：`scale(1.015) + translateY(-1px)` 快节奏跳 | 0.45秒周期 | 模拟说话节奏 |
+| **状态点联动** | 7 色状态点（calm灰/happy绿/thinking蓝/tool紫/listening红/confuse黄/speaking青），各有不同呼吸频率 | 0.6s-2.5s 周期 | 用户知道"她在干什么" |
+
+**性能优化**：全部只用 `transform` + `opacity`，GPU 加速，`will-change: transform`，`prefers-reduced-motion` 时全部禁用。所有动画控制在 2px / 2° 以内，避免 44px 圆裁溢出。
 
 #### P1（中期，需 PNG 分层）：眨眼 + 说话口型
 

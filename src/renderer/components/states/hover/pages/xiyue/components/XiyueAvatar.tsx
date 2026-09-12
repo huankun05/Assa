@@ -22,6 +22,8 @@
  * @file XiyueAvatar.tsx
  * @description 汐月 AI 头像：人形角色（圆形头像框 + 可变换表情 + AI sparkle 标识）。
  *              双轨渲染：AVATAR_IMAGE_MAP 配了路径走图片模式，否则走内联 SVG 模式。
+ *              7 种状态：calm / happy / thinking / tool / listening / confuse / speaking。
+ *              头像元素带 `mood-${mood}` class，CSS 微动系统据此播放状态独特动画。
  * @author 鸡哥
  */
 
@@ -29,11 +31,19 @@ import type { ReactElement } from 'react';
 import { AVATAR_IMAGE_MAP, type AgentMood } from '../config/xiyueMoodConfig';
 
 /**
- * 各状态的「眼 + 嘴」面部元素
+ * 各状态的「眼 + 嘴」面部元素（SVG 模式用，图片模式不使用）
  * @description 只换眼和嘴，头部圆框与 sparkle 恒定，因此状态切换成本极低。
  *              全部使用 currentColor，配合 filter invert 实现主题适配。
  */
 const FACE: Record<AgentMood, ReactElement> = {
+  /** 待机：圆眼 + 平直嘴（无笑意） */
+  calm: (
+    <>
+      <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" />
+      <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" />
+      <path d="M12.8 19.8h5.2" strokeWidth="1.5" />
+    </>
+  ),
   /** 开心：圆眼 + 微笑 */
   happy: (
     <>
@@ -50,12 +60,12 @@ const FACE: Record<AgentMood, ReactElement> = {
       <path d="M13.4 20h2.9" />
     </>
   ),
-  /** 困惑：一眼眯（横线）一眼睁 + 波浪嘴 */
-  confuse: (
+  /** 操作中：圆眼 + 抿嘴（专注） */
+  tool: (
     <>
-      <path d="M10.6 14.6h2.8" strokeWidth="1.5" />
-      <circle cx="19" cy="14.6" r="1.35" fill="currentColor" stroke="none" />
-      <path d="M12.6 20.2c.65-.85 1.3-.85 1.95 0s1.3.85 1.95 0" strokeWidth="1.5" />
+      <circle cx="11.9" cy="14.6" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="18.9" cy="14.6" r="1.2" fill="currentColor" stroke="none" />
+      <path d="M13.4 20h2.9" />
     </>
   ),
   /** 聆听中：睁眼 + 张嘴（小圆） */
@@ -66,25 +76,49 @@ const FACE: Record<AgentMood, ReactElement> = {
       <circle cx="15.4" cy="19.8" r="1.5" />
     </>
   ),
+  /** 困惑：一眼眯（横线）一眼睁 + 波浪嘴 */
+  confuse: (
+    <>
+      <path d="M10.6 14.6h2.8" strokeWidth="1.5" />
+      <circle cx="19" cy="14.6" r="1.35" fill="currentColor" stroke="none" />
+      <path d="M12.6 20.2c.65-.85 1.3-.85 1.95 0s1.3.85 1.95 0" strokeWidth="1.5" />
+    </>
+  ),
+  /** 说话中：圆眼 + 张嘴（椭圆） */
+  speaking: (
+    <>
+      <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" />
+      <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" />
+      <ellipse cx="15.4" cy="19.8" rx="1.8" ry="2.2" />
+    </>
+  ),
 };
 
 /**
  * 汐月 AI 头像
- * @param mood - 当前状态，决定表情
+ * @param mood - 当前状态，决定表情和微动动画
  * @returns 头像元素（图片 或 内联 SVG）
  */
 export function XiyueAvatar({ mood }: { mood: AgentMood }): ReactElement {
   const imgSrc = AVATAR_IMAGE_MAP[mood];
+  const moodClass = `mood-${mood}`;
 
-  // 图片模式：配置了路径就用图片（后续替换正式美术资源时走这里）
+  // 图片模式：配置了路径就用图片（正式美术资源，7 种状态全部已配置）
   if (imgSrc) {
-    return <img className="xiyue-avatar" src={imgSrc} alt="" draggable={false} />;
+    return (
+      <img
+        className={`xiyue-avatar ${moodClass}`}
+        src={imgSrc}
+        alt=""
+        draggable={false}
+      />
+    );
   }
 
-  // SVG 模式：单色 currentColor + filter invert 主题适配
+  // SVG 模式：单色 currentColor + filter invert 主题适配（兜底，图片加载失败时用）
   return (
     <svg
-      className="xiyue-avatar"
+      className={`xiyue-avatar ${moodClass}`}
       viewBox="0 0 32 32"
       fill="none"
       stroke="currentColor"

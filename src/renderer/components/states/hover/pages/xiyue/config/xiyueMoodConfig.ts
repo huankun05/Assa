@@ -35,14 +35,17 @@
  */
 
 /** AI 情绪 / 工作状态 */
-export type AgentMood = 'happy' | 'thinking' | 'confuse' | 'listening';
+export type AgentMood = 'calm' | 'happy' | 'thinking' | 'tool' | 'listening' | 'confuse' | 'speaking';
 
 /** 状态中文词（主行「汐月·开心」的后半段） */
 export const MOOD_LABEL: Record<AgentMood, string> = {
+  calm: '待机',
   happy: '开心',
   thinking: '思考中',
-  confuse: '困惑',
+  tool: '操作中',
   listening: '聆听中',
+  confuse: '困惑',
+  speaking: '说话中',
 };
 
 /** 一天中的时段 */
@@ -71,9 +74,12 @@ export const GREETING_POOL: Record<DayPart, string[]> = {
  *              文案必须准确，因此固定不随机。
  */
 export const MOOD_SUBTITLE: Record<Exclude<AgentMood, 'happy'>, string> = {
+  calm: '随时为你服务',
   thinking: '正在理解你的问题…',
-  confuse: '能再说得具体点吗？',
+  tool: '正在执行操作…',
   listening: '我在听，请说话…',
+  confuse: '能再说得具体点吗？',
+  speaking: '…',
 };
 
 /**
@@ -111,20 +117,25 @@ export function getSubtitle(mood: AgentMood, d: Date = new Date()): string {
 /**
  * 头像资源映射表（图片模式开关）
  *
- * @description 默认全部留空 = 使用内联 SVG（单色 currentColor，可被
- *              `filter: brightness(0) invert(var(--icon-invert))` 主题适配，且能随状态换表情）。
- *              后续换成正式美术资源时，**只需在这里填上路径**，组件会自动切到图片模式，
- *              无需改动 XiyueTab / XiyueAvatar 的结构。
+ * @description 配置了路径的状态使用图片模式（彩色二次元头像），
+ *              未配置的状态回退到 SVG 模式（单色 currentColor，可被主题适配）。
+ *              7 种状态全部配置了正式美术资源，512x512 PNG，透明底。
  *
- * @example
- * export const AVATAR_IMAGE_MAP = {
- *   happy: 'image/agent/xiyue_happy.png',
- *   thinking: 'image/agent/xiyue_thinking.png',
- * };
+ * 头像差分图设计：
+ * - calm:      双手交叠，中性平静，待机
+ * - happy:     挥手，开心微笑
+ * - thinking:  手托下巴，视线偏上，思考中
+ * - tool:      食指指下方，视线向下，操作中
+ * - listening: 手放耳边，头侧倾，聆听中
+ * - confuse:   挠头，眉一高一低，困惑
+ * - speaking:  手张开解释，嘴张开，说话中
  */
 export const AVATAR_IMAGE_MAP: Partial<Record<AgentMood, string>> = {
+  calm: 'image/agent/xiyue_calm.png',
   happy: 'image/agent/xiyue_happy.png',
-  thinking: 'image/agent/xiyue_happy.png',
-  confuse: 'image/agent/xiyue_happy.png',
-  listening: 'image/agent/xiyue_happy.png',
+  thinking: 'image/agent/xiyue_thinking.png',
+  tool: 'image/agent/xiyue_tool.png',
+  listening: 'image/agent/xiyue_listening.png',
+  confuse: 'image/agent/xiyue_confuse.png',
+  speaking: 'image/agent/xiyue_speaking.png',
 };
