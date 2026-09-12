@@ -25,6 +25,7 @@
  */
 
 import type { ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import useIslandStore from '../../../../../store/slices';
 
 interface CustomPageProps {
@@ -39,23 +40,34 @@ interface CustomPageProps {
  * @returns 自定义页面节点。
  */
 export function CustomPage({ tabId }: CustomPageProps): ReactElement {
+  const { t } = useTranslation();
   const def = useIslandStore((s) => s.customPages.find((p) => p.id === tabId));
 
   if (!def) {
-    return <div className="custom-page custom-page-empty">页面不存在或已删除</div>;
+    return (
+      <div className="custom-page custom-page-empty">
+        {t('hover.custom.missing', { defaultValue: '页面不存在或已删除' })}
+      </div>
+    );
   }
 
   if (def.template === 'blank') {
     return (
       <div className="custom-page custom-page-blank">
         <div className="custom-page-blank-hint">{def.title}</div>
-        <div className="custom-page-blank-sub">空白组件容器（可在此挂载自定义组件）</div>
+        <div className="custom-page-blank-sub">
+          {t('hover.custom.blankHint', { defaultValue: '空白组件容器（可在此挂载自定义组件）' })}
+        </div>
       </div>
     );
   }
 
   if (!def.url) {
-    return <div className="custom-page custom-page-empty">未配置网址</div>;
+    return (
+      <div className="custom-page custom-page-empty">
+        {t('hover.custom.noUrl', { defaultValue: '未配置网址' })}
+      </div>
+    );
   }
 
   return (

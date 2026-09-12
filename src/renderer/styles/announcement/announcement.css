@@ -223,7 +223,7 @@
 }
 
 .announcement-list-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--color-text-rgb), 0.05);
   color: rgba(var(--color-text-rgb), 0.9);
 }
 
@@ -239,7 +239,7 @@
   width: 2px;
   height: 12px;
   border-radius: 1px;
-  background: #7cbcff;
+  background: rgba(var(--color-island-accent-rgb), 1);
   content: '';
   transform: translateY(-50%);
 }
@@ -298,8 +298,8 @@
 }
 
 .announcement-close-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  background: rgba(var(--color-text-rgb), 0.08);
   color: var(--color-text);
   border-radius: 10px;
   padding: 6px;
@@ -319,13 +319,13 @@
 }
 
 .announcement-close-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(var(--color-text-rgb), 0.16);
+  border-color: rgba(var(--color-text-rgb), 0.28);
 }
 
 .announcement-list-toggle-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  background: rgba(var(--color-text-rgb), 0.08);
   border-radius: 10px;
   padding: 6px;
   cursor: pointer;
@@ -344,8 +344,8 @@
 }
 
 .announcement-list-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(var(--color-text-rgb), 0.16);
+  border-color: rgba(var(--color-text-rgb), 0.28);
 }
 
 .announcement-list-toggle-btn.active {
@@ -358,8 +358,8 @@
 }
 
 .announcement-bilibili-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  background: rgba(var(--color-text-rgb), 0.08);
   border-radius: 10px;
   padding: 6px;
   cursor: pointer;
@@ -373,18 +373,18 @@
   width: 16px;
   height: 16px;
   object-fit: contain;
-  filter: brightness(0) invert(var(--icon-invert));
+  filter: none; opacity: 1;
   opacity: 0.5;
 }
 
 .announcement-bilibili-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(var(--color-text-rgb), 0.16);
+  border-color: rgba(var(--color-text-rgb), 0.28);
 }
 
 .announcement-qq-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  background: rgba(var(--color-text-rgb), 0.08);
   border-radius: 10px;
   padding: 6px;
   cursor: pointer;
@@ -398,13 +398,13 @@
   width: 16px;
   height: 16px;
   object-fit: contain;
-  filter: brightness(0) invert(var(--icon-invert));
+  filter: none; opacity: 1;
   opacity: 0.5;
 }
 
 .announcement-qq-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(var(--color-text-rgb), 0.16);
+  border-color: rgba(var(--color-text-rgb), 0.28);
 }
 
 .announcement-qq-btn.active {
@@ -422,8 +422,8 @@
 }
 
 .announcement-github-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  background: rgba(var(--color-text-rgb), 0.08);
   border-radius: 10px;
   padding: 6px;
   cursor: pointer;
@@ -437,18 +437,18 @@
   width: 16px;
   height: 16px;
   object-fit: contain;
-  filter: brightness(0) invert(var(--icon-invert));
+  filter: none; opacity: 1;
   opacity: 0.5;
 }
 
 .announcement-github-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(var(--color-text-rgb), 0.16);
+  border-color: rgba(var(--color-text-rgb), 0.28);
 }
 
 .announcement-video-btn {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--color-text-rgb), 0.16);
+  background: rgba(var(--color-text-rgb), 0.08);
   border-radius: 10px;
   padding: 6px;
   cursor: pointer;
@@ -467,8 +467,8 @@
 }
 
 .announcement-video-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(var(--color-text-rgb), 0.16);
+  border-color: rgba(var(--color-text-rgb), 0.28);
 }
 
 .announcement-video-btn.active {
@@ -486,8 +486,8 @@
 }
 
 .announcement-dismiss-btn {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(var(--color-text-rgb), 0.14);
+  background: rgba(var(--color-text-rgb), 0.04);
   color: rgba(var(--color-text-rgb), 0.9);
   border-radius: 10px;
   padding: 6px 10px;
@@ -497,8 +497,8 @@
 }
 
 .announcement-dismiss-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(var(--color-text-rgb), 0.12);
+  border-color: rgba(var(--color-text-rgb), 0.24);
 }
 
 .announcement-main-column {
@@ -627,7 +627,7 @@
 
 .announcement-body code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--color-text-rgb), 0.08);
   padding: 1px 5px;
   border-radius: 4px;
 }
@@ -640,7 +640,7 @@
 }
 
 .announcement-body a {
-  color: #7cbcff;
+  color: rgba(var(--color-island-accent-rgb), 1);
 }
 
 .announcement-empty {
@@ -743,7 +743,7 @@
   left: 0;
   width: 2px;
   height: 12px;
-  background: #7cbcff;
+  background: rgba(var(--color-island-accent-rgb), 1);
   border-radius: 1px;
   transition: top 0.25s ease-out, opacity 0.2s ease;
 }

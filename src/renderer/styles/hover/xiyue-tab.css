@@ -127,7 +127,7 @@ img.xiyue-avatar {
 }
 
 .xiyue-status-dot--thinking {
-  --dot-color: #409cff;
+  --dot-color: rgba(var(--color-info-rgb), 1);
   --dot-glow: rgba(64, 156, 255, 0.3);
   --dot-glow-soft: rgba(64, 156, 255, 0.08);
   animation-duration: 1s;

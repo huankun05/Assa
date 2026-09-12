@@ -464,6 +464,11 @@
       },
       "rainPrefix": "雨",
       "windPrefix": "风"
+    },
+    "custom": {
+      "missing": "页面不存在或已删除",
+      "blankHint": "空白组件容器（可在此挂载自定义组件）",
+      "noUrl": "未配置网址"
     }
   },
   "weatherAbbr": {
@@ -1433,6 +1438,18 @@
     "liquidOrb": {
       "ariaLabel": "动态液态玻璃球",
       "loadingLabel": "正在加载液态玻璃球预览"
+    },
+    "phase": {
+      "connecting": "正在连接…",
+      "thinking": "正在思考…",
+      "toolCalling": "正在调用工具…",
+      "answering": "正在回答…",
+      "done": "回答完成",
+      "error": "出错了"
+    },
+    "auth": {
+      "needAuth": "需要授权",
+      "callingTool": "正在调用: {{tool}}"
     }
   },
   "cli": {
@@ -2129,34 +2146,75 @@
       "like": "喜欢同步"
     },
     "music": {
-      "like": {
-        "neteaseTitle": "网易云音乐登录态",
-        "neteaseHint": "登录后可获取真实的喜欢状态，并同步到本地收藏",
-        "statusLabel": "登录状态：",
-        "statusLoading": "加载中…",
-        "statusLoggedIn": "已登录",
-        "statusLoggedOut": "未登录",
-        "statusError": "读取登录态失败",
-        "login": "登录",
-        "logout": "退出登录",
-        "loginFailed": "登录失败，请重试",
-        "logoutFailed": "退出登录失败",
-        "refresh": "刷新状态",
-        "hotkeyTitle": "喜欢快捷键",
-        "hotkeyHint": "点击喜欢按钮时，会向当前播放器发送此快捷键",
-        "hotkeyLabel": "快捷键",
-        "hotkeyPlaceholder": "例如 Ctrl+Alt+L",
-        "localTitle": "本地收藏",
-        "localHint": "已收藏到本地的歌曲数量，登录后可与网易云真实喜欢状态同步",
-        "localCountLabel": "已收藏歌曲：",
-        "localCountLoading": "加载中…",
-        "localCountError": "读取本地收藏失败",
-        "localCountRefresh": "刷新",
-        "promptTitle": "登录网易云音乐，让喜欢状态更准确",
-        "promptDesc": "未登录时，eIsland 只能记录本地快捷收藏，无法读取网易云真实喜欢状态。登录后，红心会与网易云「我喜欢的音乐」同步，避免两边状态不一致。",
-        "saveSuccess": "已保存",
-        "saveFailed": "保存失败，请检查快捷键格式"
-      }
+      "whitelist": {
+        "title": "播放器白名单",
+        "hint": "只有白名单内的播放器才会触发歌曲信息获取",
+        "empty": "暂无已加入的播放器",
+        "addTitle": "添加播放器",
+        "addHint": "手动输入播放器进程名，或自动从当前 SMTC 会话中检测",
+        "detectedTitle": "当前检测到",
+        "placeholder": "输入播放器进程名（如 Spotify.exe）",
+        "fetching": "获取中…",
+        "fetchSourceProcess": "获取播放进程",
+        "added": "已添加",
+        "alreadyExists": "已在白名单中"
+      },
+      "lyrics": {
+        "enabledTitle": "歌词功能",
+        "enabledHint": "关闭后不再发送歌词相关网络请求，不显示歌词，不切换到歌词状态",
+        "enabledToggle": "启用歌词功能",
+        "translationTitle": "翻译歌词",
+        "translationHint": "关闭后不显示翻译歌词，不切换到翻译歌词状态",
+        "translationToggle": "显示翻译歌词",
+        "title": "歌词源",
+        "hint": "自动模式根据 SMTC 检测到的播放器进程选择对应源，失败后依次尝试其他源，最后使用 LRCLIB 兜底",
+        "displayTitle": "歌词显示",
+        "displayHint": "控制歌词界面的展示效果",
+        "sourceOptions": {
+          "auto": "自动（跟随播放器）",
+          "neteaseOnly": "仅网易云",
+          "qqmusicOnly": "仅 QQ音乐",
+          "kugouOnly": "仅酷狗",
+          "sodamusicOnly": "仅汽水音乐",
+          "applemusicOnly": "仅 Apple Music",
+          "spotifyOnly": "仅 Spotify",
+          "moekoeOnly": "仅 MoeKoe",
+          "lrclibOnly": "仅 LRCLIB"
+        },
+        "karaokeTitle": "逐字扫光",
+        "karaokeHint": "启用后歌词将以逐字高亮方式显示",
+        "karaokeToggle": "启用逐字扫光效果",
+        "clockTitle": "歌词时钟",
+        "clockHint": "在歌词界面封面与歌词之间显示当前北京时间",
+        "clockToggle": "显示当前时间",
+        "calibrateTitle": "歌词校准",
+        "calibrateHint": "歌词获取后延迟读取 SMTC 时间戳，修正歌词时间偏移",
+        "calibrateToggle": "启用歌词校准",
+        "calibrateDelayLabel": "触发延迟（秒）"
+      },
+      "smtc": {
+        "title": "SMTC 自动取消订阅",
+        "hint": "用于清理长时间无更新的播放会话，默认永不取消订阅",
+        "unsubscribeMs": "取消订阅时间（毫秒）",
+        "neverUnsubscribe": "永不取消订阅",
+        "invalidMsValue": "请输入有效毫秒值（>= 1000）或开启「永不取消订阅」",
+        "saveFailed": "保存失败，请稍后重试",
+        "savedNeverUnsubscribe": "已保存：永不自动取消订阅",
+        "savedAutoUnsubscribe": "已保存：{{ms}} ms 自动取消订阅"
+      },
+      "providers": {
+        "mode": {
+          "title": "汽水音乐请求模式",
+          "hint": "默认使用非登录态；登录态需要先完成汽水音乐登录",
+          "guest": "非登录态",
+          "logged-in": "登录态"
+        },
+        "sodaMusic": {
+          "title": "汽水音乐提供方",
+          "login": "登录"
+        }
+      },
+      "pagination": "歌曲设置分页"
     },
     "networkPages": {
       "timeout": "请求超时",
@@ -2814,77 +2872,6 @@
         "noCoords": "查询结果缺少经纬度信息"
       },
       "pagination": "天气配置分页"
-    },
-    "music": {
-      "whitelist": {
-        "title": "播放器白名单",
-        "hint": "只有白名单内的播放器才会触发歌曲信息获取",
-        "empty": "暂无已加入的播放器",
-        "addTitle": "添加播放器",
-        "addHint": "手动输入播放器进程名，或自动从当前 SMTC 会话中检测",
-        "detectedTitle": "当前检测到",
-        "placeholder": "输入播放器进程名（如 Spotify.exe）",
-        "fetching": "获取中…",
-        "fetchSourceProcess": "获取播放进程",
-        "added": "已添加",
-        "alreadyExists": "已在白名单中"
-      },
-      "lyrics": {
-        "enabledTitle": "歌词功能",
-        "enabledHint": "关闭后不再发送歌词相关网络请求，不显示歌词，不切换到歌词状态",
-        "enabledToggle": "启用歌词功能",
-        "translationTitle": "翻译歌词",
-        "translationHint": "关闭后不显示翻译歌词，不切换到翻译歌词状态",
-        "translationToggle": "显示翻译歌词",
-        "title": "歌词源",
-        "hint": "自动模式根据 SMTC 检测到的播放器进程选择对应源，失败后依次尝试其他源，最后使用 LRCLIB 兜底",
-        "displayTitle": "歌词显示",
-        "displayHint": "控制歌词界面的展示效果",
-        "sourceOptions": {
-          "auto": "自动（跟随播放器）",
-          "neteaseOnly": "仅网易云",
-          "qqmusicOnly": "仅 QQ音乐",
-          "kugouOnly": "仅酷狗",
-          "sodamusicOnly": "仅汽水音乐",
-          "applemusicOnly": "仅 Apple Music",
-          "spotifyOnly": "仅 Spotify",
-          "moekoeOnly": "仅 MoeKoe",
-          "lrclibOnly": "仅 LRCLIB"
-        },
-        "karaokeTitle": "逐字扫光",
-        "karaokeHint": "启用后歌词将以逐字高亮方式显示",
-        "karaokeToggle": "启用逐字扫光效果",
-        "clockTitle": "歌词时钟",
-        "clockHint": "在歌词界面封面与歌词之间显示当前北京时间",
-        "clockToggle": "显示当前时间",
-        "calibrateTitle": "歌词校准",
-        "calibrateHint": "歌词获取后延迟读取 SMTC 时间戳，修正歌词时间偏移",
-        "calibrateToggle": "启用歌词校准",
-        "calibrateDelayLabel": "触发延迟（秒）"
-      },
-      "smtc": {
-        "title": "SMTC 自动取消订阅",
-        "hint": "用于清理长时间无更新的播放会话，默认永不取消订阅",
-        "unsubscribeMs": "取消订阅时间（毫秒）",
-        "neverUnsubscribe": "永不取消订阅",
-        "invalidMsValue": "请输入有效毫秒值（>= 1000）或开启「永不取消订阅」",
-        "saveFailed": "保存失败，请稍后重试",
-        "savedNeverUnsubscribe": "已保存：永不自动取消订阅",
-        "savedAutoUnsubscribe": "已保存：{{ms}} ms 自动取消订阅"
-      },
-      "providers": {
-        "mode": {
-          "title": "汽水音乐请求模式",
-          "hint": "默认使用非登录态；登录态需要先完成汽水音乐登录",
-          "guest": "非登录态",
-          "logged-in": "登录态"
-        },
-        "sodaMusic": {
-          "title": "汽水音乐提供方",
-          "login": "登录"
-        }
-      },
-      "pagination": "歌曲设置分页"
     },
     "musicProviderLogin": {
       "title": "音乐提供商账号连接",

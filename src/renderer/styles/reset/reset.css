@@ -38,9 +38,36 @@
   --color-island-text: #ffffff;
   --color-shadow-rgb: 0, 0, 0;
   --color-island-accent: oklch(0.7 0.15 250);
+  /** 与 accent 视觉对齐的 RGB 三元组（独立窗/JS 共用，见 DESIGN_SYSTEM 附录 A） */
+  --color-island-accent-rgb: 100, 170, 255;
+  --color-ok-rgb: 52, 199, 89;
+  --color-warn-rgb: 255, 149, 0;
+  --color-danger-rgb: 255, 59, 48;
+  --color-info-rgb: 64, 156, 255;
   --icon-invert: 1;
   --island-ui-font: 'Microsoft YaHei', 'PingFang SC', -apple-system, sans-serif;
   --island-lyrics-font: 'Microsoft YaHei', 'PingFang SC', -apple-system, sans-serif;
+}
+
+/** 功能单色图标：颜色由 background/color 决定，不依赖 brightness(0) invert 洗色 */
+.icon-mono {
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask-image: var(--icon-url, none);
+  mask-image: var(--icon-url, none);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/** 品牌/插画/多色图标：禁止反相洗色 */
+.icon-color,
+.no-filter {
+  filter: none !important;
+  opacity: 1;
 }
 
 /** ===== UI 字体应用 ===== */

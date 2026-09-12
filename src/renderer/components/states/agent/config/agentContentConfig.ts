@@ -26,13 +26,16 @@
 
 export type AgentPhase = 'connecting' | 'thinking' | 'toolCalling' | 'answering' | 'done' | 'error';
 
+/** 差分未齐前统一回落少女 happy（禁恐龙）；资源齐后替换为 calm/thinking/tool/… */
+const XIYUE_FALLBACK = 'image/agent/xiyue_happy.png';
+
 export const PHASE_IMAGE: Record<AgentPhase, string> = {
-  connecting: 'image/AGENT_DEFAULT.png',
-  thinking: 'image/AGENT_THINKING.png',
-  toolCalling: 'image/AGENT_TOOL_CALLING.png',
-  answering: 'image/AGENT_FINAL_ANSWER.png',
-  done: 'image/AGENT_FINAL_ANSWER.png',
-  error: 'image/AGENT_CONFUSE.png',
+  connecting: XIYUE_FALLBACK,
+  thinking: XIYUE_FALLBACK,
+  toolCalling: XIYUE_FALLBACK,
+  answering: XIYUE_FALLBACK,
+  done: XIYUE_FALLBACK,
+  error: XIYUE_FALLBACK,
 };
 
 export const PHASE_LABEL: Record<AgentPhase, string> = {

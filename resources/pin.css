@@ -42,7 +42,7 @@ body.is-dragging {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: fill;
+  object-fit: contain;
   border-radius: 14px;
   /* 常驻：双层柔和环境投影（近处贴地 + 远处弥散），不放大不裁切 */
   box-shadow:

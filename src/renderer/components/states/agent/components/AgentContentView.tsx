@@ -59,7 +59,7 @@ export function AgentContentView(props: AgentContentViewProps): ReactElement {
       />
       <div className="agent-text-area">
         <span className="agent-text-label">
-          {overlayLabel ?? PHASE_LABEL[phase]}
+          {overlayLabel ?? t(`agent.phase.${phase}`, { defaultValue: PHASE_LABEL[phase] })}
         </span>
         <div
           ref={textRef}

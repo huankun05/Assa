@@ -9,18 +9,19 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY, without even the implied warranty of
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
 
 /**
  * @file PomodoroTab.tsx
- * @description Hover 番茄钟专属页（原则：计时器单独成页，不与控制中心混）
+ * @description Hover 番茄钟精简页：大时间 + 阶段 + 播放/暂停/重置。
+ * 时长与循环在设置页配置（DESIGN_SYSTEM §4A：小面板不放表单）。
  * @author 鸡哥
  */
 
@@ -35,6 +36,10 @@ function formatMMSS(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
 }
 
+/** 默认专注时长（分钟）；后续可迁设置 store */
+const DEFAULT_WORK_MIN = 25;
+const DEFAULT_BREAK_MIN = 5;
+
 /** Hover 番茄钟页 */
 export function PomodoroTab(): ReactElement {
   const { t } = useTranslation();
@@ -47,14 +52,10 @@ export function PomodoroTab(): ReactElement {
     setPomodoroRunning,
   } = useIslandStore();
 
-  const [workMin, setWorkMin] = useState(25);
-  const [breakMin, setBreakMin] = useState(5);
-  const [loopEnabled, setLoopEnabled] = useState(true);
+  const workSec = DEFAULT_WORK_MIN * 60;
+  const breakSec = DEFAULT_BREAK_MIN * 60;
+  const [loopEnabled] = useState(true);
 
-  const workSec = workMin * 60;
-  const breakSec = breakMin * 60;
-
-  // 计时 tick：运行中每秒递减，归零按循环设置切换工作/休息
   useEffect(() => {
     if (!pomodoroRunning) return;
     const id = setInterval(() => {
@@ -78,7 +79,11 @@ export function PomodoroTab(): ReactElement {
   }, [pomodoroRunning, loopEnabled, workSec, breakSec]);
 
   const handleStart = (): void => {
-    if (pomodoroRemaining <= 0 || (pomodoroPhase === 'work' && pomodoroRemaining >= workSec) || (pomodoroPhase === 'shortBreak' && pomodoroRemaining >= breakSec)) {
+    if (
+      pomodoroRemaining <= 0
+      || (pomodoroPhase === 'work' && pomodoroRemaining >= workSec)
+      || (pomodoroPhase === 'shortBreak' && pomodoroRemaining >= breakSec)
+    ) {
       setPomodoroRemaining(pomodoroPhase === 'work' ? workSec : breakSec);
     }
     setPomodoroRunning(true);
@@ -92,43 +97,30 @@ export function PomodoroTab(): ReactElement {
 
   return (
     <div className="pomodoro-tab">
-      <div className="pomodoro-phase">
-        {pomodoroPhase === 'work' ? t('hover.pomodoro.work', { defaultValue: '工作' }) : t('hover.pomodoro.break', { defaultValue: '休息' })}
-      </div>
+      <span
+        className="pomodoro-phase"
+        data-phase={pomodoroPhase}
+      >
+        {pomodoroPhase === 'work'
+          ? t('hover.pomodoro.work', { defaultValue: '工作' })
+          : t('hover.pomodoro.break', { defaultValue: '休息' })}
+      </span>
       <div className="pomodoro-time">{formatMMSS(pomodoroRemaining)}</div>
-
-      <div className="pomodoro-inputs">
-        <label>
-          {t('hover.pomodoro.workMin', { defaultValue: '工作(分)' })}
-          <input
-            type="number"
-            min={1}
-            max={120}
-            value={workMin}
-            onChange={(e) => setWorkMin(Math.max(1, Math.min(120, Number(e.target.value) || 1)))}
-          />
-        </label>
-        <label>
-          {t('hover.pomodoro.breakMin', { defaultValue: '休息(分)' })}
-          <input
-            type="number"
-            min={1}
-            max={60}
-            value={breakMin}
-            onChange={(e) => setBreakMin(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
-          />
-        </label>
-      </div>
-
       <div className="pomodoro-controls">
         {pomodoroRunning
-          ? <button onClick={() => setPomodoroRunning(false)}>{t('hover.pomodoro.pause', { defaultValue: '暂停' })}</button>
-          : <button onClick={handleStart}>{t('hover.pomodoro.start', { defaultValue: '开始' })}</button>}
-        <button onClick={handleReset}>{t('hover.pomodoro.reset', { defaultValue: '重置' })}</button>
-        <label className="pomodoro-loop">
-          <input type="checkbox" checked={loopEnabled} onChange={(e) => setLoopEnabled(e.target.checked)} />
-          {t('hover.pomodoro.loop', { defaultValue: '循环' })}
-        </label>
+          ? (
+            <button type="button" onClick={() => setPomodoroRunning(false)}>
+              {t('hover.pomodoro.pause', { defaultValue: '暂停' })}
+            </button>
+          )
+          : (
+            <button type="button" onClick={handleStart}>
+              {t('hover.pomodoro.start', { defaultValue: '开始' })}
+            </button>
+          )}
+        <button type="button" onClick={handleReset}>
+          {t('hover.pomodoro.reset', { defaultValue: '重置' })}
+        </button>
       </div>
     </div>
   );

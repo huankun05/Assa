@@ -26,6 +26,7 @@
 
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AgentPhase } from '../config/agentContentConfig';
 import type { AuthPending } from '../types/AuthPending';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
@@ -47,12 +48,22 @@ interface AgentDisplayState {
   renderedDisplay: ReactNode;
 }
 
+const PHASE_I18N_KEY: Record<AgentPhase, string> = {
+  connecting: 'agent.phase.connecting',
+  thinking: 'agent.phase.thinking',
+  toolCalling: 'agent.phase.toolCalling',
+  answering: 'agent.phase.answering',
+  done: 'agent.phase.done',
+  error: 'agent.phase.error',
+};
+
 /**
  * @description 计算 Agent UI 展示文本与状态。
  * @param options - 展示态计算参数。
  * @returns Agent 展示态数据。
  */
 export function useAgentDisplayState(options: UseAgentDisplayStateOptions): AgentDisplayState {
+  const { t } = useTranslation();
   const {
     phase,
     answerText,
@@ -63,8 +74,13 @@ export function useAgentDisplayState(options: UseAgentDisplayStateOptions): Agen
   } = options;
 
   const overlayText = authPending ? authPending.description : toolCallInfo ? toolCallInfo.purpose : null;
-  const overlayLabel = authPending ? '需要授权' : toolCallInfo ? `正在调用: ${toolCallInfo.tool}` : null;
-  const displayText = (answerText || thinkText || errorMsg || PHASE_LABEL[phase]).replace(/\n{2,}/g, '\n');
+  const overlayLabel = authPending
+    ? t('agent.auth.needAuth', { defaultValue: '需要授权' })
+    : toolCallInfo
+      ? t('agent.auth.callingTool', { defaultValue: '正在调用: {{tool}}', tool: toolCallInfo.tool })
+      : null;
+  const phaseLabel = t(PHASE_I18N_KEY[phase], { defaultValue: PHASE_LABEL[phase] });
+  const displayText = (answerText || thinkText || errorMsg || phaseLabel).replace(/\n{2,}/g, '\n');
   const isThinkOnly = !answerText && !!thinkText;
 
   const renderedDisplay = useMemo(() => {

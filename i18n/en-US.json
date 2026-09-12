@@ -462,6 +462,11 @@
       },
       "rainPrefix": "R",
       "windPrefix": "W"
+    },
+    "custom": {
+      "missing": "Page not found or deleted",
+      "blankHint": "Blank component container (mount custom components here)",
+      "noUrl": "URL not configured"
     }
   },
   "weatherAbbr": {
@@ -1431,6 +1436,18 @@
     "liquidOrb": {
       "ariaLabel": "Dynamic liquid glass orb",
       "loadingLabel": "Loading liquid glass orb preview"
+    },
+    "phase": {
+      "connecting": "Connecting…",
+      "thinking": "Thinking…",
+      "toolCalling": "Calling tool…",
+      "answering": "Answering…",
+      "done": "Done",
+      "error": "Something went wrong"
+    },
+    "auth": {
+      "needAuth": "Authorization needed",
+      "callingTool": "Calling: {{tool}}"
     }
   },
   "cli": {
@@ -2127,34 +2144,75 @@
       "like": "Like Sync"
     },
     "music": {
-      "like": {
-        "neteaseTitle": "NetEase Cloud Music Login",
-        "neteaseHint": "After login, real like status can be fetched and synced to local favorites",
-        "statusLabel": "Status: ",
-        "statusLoading": "Loading...",
-        "statusLoggedIn": "Logged in",
-        "statusLoggedOut": "Not logged in",
-        "statusError": "Failed to read login status",
-        "login": "Login",
-        "logout": "Logout",
-        "loginFailed": "Login failed, please retry",
-        "logoutFailed": "Logout failed",
-        "refresh": "Refresh",
-        "hotkeyTitle": "Like Hotkey",
-        "hotkeyHint": "When clicking like, this hotkey will be sent to the current player",
-        "hotkeyLabel": "Hotkey",
-        "hotkeyPlaceholder": "e.g. Ctrl+Alt+L",
-        "localTitle": "Local Favorites",
-        "localHint": "Songs saved locally; after login, can sync with real NetEase liked status",
-        "localCountLabel": "Liked songs: ",
-        "localCountLoading": "Loading...",
-        "localCountError": "Failed to load local favorites",
-        "localCountRefresh": "Refresh",
-        "promptTitle": "Login to NetEase Cloud Music for accurate like status",
-        "promptDesc": "Without login, eIsland can only save favorites locally and cannot read real NetEase liked status. After login, the heart icon will sync with NetEase 'My Liked Songs' to avoid inconsistent states.",
-        "saveSuccess": "Saved",
-        "saveFailed": "Save failed, check hotkey format"
-      }
+      "whitelist": {
+        "title": "Player Whitelist",
+        "hint": "Only whitelisted players can trigger music metadata",
+        "empty": "No players added yet",
+        "addTitle": "Add Player",
+        "addHint": "Enter a player process name manually, or detect it from the current SMTC session",
+        "detectedTitle": "Currently Detected",
+        "placeholder": "Enter player process name (e.g. Spotify.exe)",
+        "fetching": "Fetching...",
+        "fetchSourceProcess": "Fetch Playing Process",
+        "added": "Added",
+        "alreadyExists": "Already in whitelist"
+      },
+      "lyrics": {
+        "enabledTitle": "Lyrics Feature",
+        "enabledHint": "When disabled, no lyrics network requests are sent, lyrics are not displayed, and the island does not switch to lyrics state",
+        "enabledToggle": "Enable lyrics feature",
+        "translationTitle": "Translation Lyrics",
+        "translationHint": "When disabled, translation lyrics are not displayed and the island does not switch to translation lyrics state",
+        "translationToggle": "Show translation lyrics",
+        "title": "Lyrics Source",
+        "hint": "Auto mode selects source by detected SMTC player and falls back to LRCLIB",
+        "displayTitle": "Lyrics Display",
+        "displayHint": "Control how lyrics are rendered on screen",
+        "sourceOptions": {
+          "auto": "Auto (Follow Player)",
+          "neteaseOnly": "NetEase Only",
+          "qqmusicOnly": "QQ Music Only",
+          "kugouOnly": "KuGou Only",
+          "sodamusicOnly": "Soda Music Only",
+          "applemusicOnly": "Apple Music Only",
+          "spotifyOnly": "Spotify Only",
+          "moekoeOnly": "MoeKoe Only",
+          "lrclibOnly": "LRCLIB Only"
+        },
+        "karaokeTitle": "Karaoke Highlight",
+        "karaokeHint": "Enable word-by-word highlight effects",
+        "karaokeToggle": "Enable karaoke highlight",
+        "clockTitle": "Lyrics Clock",
+        "clockHint": "Show current Beijing time between cover and lyrics",
+        "clockToggle": "Show current time",
+        "calibrateTitle": "Lyrics Calibration",
+        "calibrateHint": "Read SMTC timestamp after lyrics fetch to correct timing offset",
+        "calibrateToggle": "Enable lyrics calibration",
+        "calibrateDelayLabel": "Trigger delay (seconds)"
+      },
+      "smtc": {
+        "title": "SMTC Auto Unsubscribe",
+        "hint": "Clean stale sessions with no updates for long periods",
+        "unsubscribeMs": "Unsubscribe timeout (ms)",
+        "neverUnsubscribe": "Never unsubscribe",
+        "invalidMsValue": "Please enter a valid ms value (>= 1000) or enable \"Never unsubscribe\"",
+        "saveFailed": "Save failed, please try again later",
+        "savedNeverUnsubscribe": "Saved: Never auto-unsubscribe",
+        "savedAutoUnsubscribe": "Saved: Auto-unsubscribe after {{ms}} ms"
+      },
+      "providers": {
+        "mode": {
+          "title": "Soda Music request mode",
+          "hint": "Guest mode is used by default; logged-in mode requires a connected Soda Music account",
+          "guest": "Guest mode",
+          "logged-in": "Logged-in mode"
+        },
+        "sodaMusic": {
+          "title": "Soda Music Provider",
+          "login": "Log in"
+        }
+      },
+      "pagination": "Music settings pagination"
     },
     "networkPages": {
       "timeout": "Timeout",
@@ -2812,77 +2870,6 @@
         "noCoords": "Query result is missing coordinates"
       },
       "pagination": "Weather settings pagination"
-    },
-    "music": {
-      "whitelist": {
-        "title": "Player Whitelist",
-        "hint": "Only whitelisted players can trigger music metadata",
-        "empty": "No players added yet",
-        "addTitle": "Add Player",
-        "addHint": "Enter a player process name manually, or detect it from the current SMTC session",
-        "detectedTitle": "Currently Detected",
-        "placeholder": "Enter player process name (e.g. Spotify.exe)",
-        "fetching": "Fetching...",
-        "fetchSourceProcess": "Fetch Playing Process",
-        "added": "Added",
-        "alreadyExists": "Already in whitelist"
-      },
-      "lyrics": {
-        "enabledTitle": "Lyrics Feature",
-        "enabledHint": "When disabled, no lyrics network requests are sent, lyrics are not displayed, and the island does not switch to lyrics state",
-        "enabledToggle": "Enable lyrics feature",
-        "translationTitle": "Translation Lyrics",
-        "translationHint": "When disabled, translation lyrics are not displayed and the island does not switch to translation lyrics state",
-        "translationToggle": "Show translation lyrics",
-        "title": "Lyrics Source",
-        "hint": "Auto mode selects source by detected SMTC player and falls back to LRCLIB",
-        "displayTitle": "Lyrics Display",
-        "displayHint": "Control how lyrics are rendered on screen",
-        "sourceOptions": {
-          "auto": "Auto (Follow Player)",
-          "neteaseOnly": "NetEase Only",
-          "qqmusicOnly": "QQ Music Only",
-          "kugouOnly": "KuGou Only",
-          "sodamusicOnly": "Soda Music Only",
-          "applemusicOnly": "Apple Music Only",
-          "spotifyOnly": "Spotify Only",
-          "moekoeOnly": "MoeKoe Only",
-          "lrclibOnly": "LRCLIB Only"
-        },
-        "karaokeTitle": "Karaoke Highlight",
-        "karaokeHint": "Enable word-by-word highlight effects",
-        "karaokeToggle": "Enable karaoke highlight",
-        "clockTitle": "Lyrics Clock",
-        "clockHint": "Show current Beijing time between cover and lyrics",
-        "clockToggle": "Show current time",
-        "calibrateTitle": "Lyrics Calibration",
-        "calibrateHint": "Read SMTC timestamp after lyrics fetch to correct timing offset",
-        "calibrateToggle": "Enable lyrics calibration",
-        "calibrateDelayLabel": "Trigger delay (seconds)"
-      },
-      "smtc": {
-        "title": "SMTC Auto Unsubscribe",
-        "hint": "Clean stale sessions with no updates for long periods",
-        "unsubscribeMs": "Unsubscribe timeout (ms)",
-        "neverUnsubscribe": "Never unsubscribe",
-        "invalidMsValue": "Please enter a valid ms value (>= 1000) or enable \"Never unsubscribe\"",
-        "saveFailed": "Save failed, please try again later",
-        "savedNeverUnsubscribe": "Saved: Never auto-unsubscribe",
-        "savedAutoUnsubscribe": "Saved: Auto-unsubscribe after {{ms}} ms"
-      },
-      "providers": {
-        "mode": {
-          "title": "Soda Music request mode",
-          "hint": "Guest mode is used by default; logged-in mode requires a connected Soda Music account",
-          "guest": "Guest mode",
-          "logged-in": "Logged-in mode"
-        },
-        "sodaMusic": {
-          "title": "Soda Music Provider",
-          "login": "Log in"
-        }
-      },
-      "pagination": "Music settings pagination"
     },
     "musicProviderLogin": {
       "title": "Music provider account connection",
