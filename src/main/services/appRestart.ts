@@ -156,10 +156,10 @@ function showRestartToast(): void {
  *   安全软件常把「隐藏 PowerShell」当可疑拦截）。脚本等待旧 PID / 端口后 npm run dev。
  */
 function spawnDevSessionRestarter(): void {
+  /** 重启瞬间把「本应用路径 + 本会话端口」写进配置，重启器只认这份配置 */
   const projectRoot = resolve(app.getAppPath());
   const pid = process.pid;
 
-  /** 重启瞬间记录本会话 renderer 端口，写入 restarter，避免事后再猜 */
   let rendererPort = 0;
   try {
     const url = new URL(process.env.ELECTRON_RENDERER_URL || '');
@@ -170,19 +170,34 @@ function spawnDevSessionRestarter(): void {
 
   const tempDir = app.getPath('temp');
   const logFile = join(tempDir, 'xiyue-dev-restart.log');
+  const configFile = join(tempDir, `xiyue-dev-restart-${pid}.json`);
   const scriptPath = join(tempDir, `xiyue-dev-restart-${pid}.js`);
   const vbsPath = join(tempDir, `xiyue-dev-restart-${pid}.vbs`);
   const systemNode = 'E:/software/Nodejs/node.exe';
   const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
   const maxMs = RESTARTER_MAX_TRIES * 1000;
 
-  const script = `/* xiyue dev restarter parent=${pid} recordedPort=${rendererPort || 'none'} */
+  const restartConfig = {
+    parentPid: pid,
+    projectRoot,
+    recordedPort: rendererPort,
+    logFile,
+    systemNode,
+    npmCli,
+  };
+  writeFileSync(configFile, JSON.stringify(restartConfig, null, 2), 'utf-8');
+
+  const script = `/* xiyue dev restarter — config: ${configFile} */
 const { spawn } = require('child_process');
 const fs = require('fs');
 const net = require('net');
-const log = ${JSON.stringify(logFile)};
-const parentPid = ${pid};
-const recordedPort = ${rendererPort};
+const cfg = JSON.parse(fs.readFileSync(${JSON.stringify(configFile)}, 'utf-8'));
+const log = cfg.logFile;
+const parentPid = cfg.parentPid;
+const projectRoot = cfg.projectRoot;
+const recordedPort = cfg.recordedPort || 0;
+const systemNode = cfg.systemNode;
+const npmCli = cfg.npmCli;
 function logLine(s) { try { fs.appendFileSync(log, s + '\\n'); } catch (e) {} }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function alive(p) {
@@ -190,14 +205,15 @@ function alive(p) {
 }
 function waitPortFree(port) {
   if (!port) return Promise.resolve(true);
-  return new Promise((resolve) => {
-    const sock = net.connect({ port, host: '127.0.0.1' }, () => { sock.destroy(); resolve(false); });
-    sock.on('error', () => resolve(true));
-    setTimeout(() => { try { sock.destroy(); } catch (e) {} resolve(true); }, 300);
+  return new Promise((ok) => {
+    const sock = net.connect({ port, host: '127.0.0.1' }, () => { sock.destroy(); ok(false); });
+    sock.on('error', () => ok(true));
+    setTimeout(() => { try { sock.destroy(); } catch (e) {} ok(true); }, 300);
   });
 }
 (async () => {
-  logLine('===== restarter start parent=' + parentPid + ' recordedPort=' + (recordedPort || 'none') + ' =====');
+  logLine('===== restarter start =====');
+  logLine('parent=' + parentPid + ' projectRoot=' + projectRoot + ' recordedPort=' + (recordedPort || 'none'));
   const deadline = Date.now() + ${maxMs};
   while (alive(parentPid) && Date.now() < deadline) await sleep(300);
   logLine('parent gone');
@@ -206,9 +222,9 @@ function waitPortFree(port) {
     logLine('recorded port ' + recordedPort + ' free');
   }
   await sleep(1200);
-  logLine('spawn npm run dev (new session picks a free port)');
-  const child = spawn(${JSON.stringify(systemNode)}, [${JSON.stringify(npmCli)}, 'run', 'dev'], {
-    cwd: ${JSON.stringify(projectRoot)},
+  logLine('spawn npm run dev in ' + projectRoot);
+  const child = spawn(systemNode, [npmCli, 'run', 'dev'], {
+    cwd: projectRoot,
     detached: true,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
@@ -231,7 +247,7 @@ function waitPortFree(port) {
     writeFileSync(vbsPath, vbs, 'ascii');
     appendFileSync(
       logFile,
-      `===== scheduled pid=${pid} recordedPort=${rendererPort || 'none'} vbs=${vbsPath} =====\n`,
+      `===== scheduled pid=${pid} projectRoot=${projectRoot} port=${rendererPort || 'none'} config=${configFile} =====\n`,
     );
     const child = spawn('wscript.exe', [vbsPath], {
       detached: true,
@@ -240,7 +256,7 @@ function waitPortFree(port) {
       cwd: projectRoot,
     });
     child.unref();
-    safeLog(`[App] dev restarter scheduled via wscript port=${rendererPort || 'none'} (log: ${logFile})`);
+    safeLog(`[App] restarter scheduled root=${projectRoot} port=${rendererPort || 'none'}`);
   } catch (err) {
     safeLogError('[App] restarter schedule failed:', err);
     try {
