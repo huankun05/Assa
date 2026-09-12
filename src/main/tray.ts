@@ -64,8 +64,8 @@ async function refreshTrayIdentity(): Promise<void> {
  * @description 开发环境从项目根目录加载，生产环境从 extraResources 打包目录加载
  */
 const TRAY_ICON_PATH = is.dev
-  ? join(__dirname, '../../resources/icon/eisland_16x16.ico')
-  : join(process.resourcesPath, 'icon/eisland_16x16.ico');
+  ? join(__dirname, '../../resources/icon/xiyue_16x16.ico')
+  : join(process.resourcesPath, 'icon/xiyue_16x16.ico');
 
 /**
  * 创建系统托盘

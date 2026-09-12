@@ -1,4 +1,4 @@
-/*
+﻿/*
  * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
  * https://github.com/JNTMTMTM/eIsland
  *
@@ -49,8 +49,8 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
     backgroundColor: '#000000',
     resizable: true,
     icon: is.dev
-      ? join(__dirname, '../../resources/icon/eisland_256x256.ico')
-      : join(process.resourcesPath, 'icon/eisland_256x256.ico'),
+      ? join(__dirname, '../../resources/icon/xiyue_256x256.ico')
+      : join(process.resourcesPath, 'icon/xiyue_256x256.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,

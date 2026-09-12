@@ -83,7 +83,7 @@
     }
   ],
   "win": {
-    "icon": "resources/icon/eisland_256x256.ico",
+    "icon": "resources/icon/xiyue_256x256.ico",
     "target": [
       {
         "target": "nsis",
