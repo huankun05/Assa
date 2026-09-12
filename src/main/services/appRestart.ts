@@ -177,13 +177,14 @@ function spawnDevSessionRestarter(): void {
   const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
   const maxMs = RESTARTER_MAX_TRIES * 1000;
 
+  const electronViteBin = join(projectRoot, 'node_modules', 'electron-vite', 'bin', 'electron-vite.js');
   const restartConfig = {
     parentPid: pid,
     projectRoot,
     recordedPort: rendererPort,
     logFile,
     systemNode,
-    npmCli,
+    electronViteBin,
   };
   writeFileSync(configFile, JSON.stringify(restartConfig, null, 2), 'utf-8');
 
@@ -197,7 +198,7 @@ const parentPid = cfg.parentPid;
 const projectRoot = cfg.projectRoot;
 const recordedPort = cfg.recordedPort || 0;
 const systemNode = cfg.systemNode;
-const npmCli = cfg.npmCli;
+const electronViteBin = cfg.electronViteBin;
 function logLine(s) { try { fs.appendFileSync(log, s + '\\n'); } catch (e) {} }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function alive(p) {
@@ -222,19 +223,18 @@ function waitPortFree(port) {
     logLine('recorded port ' + recordedPort + ' free');
   }
   await sleep(1200);
-  logLine('spawn npm run dev in ' + projectRoot);
-  const child = spawn(systemNode, [npmCli, 'run', 'dev'], {
+  logLine('spawn electron-vite dev (no npm shell, no extra console)');
+  const out = fs.openSync(log, 'a');
+  const child = spawn(systemNode, [electronViteBin, 'dev'], {
     cwd: projectRoot,
     detached: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', out, out],
     windowsHide: true,
   });
-  const append = (c) => { try { fs.appendFileSync(log, String(c)); } catch (e) {} };
-  child.stdout.on('data', append);
-  child.stderr.on('data', append);
-  child.on('error', (e) => logLine('spawn error ' + e));
   child.unref();
-  logLine('npm run dev detached pid=' + child.pid);
+  logLine('electron-vite detached pid=' + child.pid);
+  // 立刻退出 restarter，避免多占一个隐藏/可见窗口
+  process.exit(0);
 })();
 `;
 
