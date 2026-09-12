@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:preload": "vitest run src/preload/index.test.ts",
     "test:coverage": "vitest run --coverage",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && node scripts/patch-electron-vite-hide-console.js",
     "package": "electron-vite build && electron-builder",
     "changelog:generate": "node --experimental-strip-types scripts/generate-changelog.ts -o docs/CHANGE_LOG.md",
     "release:notes": "node --experimental-strip-types scripts/generate-incremental-release-notes.ts -o RELEASE_NOTES_SINCE_LAST_TAG.md",
