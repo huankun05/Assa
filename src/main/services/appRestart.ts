@@ -139,8 +139,7 @@ function spawnDevSessionRestarter(): void {
 
   const tempDir = app.getPath('temp');
   const logFile = join(tempDir, 'xiyue-dev-restart.log').replace(/\\/g, '/');
-  const nodeExe = process.execPath.replace(/\\/g, '/');
-  // electron 进程的 execPath 是 electron.exe；应用侧 npm 用系统 node 更稳
+  // 用系统 Node + npm-cli（路径可在本机调整）；electron.exe 不能直接 npm run
   const systemNode = 'E:/software/Nodejs/node.exe';
   const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
   const root = projectRoot.replace(/\\/g, '/');
@@ -185,21 +184,4 @@ function spawnDevSessionRestarter(): void {
       // ignore
     }
   }
-}
-
-/**
- * 读取项目 package.json 中的 dev 会话脚本名
- * @description 优先 dev，其次 start；都没有时返回空串（调用方回退 electron-vite dev）
- */
-function readDevScriptName(projectRoot: string): string {
-  try {
-    const pkg = JSON.parse(
-      readFileSync(join(projectRoot, 'package.json'), 'utf8')
-    ) as { scripts?: Record<string, string> };
-    if (pkg.scripts?.dev) return 'dev';
-    if (pkg.scripts?.start) return 'start';
-  } catch {
-    // package.json 缺失或损坏时由调用方回退
-  }
-  return '';
 }
