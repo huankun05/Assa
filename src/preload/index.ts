@@ -165,6 +165,10 @@ const api = {
   hideWindow: (): void => {
     ipcRenderer.send('window:hide');
   },
+  /** 右键让路：临时隐藏，durationMs 后自动显示（默认 3 秒） */
+  hideWindowTemporarily: (durationMs = 3000): void => {
+    ipcRenderer.send('window:temp-hide', durationMs);
+  },
   showWindow: (): void => {
     ipcRenderer.send('window:show');
   },

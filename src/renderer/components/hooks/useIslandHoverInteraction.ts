@@ -45,6 +45,10 @@ interface UseIslandHoverInteractionOptions {
   leaveTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   /** pill 模式下强制 click-to-hover */
   forceClickToHover?: boolean;
+  /** 右键让路：时间戳；之前不因悬停展开 */
+  tempHideUntilRef?: React.MutableRefObject<number>;
+  /** 让路结束后需先移出再进入，避免立刻又挡住 */
+  requireLeaveAfterTempHideRef?: React.MutableRefObject<boolean>;
 }
 
 /**
@@ -66,6 +70,8 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
     enterTimerRef,
     leaveTimerRef,
     forceClickToHover = false,
+    tempHideUntilRef,
+    requireLeaveAfterTempHideRef,
   } = options;
 
   /** pill 模式下始终 click-to-hover，读取 ref 保持运行时最新 */
@@ -123,6 +129,16 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
         return;
       }
 
+      /** 右键让路计时内：保持穿透，不展开 */
+      const tempHideUntil = tempHideUntilRef?.current ?? 0;
+      if (Date.now() < tempHideUntil) {
+        clearAllTimers();
+        isHoveringRef.current = false;
+        setMousePassthrough(true);
+        scheduleCheck();
+        return;
+      }
+
       const config = STATE_CONFIGS[state];
       const sliderCaptchaActive = Boolean(document.querySelector('.slider-captcha-overlay'));
 
@@ -146,6 +162,13 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
       }
 
       if (inWindow) {
+        if (requireLeaveAfterTempHideRef?.current) {
+          /** 刚从让路恢复且鼠标仍在岛上：先穿透，等离开再允许悬停 */
+          setMousePassthrough(true);
+          scheduleCheck();
+          return;
+        }
+
         if (leaveTimerRef.current !== null) {
           clearTimeout(leaveTimerRef.current);
           leaveTimerRef.current = null;
@@ -179,6 +202,10 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
         if (enterTimerRef.current !== null) {
           clearTimeout(enterTimerRef.current);
           enterTimerRef.current = null;
+        }
+
+        if (requireLeaveAfterTempHideRef?.current) {
+          requireLeaveAfterTempHideRef.current = false;
         }
 
         if ((state === 'idle' || state === 'lyrics' || state === 'lyricsTranslation' || (state as string) === 'agentVoiceInput') && (forceClickToHover || idleClickExpandRef.current) && !isHoveringRef.current) {
@@ -243,6 +270,8 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
     enterTimerRef,
     leaveTimerRef,
     forceClickToHover,
+    tempHideUntilRef,
+    requireLeaveAfterTempHideRef,
   ]);
 }
 

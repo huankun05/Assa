@@ -189,6 +189,10 @@
       "retract": {
         "title": "Auto Retract",
         "desc": "Move cursor away from Dynamic Island to retract to idle state."
+      },
+      "tempHide": {
+        "title": "Right-click to make way",
+        "desc": "Right-click the island to hide it for about 3 seconds so you can click browser tabs or windows behind it. Use hide settings for a permanent hide."
       }
     },
     "musicCards": {

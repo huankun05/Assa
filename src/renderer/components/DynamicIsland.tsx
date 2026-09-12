@@ -52,6 +52,7 @@ function DynamicIsland(): JSX.Element {
 
   const {
     handleIslandClick,
+    handleIslandContextMenu,
     shellClassName,
     shellStyle,
     timeStr,
@@ -76,6 +77,7 @@ function DynamicIsland(): JSX.Element {
     <div
       className={shellClassName}
       onClick={handleIslandClick}
+      onContextMenu={handleIslandContextMenu}
       style={shellStyle}
     >
       <DynamicIslandBackground

@@ -55,6 +55,7 @@ interface DynamicIslandCoordinatorState {
   shellClassName: string;
   shellStyle: React.CSSProperties | undefined;
   handleIslandClick: () => void;
+  handleIslandContextMenu: (event: React.MouseEvent) => void;
   timeStr: string;
   dayStr: string;
   fullTimeStr: string;
@@ -124,6 +125,8 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
     autoDimEnabledRef,
     autoDimDelayRef,
     positionLockedRef,
+    tempHideUntilRef,
+    requireLeaveAfterTempHideRef,
   } = useIslandRuntimeRefs({
     setNotification,
   });
@@ -297,7 +300,22 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
     enterTimerRef,
     leaveTimerRef,
     forceClickToHover: shapeMode === 'pill',
+    tempHideUntilRef,
+    requireLeaveAfterTempHideRef,
   });
+
+  /** 右键让路：隐藏约 3 秒，方便点击背后窗口/标签 */
+  const handleIslandContextMenu = (event: React.MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    isHoveringRef.current = false;
+    setIdle(true);
+    window.api?.enableMousePassthrough();
+    const durationMs = 3000;
+    tempHideUntilRef.current = Date.now() + durationMs;
+    requireLeaveAfterTempHideRef.current = true;
+    window.api?.hideWindowTemporarily?.(durationMs);
+  };
 
   const {
     shellClassName,
@@ -319,6 +337,7 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
     shellClassName,
     shellStyle,
     handleIslandClick: wrapClick(handleIslandClick),
+    handleIslandContextMenu,
     timeStr,
     dayStr,
     fullTimeStr,

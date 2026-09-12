@@ -60,7 +60,7 @@ export function BehaviorSettingsPage({
 
   const [standaloneWindowMode, setStandaloneWindowMode] = useState<'integrated' | 'standalone'>('integrated');
   const [hoverScreenshotMode, setHoverScreenshotMode] = useState<HoverScreenshotMode>('region');
-  const [idleClickExpand, setIdleClickExpand] = useState<boolean>(true);
+  const [idleClickExpand, setIdleClickExpand] = useState<boolean>(false);
   const [shapeMode, setShapeMode] = useState<IslandShapeMode>('notch');
   const [pomodoroWorkMin, setPomodoroWorkMin] = useState(25);
   const [pomodoroBreakMin, setPomodoroBreakMin] = useState(5);
@@ -239,7 +239,7 @@ export function BehaviorSettingsPage({
         <div className="settings-card">
           <div className="settings-card-header">
             <div className="settings-card-title">{t('settings.app.behavior.idleClickExpandTitle', { defaultValue: '空闲态点击展开' })}</div>
-            <div className="settings-card-subtitle">{t('settings.app.behavior.idleClickExpandHint', { defaultValue: '启用后，鼠标悬停在灵动岛上不会自动展开，需要点击才能展开，后续交互不受影响' })}</div>
+            <div className="settings-card-subtitle">{t('settings.app.behavior.idleClickExpandHint', { defaultValue: '默认悬停展开。启用后需点击才展开。若需临时点击背后窗口，可在岛上右键让路约 3 秒' })}</div>
           </div>
           <div className="settings-card-inline-row">
             <label className="settings-card-check">

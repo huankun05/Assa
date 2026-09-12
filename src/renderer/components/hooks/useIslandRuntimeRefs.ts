@@ -46,6 +46,8 @@ interface IslandRuntimeRefsState {
   autoDimEnabledRef: React.MutableRefObject<boolean>;
   autoDimDelayRef: React.MutableRefObject<number>;
   positionLockedRef: React.MutableRefObject<boolean>;
+  tempHideUntilRef: React.MutableRefObject<number>;
+  requireLeaveAfterTempHideRef: React.MutableRefObject<boolean>;
 }
 
 /**
@@ -63,14 +65,18 @@ export function useIslandRuntimeRefs(options: UseIslandRuntimeRefsOptions): Isla
   const setNotificationRef = useRef(setNotification);
   const expandLeaveIdleRef = useRef(false);
   const maxExpandLeaveIdleRef = useRef(false);
-  /** 与主进程默认一致：新装/无配置时点击才展开，避免加载完成前误触 hover */
-  const idleClickExpandRef = useRef(true);
+  /** 与主进程默认一致：悬停展开；可用设置改为点击展开 */
+  const idleClickExpandRef = useRef(false);
   const pendingAnnouncementAfterGuideRef = useRef(false);
   const pendingAnnouncementAppVersionRef = useRef('');
   const startupAutoCheckHandledRef = useRef(false);
   const autoDimEnabledRef = useRef(false);
   const autoDimDelayRef = useRef(10);
   const positionLockedRef = useRef(false);
+  /** 右键让路隐藏截止时间戳 */
+  const tempHideUntilRef = useRef(0);
+  /** 让路结束后需先移出再悬停 */
+  const requireLeaveAfterTempHideRef = useRef(false);
 
   useLayoutEffect(() => {
     setNotificationRef.current = setNotification;
@@ -91,5 +97,7 @@ export function useIslandRuntimeRefs(options: UseIslandRuntimeRefsOptions): Isla
     autoDimEnabledRef,
     autoDimDelayRef,
     positionLockedRef,
+    tempHideUntilRef,
+    requireLeaveAfterTempHideRef,
   };
 }

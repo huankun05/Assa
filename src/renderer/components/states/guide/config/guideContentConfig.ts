@@ -218,6 +218,14 @@ export function getInteractionCards(t: TFunction): InteractionCard[] {
       desc: t('guide.interactionCards.retract.desc', { defaultValue: '将鼠标移开灵动岛，自动收回至待机状态。' }),
       demo: 'retract',
     },
+    {
+      iconSrc: SvgIcon.HIDE,
+      title: t('guide.interactionCards.tempHide.title', { defaultValue: '右键让路' }),
+      desc: t('guide.interactionCards.tempHide.desc', {
+        defaultValue: '在灵动岛上点右键，岛会暂时隐藏约 3 秒，方便你去点后面的浏览器标签或窗口；需要长期隐藏请用设置里的隐藏功能。',
+      }),
+      demo: 'retract',
+    },
   ];
 }
 

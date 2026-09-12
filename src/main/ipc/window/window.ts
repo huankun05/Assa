@@ -121,6 +121,8 @@ export function registerWindowIpcHandlers(options: RegisterWindowIpcHandlersOpti
     targetBounds: Electron.Rectangle,
     visibleWidth: number,
     visibleHeight: number,
+    /** hit-test 区宽；默认等于可见宽。idle 传热区宽，两侧点穿到下层 */
+    shapeWidth?: number,
   ): void => {
     const currentBounds = win.getBounds();
     const backingWidth = Math.max(currentBounds.width, targetBounds.width, visibleWidth);
@@ -156,11 +158,12 @@ export function registerWindowIpcHandlers(options: RegisterWindowIpcHandlersOpti
       return;
     }
 
+    const hitWidth = Math.max(1, Math.min(shapeWidth ?? visibleWidth, visibleWidth));
     win.setBounds(nextBounds);
     win.setShape([{
-      x: Math.round((backingWidth - visibleWidth) / 2),
+      x: Math.round((backingWidth - hitWidth) / 2),
       y: 0,
-      width: visibleWidth,
+      width: hitWidth,
       height: visibleHeight,
     }]);
     win.webContents.invalidate();
@@ -334,6 +337,24 @@ export function registerWindowIpcHandlers(options: RegisterWindowIpcHandlersOpti
         height: getHeight(options.sizes.islandHeight, PILL_ISLAND_HEIGHT),
       };
     }, delayMs);
+  });
+
+  /** 临时隐藏：给用户 3 秒去点背后的窗口/标签；到时自动显示 */
+  let tempHideTimer: ReturnType<typeof setTimeout> | null = null;
+  ipcMain.on('window:temp-hide', (_event, durationMs = 3000) => {
+    const ms = Math.max(500, Math.min(15000, Number(durationMs) || 3000));
+    withWindow((win) => {
+      options.setHiddenByAutoHideProcess(false);
+      win.hide();
+    });
+    if (tempHideTimer) clearTimeout(tempHideTimer);
+    tempHideTimer = setTimeout(() => {
+      tempHideTimer = null;
+      withWindow((win) => {
+        win.show();
+        win.setAlwaysOnTop(true, 'screen-saver');
+      });
+    }, ms);
   });
 
   ipcMain.on('window:hide', () => {

@@ -255,9 +255,9 @@ describe('registerIslandIpcHandlers', () => {
   });
 
   describe('idle-click-expand', () => {
-    it('get returns true when file is missing (default on)', () => {
+    it('get returns false when file is missing (default hover expand)', () => {
       existsSyncMock.mockReturnValue(false);
-      expect(getHandler('island:idle-click-expand:get')()).toBe(true);
+      expect(getHandler('island:idle-click-expand:get')()).toBe(false);
     });
 
     it('get returns persisted boolean', () => {

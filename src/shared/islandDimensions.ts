@@ -21,3 +21,10 @@
 
 export const ISLAND_WIDTH = 260;
 export const ISLAND_HEIGHT = 42;
+
+/**
+ * idle 态命中热区宽度（px）
+ * @description 居中窄条：两侧不参与 hit-test，避免 always-on-top 整条挡住浏览器标签。
+ * 命中热区外点击穿透到下层应用（DESIGN_SYSTEM §4.2 P1）。
+ */
+export const IDLE_HOTSPOT_WIDTH = 120;

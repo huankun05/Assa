@@ -103,6 +103,7 @@ declare global {
       expandWindowSettings: (delayMs?: number) => void;
       collapseWindow: (delayMs?: number) => void;
       hideWindow: () => void;
+      hideWindowTemporarily: (durationMs?: number) => void;
       showWindow: () => void;
       moveWindowDelta: (dx: number, dy: number) => void;
       getMousePosition: () => Promise<Point>;

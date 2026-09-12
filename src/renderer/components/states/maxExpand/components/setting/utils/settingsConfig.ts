@@ -465,7 +465,7 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   // ── 软件设置 > 交互行为 ──
   { label: '岛屿形态', desc: '切换灵动岛的外观形态，刘海屏贴于屏幕顶部，灵动岛为胶囊形状', labelKey: 'settings.app.behavior.shapeModeTitle', descKey: 'settings.app.behavior.shapeModeHint', tab: 'app', appPage: 'behavior' },
   { label: '鼠标移开自动收回', desc: '启用后，鼠标离开灵动岛时将自动回到空闲状态（若正在播放音乐则切到歌词态）', labelKey: 'settings.app.behavior.mouseLeaveTitle', descKey: 'settings.app.behavior.mouseLeaveHint', tab: 'app', appPage: 'behavior' },
-  { label: '空闲态点击展开', desc: '启用后，鼠标悬停在灵动岛上不会自动展开，需要点击才能展开，后续交互不受影响', labelKey: 'settings.app.behavior.idleClickExpandTitle', descKey: 'settings.app.behavior.idleClickExpandHint', tab: 'app', appPage: 'behavior' },
+  { label: '空闲态点击展开', desc: '默认悬停展开。启用后需点击才展开。若需临时点击背后窗口，可在岛上右键让路约 3 秒', labelKey: 'settings.app.behavior.idleClickExpandTitle', descKey: 'settings.app.behavior.idleClickExpandHint', tab: 'app', appPage: 'behavior' },
   { label: '是否显示启动动画', desc: '开启后仅首次启动显示启动动画（画面右下角可直接进设置），关闭后永不显示', labelKey: 'settings.app.animation.startupAnimationTitle', descKey: 'settings.app.animation.startupAnimationHint', tab: 'app', appPage: 'animation' },
   { label: '独立窗口模式', desc: '启用后，待办事项、倒数日、设置将在独立窗口中打开，而非灵动岛内', labelKey: 'settings.app.behavior.windowModeTitle', descKey: 'settings.app.behavior.windowModeHint', tab: 'app', appPage: 'behavior' },
   { label: '悬停界面截图按钮模式', desc: '配置 hover 界面的截图按钮触发选区截图或显示器截图', labelKey: 'settings.app.behavior.hoverScreenshotModeTitle', descKey: 'settings.app.behavior.hoverScreenshotModeHint', tab: 'app', appPage: 'behavior' },
