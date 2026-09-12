@@ -203,19 +203,70 @@ src/renderer/public/image/legacy/eisland-dino/   # 可选：恐龙归档
 
 ---
 
-## 6. 当前资产盘点（2026-09-12）
+## 6. 当前资产盘点（2026-09-12 更新）
 
-| 路径 | 内容 |
+| 路径 | 状态 |
 |---|---|
-| `public/image/agent/xiyue_happy.png` | 女孩 happy（已接线） |
-| `public/image/agent/xiyue_happy_full.png` | 完整版 |
-| `public/image/AGENT_*.png` | **恐龙五态（待替换）** |
-| `public/assets/avatar/T.jpg` | 旧占位，待清理 |
-| 根目录 `xiyue_face_*` / `xiyue_island*` / `xiyue_happy_*` | 草稿，未进包 |
+| `public/image/agent/xiyue_{calm,happy,thinking,tool,listening,confuse,speaking}.png` | **P0 七态已入库并接线** |
+| `public/image/agent/xiyue_happy_full.png` | 完整版可用 |
+| `public/image/legacy/eisland-dino/AGENT_*.png` | 恐龙已归档，不进默认路径 |
+| `public/assets/avatar/T.jpg` | 旧占位，可删 |
+| `Assa/temp-archive/*.png` | 出图中间稿（约 30MB），确认后可删 |
+| `Assa/xiyue_face_v2.png` | 草稿，未进包 |
+
+### 6.1 已完成（无需再交）
+
+- [x] 七态脸特写 PNG（透明底）  
+- [x] Agent / Hover 路径接线 + 缺图回落 happy  
+- [x] CSS 微动  
 
 ---
 
-## 7. 里程碑建议
+## 6B. 仍需你准备的素材（按优先级）
+
+### P0 · 品牌图标（应用/托盘，当前仍是 eisland）
+
+| 要什么 | 规格 | 放哪 | 说明 |
+|---|---|---|---|
+| **应用图标 ICO** | **256×256** 多尺寸 ICO（至少含 16/32/48/64/128/256） | `resources/icon/xiyue_256x256.ico` | 安装包、主窗口图标 |
+| **托盘 ICO** | **16×16**（可含 32） | `resources/icon/xiyue_16x16.ico` | 系统托盘；深浅背景都要能认 |
+| **可选 SVG 源** | 矢量 | `resources/icon/xiyue.svg` | 便于再导出；非强制 |
+| **可选 PNG 源** | 512×512 透明或带底 | `resources/icon/xiyue_512.png` | 设计源，方便切 ICO |
+
+**画面怎么设计（描述清楚）：**
+
+| 项 | 建议 |
+|---|---|
+| 主体 | **汐月头像简化版**（与 7 态同一人）**或** 抽象「月牙 + 潮汐」二选一；更推荐「少女头 + 圆角深底」识别度高 |
+| 构图 | 正方形居中；头肩或大头皆可，**16px 缩到仍能看出「有人脸/月」** |
+| 底 | 应用图标：**深色圆角底**（深蓝黑/近黑 #0a0a12 一类），不要纯白底 |
+| 色 | 发色暖棕/蜜桃；可用一点 iOS 蓝点缀；整体不要花 |
+| 禁止 | 文字「汐月/Xiyue」不要压在 16px 上；复杂场景；水印 |
+| 风格 | 与 hover 头像同一画风（赛璐璐），避免应用图标是写实、岛内是二次元 |
+
+**代码接线（有文件后我改，你不用动代码）：**
+
+- `electron-builder.json` → `"win.icon": "resources/icon/xiyue_256x256.ico"`  
+- `src/main/tray.ts` → `TRAY_ICON_PATH` → `xiyue_16x16.ico`  
+- 若有独立窗 `windowIcon` 一并替换  
+
+### P1 · 可选（不阻塞）
+
+| 要什么 | 用途 | 说明 |
+|---|---|---|
+| `xiyue_{mood}_full.png` × 若干 | 设置/关于页 80–256 | 头肩胸完整版；至少 happy_full 可扩 thinking/full |
+| P1 表情 excited / gentle | 好消息 / 温和共情 | 非必须 |
+| 品牌壁纸 1 张 | 可选桌面/启动背景 | 可后置 |
+
+### 明确不做（本阶段）
+
+- Live2D / 骨骼模型  
+- 屏顶露头条（P2 遮挡终极方案）——**产品已验收现方案，取消**  
+- 恐龙皮肤回归默认路径  
+
+---
+
+## 7. 里程碑建议（更新）
 
 | 里程碑 | 内容 |
 |---|---|
