@@ -75,9 +75,16 @@ const RESTART_TOAST_DELAY_MS = 1000;
 export function restartApp(): void {
   if (restarting) return;
   restarting = true;
+  console.log('[App] restartApp start', {
+    packaged: app.isPackaged,
+    hasRendererUrl: Boolean(process.env.ELECTRON_RENDERER_URL),
+    appPath: app.getAppPath(),
+  });
 
   try {
-    if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+    // dev 下即使没有 ELECTRON_RENDERER_URL 也走脚本（相对 electron-vite.cmd），
+    // 避免 app.relaunch() 指向已死的 renderer URL
+    if (!app.isPackaged) {
       spawnDevSessionRestarter();
     } else {
       app.relaunch();
@@ -117,8 +124,9 @@ function showRestartToast(): void {
  * 派生 dev 会话重启脚本
  * @description 生成的 cmd 脚本会：等待旧进程退出（释放单实例锁）→ 等待
  *   ELECTRON_RENDERER_URL 端口释放（electron-vite CLI 与 vite server 已死）→
- *   在项目根目录重新执行 npm run dev，输出追加到临时目录日志。
- *   detached + windowsHide：不弹窗、不随本进程退出而被回收。
+ *   在项目根目录重新执行 npm run dev。
+ *   Windows 关键点：Electron 退出时 Job Object 可能连带杀掉子进程，
+ *   因此必须用 `start` 再拉一层，把 restarter 从本进程作业中剥离。
  */
 function spawnDevSessionRestarter(): void {
   const projectRoot = resolve(app.getAppPath());
@@ -138,7 +146,7 @@ function spawnDevSessionRestarter(): void {
   const lines: string[] = [
     '@echo off',
     'setlocal EnableDelayedExpansion',
-    `rem 汐月 dev session restarter, spawned by pid ${process.pid}`,
+    `rem xiyue dev session restarter pid=${process.pid}`,
     'set /a tries=0',
     ':waitpid',
     `tasklist /fi "PID eq ${process.pid}" 2>nul | find "${process.pid}" >nul 2>&1`,
@@ -167,24 +175,32 @@ function spawnDevSessionRestarter(): void {
   lines.push(
     ':spawn',
     `cd /d "${projectRoot}"`,
-    `echo ===== 汐月 dev session restart %date% %time% =====>> "${logFile}"`
+    `echo ===== xiyue dev restart %date% %time% =====>> "${logFile}"`,
   );
 
+  const viteCmd = join(projectRoot, 'node_modules', '.bin', 'electron-vite.cmd');
   if (devScriptName) {
-    lines.push(`call npm run ${devScriptName} >> "${logFile}" 2>&1`);
-  } else {
     lines.push(
-      `call "${join(projectRoot, 'node_modules', '.bin', 'electron-vite.cmd')}" dev >> "${logFile}" 2>&1`
+      'where npm >nul 2>&1',
+      'if not errorlevel 1 (',
+      `  call npm run ${devScriptName} >> "${logFile}" 2>&1`,
+      ') else (',
+      `  call "${viteCmd}" dev >> "${logFile}" 2>&1`,
+      ')',
     );
+  } else {
+    lines.push(`call "${viteCmd}" dev >> "${logFile}" 2>&1`);
   }
   lines.push('endlocal');
 
   try {
-    writeFileSync(scriptPath, lines.join('\r\n') + '\r\n');
-    spawn('cmd.exe', ['/d', '/c', scriptPath], {
+    writeFileSync(scriptPath, lines.join('\r\n') + '\r\n', 'ascii');
+    // start 脱离 Electron Job Object，避免 app.exit 时被一起杀掉
+    spawn('cmd.exe', ['/d', '/c', 'start', '/b', '', 'cmd.exe', '/d', '/c', scriptPath], {
       detached: true,
       stdio: 'ignore',
-      windowsHide: true
+      windowsHide: true,
+      cwd: projectRoot,
     }).unref();
     console.log(`[App] dev 会话重启已排定: ${scriptPath} (log: ${logFile})`);
   } catch (err) {

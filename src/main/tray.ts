@@ -119,6 +119,7 @@ function createTray(mainWindowGetter: () => BrowserWindow | null): Tray {
       label: '重启灵动岛',
       click: () => {
         try {
+          console.log('[Tray] restart requested');
           restartApp();
         } catch (err) {
           console.error('[Tray] restart error:', err);
