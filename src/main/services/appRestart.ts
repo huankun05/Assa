@@ -96,15 +96,22 @@ export function restartApp(): void {
   });
 
   try {
-    // dev 下即使没有 ELECTRON_RENDERER_URL 也走脚本（相对 electron-vite.cmd），
-    // 避免 app.relaunch() 指向已死的 renderer URL
     if (!app.isPackaged) {
-      spawnDevSessionRestarter();
+      // 软重启：只让 electron-vite 原地再拉一次 electron，不整段重开 CLI（无闪窗）
+      const tmp = process.env.TEMP || process.env.TMP || process.env.TMPDIR || app.getPath('temp');
+      const flag = join(tmp, 'xiyue-soft-restart.flag');
+      writeFileSync(flag, String(process.pid), 'utf-8');
+      safeLog('[App] soft-restart flag written', flag);
     } else {
       app.relaunch();
     }
   } catch (err) {
     safeLogError('[App] restart relaunch error:', err);
+    try {
+      if (!app.isPackaged) spawnDevSessionRestarter();
+    } catch {
+      // ignore
+    }
   }
 
   try {
