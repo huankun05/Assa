@@ -34,7 +34,7 @@
 
 import { app, Notification } from 'electron';
 import { spawn } from 'child_process';
-import { appendFileSync } from 'fs';
+import { appendFileSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 /** 等待旧实例退出的轮询上限（约 2 分钟），防止隐藏脚本无限循环 */
@@ -121,10 +121,9 @@ function showRestartToast(): void {
 }
 
 /**
- * 派生 dev 会话重启器（Windows）
- * @description 用 PowerShell `Start-Process -WindowStyle Hidden` 起完全独立进程，
- *   避免 Electron Job Object 在 app.exit 时杀掉子进程；也避免 cmd start 闪终端。
- *   等待旧 PID 退出 + renderer 端口释放后，在项目根用 node+npm-cli 拉起 npm run dev。
+ * 派生 dev 会话重启器
+ * @description 写一个独立 Node 脚本并用系统 node 启动（不用 PowerShell——
+ *   安全软件常把「隐藏 PowerShell」当可疑拦截）。脚本等待旧 PID / 端口后 npm run dev。
  */
 function spawnDevSessionRestarter(): void {
   const projectRoot = resolve(app.getAppPath());
@@ -138,46 +137,71 @@ function spawnDevSessionRestarter(): void {
   }
 
   const tempDir = app.getPath('temp');
-  const logFile = join(tempDir, 'xiyue-dev-restart.log').replace(/\\/g, '/');
-  // 用系统 Node + npm-cli（路径可在本机调整）；electron.exe 不能直接 npm run
+  const logFile = join(tempDir, 'xiyue-dev-restart.log');
+  const scriptPath = join(tempDir, `xiyue-dev-restart-${pid}.js`);
   const systemNode = 'E:/software/Nodejs/node.exe';
   const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
-  const root = projectRoot.replace(/\\/g, '/');
-  const maxTries = RESTARTER_MAX_TRIES;
+  const maxMs = RESTARTER_MAX_TRIES * 1000;
 
-  const portWait = rendererPort
-    ? `$deadline=Get-Date; while((Get-Date) -lt $deadline.AddSeconds(${maxTries})) { $c=Get-NetTCPConnection -LocalPort ${rendererPort} -State Listen -EA SilentlyContinue; if(-not $c){break}; Start-Sleep -Milliseconds 500 }`
-    : '';
-
-  const ps = [
-    `$ErrorActionPreference='Continue'`,
-    `"===== xiyue restart restarter start pid=${pid} =====" | Add-Content -Encoding utf8 '${logFile}'`,
-    `$p=${pid}`,
-    `$deadline=Get-Date; while((Get-Process -Id $p -EA SilentlyContinue) -and ((Get-Date) -lt $deadline.AddSeconds(${maxTries}))) { Start-Sleep -Milliseconds 400 }`,
-    portWait,
-    `Start-Sleep -Milliseconds 800`,
-    `Set-Location '${root}'`,
-    `& '${systemNode}' '${npmCli}' run dev >> '${logFile}' 2>&1`,
-    `"===== restarter finished exit=$LASTEXITCODE =====" | Add-Content -Encoding utf8 '${logFile}'`,
-  ].join('; ');
+  const portExpr = rendererPort ? rendererPort : 'null';
+  const script = `/* xiyue dev restarter, parent pid=${pid} */
+const { spawn } = require('child_process');
+const fs = require('fs');
+const net = require('net');
+const log = ${JSON.stringify(logFile)};
+const maxMs = ${maxMs};
+const port = ${portExpr};
+function logLine(s) { try { fs.appendFileSync(log, s + '\\n'); } catch (e) {} }
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+function alive(p) {
+  try { process.kill(p, 0); return true; } catch (e) { return false; }
+}
+function portFree(p) {
+  if (!p) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const sock = net.connect({ port: Number(p), host: '127.0.0.1' }, () => {
+      sock.destroy();
+      resolve(false);
+    });
+    sock.on('error', () => resolve(true));
+    setTimeout(() => { try { sock.destroy(); } catch (e) {} resolve(true); }, 400);
+  });
+}
+(async () => {
+  logLine('===== restarter start parent=${pid} port=' + (port || 'none') + ' =====');
+  const deadline = Date.now() + maxMs;
+  while (alive(${pid}) && Date.now() < deadline) await sleep(400);
+  logLine('parent exited, waiting port');
+  while (!(await portFree(port)) && Date.now() < deadline) await sleep(400);
+  await sleep(800);
+  logLine('spawn npm run dev');
+  const child = spawn(${JSON.stringify(systemNode)}, [${JSON.stringify(npmCli)}, 'run', 'dev'], {
+    cwd: ${JSON.stringify(projectRoot)},
+    detached: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  });
+  const append = (chunk) => { try { fs.appendFileSync(log, String(chunk)); } catch (e) {} };
+  child.stdout.on('data', append);
+  child.stderr.on('data', append);
+  child.unref();
+  logLine('npm run dev detached');
+})();
+`;
 
   try {
-    // 立刻写一行，证明「已排定」
-    appendFileSync(logFile, `===== scheduled by pid ${pid} rendererPort=${rendererPort || 'none'} =====\n`);
-    const child = spawn(
-      'powershell.exe',
-      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', ps],
-      {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true,
-        cwd: projectRoot,
-      },
-    );
+    writeFileSync(scriptPath, script, 'utf-8');
+    appendFileSync(logFile, `===== scheduled pid=${pid} script=${scriptPath} =====\n`);
+    const child = spawn(systemNode, [scriptPath], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+      cwd: projectRoot,
+    });
     child.unref();
-    console.log(`[App] dev restarter scheduled via powershell (log: ${logFile})`);
+    console.log(`[App] dev restarter scheduled via node (log: ${logFile})`);
   } catch (err) {
-    console.error('[App] powershell restarter spawn failed:', err);
+    console.error('[App] node restarter spawn failed:', err);
     try {
       app.relaunch();
     } catch {
