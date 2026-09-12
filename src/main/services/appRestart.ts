@@ -130,6 +130,15 @@ function spawnDevSessionRestarter(): void {
   const projectRoot = resolve(app.getAppPath());
   const pid = process.pid;
 
+  /** 重启瞬间记录本会话 renderer 端口，写入 restarter，避免事后再猜 */
+  let rendererPort = 0;
+  try {
+    const url = new URL(process.env.ELECTRON_RENDERER_URL || '');
+    rendererPort = Number(url.port) || 0;
+  } catch {
+    rendererPort = 0;
+  }
+
   const tempDir = app.getPath('temp');
   const logFile = join(tempDir, 'xiyue-dev-restart.log');
   const scriptPath = join(tempDir, `xiyue-dev-restart-${pid}.js`);
@@ -138,24 +147,37 @@ function spawnDevSessionRestarter(): void {
   const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
   const maxMs = RESTARTER_MAX_TRIES * 1000;
 
-  // 不等待具体端口：ELECTRON_RENDERER_URL 可能是 5173，实际 vite 却在 5174。
-  // 等父 PID 消失 + 固定冷却即可，避免卡死在错误端口上。
-  const script = `/* xiyue dev restarter parent=${pid} */
+  const script = `/* xiyue dev restarter parent=${pid} recordedPort=${rendererPort || 'none'} */
 const { spawn } = require('child_process');
 const fs = require('fs');
+const net = require('net');
 const log = ${JSON.stringify(logFile)};
+const parentPid = ${pid};
+const recordedPort = ${rendererPort};
 function logLine(s) { try { fs.appendFileSync(log, s + '\\n'); } catch (e) {} }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function alive(p) {
   try { process.kill(p, 0); return true; } catch (e) { return false; }
 }
+function waitPortFree(port) {
+  if (!port) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const sock = net.connect({ port, host: '127.0.0.1' }, () => { sock.destroy(); resolve(false); });
+    sock.on('error', () => resolve(true));
+    setTimeout(() => { try { sock.destroy(); } catch (e) {} resolve(true); }, 300);
+  });
+}
 (async () => {
-  logLine('===== restarter start parent=${pid} =====');
+  logLine('===== restarter start parent=' + parentPid + ' recordedPort=' + (recordedPort || 'none') + ' =====');
   const deadline = Date.now() + ${maxMs};
-  while (alive(${pid}) && Date.now() < deadline) await sleep(300);
-  logLine('parent gone, cooldown 2s');
-  await sleep(2000);
-  logLine('spawn npm run dev cwd=' + ${JSON.stringify(projectRoot)});
+  while (alive(parentPid) && Date.now() < deadline) await sleep(300);
+  logLine('parent gone');
+  if (recordedPort) {
+    while (!(await waitPortFree(recordedPort)) && Date.now() < deadline) await sleep(300);
+    logLine('recorded port ' + recordedPort + ' free');
+  }
+  await sleep(1200);
+  logLine('spawn npm run dev (new session picks a free port)');
   const child = spawn(${JSON.stringify(systemNode)}, [${JSON.stringify(npmCli)}, 'run', 'dev'], {
     cwd: ${JSON.stringify(projectRoot)},
     detached: true,
@@ -173,13 +195,15 @@ function alive(p) {
 
   try {
     writeFileSync(scriptPath, script, 'utf-8');
-    // VBS 无窗口启动 node：能脱离 Electron Job Object，且不触发「隐藏 PowerShell」拦截
     const vbs = [
       'Set sh = CreateObject("WScript.Shell")',
       `sh.Run """${systemNode}"" ""${scriptPath.replace(/\\/g, '\\\\')}""", 0, False`,
     ].join('\r\n');
     writeFileSync(vbsPath, vbs, 'ascii');
-    appendFileSync(logFile, `===== scheduled pid=${pid} vbs=${vbsPath} =====\n`);
+    appendFileSync(
+      logFile,
+      `===== scheduled pid=${pid} recordedPort=${rendererPort || 'none'} vbs=${vbsPath} =====\n`,
+    );
     const child = spawn('wscript.exe', [vbsPath], {
       detached: true,
       stdio: 'ignore',
@@ -187,7 +211,7 @@ function alive(p) {
       cwd: projectRoot,
     });
     child.unref();
-    console.log(`[App] dev restarter scheduled via wscript (log: ${logFile})`);
+    console.log(`[App] dev restarter scheduled via wscript port=${rendererPort || 'none'} (log: ${logFile})`);
   } catch (err) {
     console.error('[App] restarter schedule failed:', err);
     try {
