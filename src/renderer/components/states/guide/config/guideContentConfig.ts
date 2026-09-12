@@ -238,9 +238,9 @@ export function getGuidePages(t: TFunction): GuidePage[] {
   return [
     {
       imageSrc: './svg/eisland.svg',
-      title: t('guide.welcome.title', { defaultValue: '欢迎使用 eIsland' }),
+      title: t('guide.welcome.title', { defaultValue: '欢迎使用汐月' }),
       desc: t('guide.welcome.desc', {
-        defaultValue: '一款灵感来自 Apple 灵动岛的 Windows 桌面浮窗小组件，\n让你的桌面更加灵动、高效。',
+        defaultValue: '一款灵感来自 Apple 灵动岛的 Windows 桌面浮窗与 AI 管家，\n让你的桌面更灵动、更高效。',
       }),
     },
     {

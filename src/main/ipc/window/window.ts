@@ -339,21 +339,45 @@ export function registerWindowIpcHandlers(options: RegisterWindowIpcHandlersOpti
     }, delayMs);
   });
 
-  /** 临时隐藏：给用户 3 秒去点背后的窗口/标签；到时自动显示 */
+  /** 临时隐藏：给用户 3 秒去点背后的窗口/标签；到时淡入显示，避免硬闪 */
   let tempHideTimer: ReturnType<typeof setTimeout> | null = null;
+  let tempShowOpacityTimer: ReturnType<typeof setInterval> | null = null;
+  const TEMP_SHOW_FADE_MS = 280;
   ipcMain.on('window:temp-hide', (_event, durationMs = 3000) => {
     const ms = Math.max(500, Math.min(15000, Number(durationMs) || 3000));
     withWindow((win) => {
       options.setHiddenByAutoHideProcess(false);
+      if (tempShowOpacityTimer) {
+        clearInterval(tempShowOpacityTimer);
+        tempShowOpacityTimer = null;
+      }
+      win.setOpacity(0);
       win.hide();
     });
     if (tempHideTimer) clearTimeout(tempHideTimer);
     tempHideTimer = setTimeout(() => {
       tempHideTimer = null;
       withWindow((win) => {
+        win.setOpacity(0);
         win.show();
         win.setAlwaysOnTop(true, 'screen-saver');
       });
+      if (tempShowOpacityTimer) clearInterval(tempShowOpacityTimer);
+      const stepMs = 16;
+      const steps = Math.max(1, Math.round(TEMP_SHOW_FADE_MS / stepMs));
+      let i = 0;
+      tempShowOpacityTimer = setInterval(() => {
+        i += 1;
+        const opacity = Math.min(1, i / steps);
+        withWindow((win) => {
+          win.setOpacity(opacity);
+        });
+        if (i >= steps) {
+          if (tempShowOpacityTimer) clearInterval(tempShowOpacityTimer);
+          tempShowOpacityTimer = null;
+          withWindow((win) => win.setOpacity(1));
+        }
+      }, stepMs);
     }, ms);
   });
 
