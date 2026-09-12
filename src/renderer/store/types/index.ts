@@ -374,8 +374,8 @@ export interface IslandSlice {
   notification: NotificationData;
   sttText: string;
   agentPrompt: string;
-  /** 汐月 AI 情绪/工作状态（hover 页头像与状态点） */
-  agentMood: 'happy' | 'thinking' | 'confuse' | 'listening';
+  /** 汐月 AI 情绪/工作状态（hover 页头像与状态点）— 与 AgentMood 七态对齐 */
+  agentMood: 'calm' | 'happy' | 'thinking' | 'tool' | 'listening' | 'confuse' | 'speaking';
 
   springAnimation: boolean;
   animationSpeed: AnimationSpeed;

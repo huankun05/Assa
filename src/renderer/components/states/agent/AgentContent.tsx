@@ -28,6 +28,7 @@ import { useRef, useState, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import useIslandStore from '../../../store/isLandStore';
 import type { AgentPhase } from './config/agentContentConfig';
+import type { AgentMood } from '../hover/pages/xiyue/config/xiyueMoodConfig';
 import type { AuthPending } from './types/AuthPending';
 import { useAgentAutoScroll } from './hooks/useAgentAutoScroll';
 import { useAgentDisplayState } from './hooks/useAgentDisplayState';
@@ -36,11 +37,23 @@ import { useAgentAuthDecision } from './hooks/useAgentAuthDecision';
 import { AgentContentView } from './components/AgentContentView';
 import '../../../styles/agent/agent.css';
 
-/** Agent 岛内阶段 → hover 页汐月 mood */
-function phaseToMood(phase: AgentPhase): 'happy' | 'thinking' | 'confuse' | 'listening' {
-  if (phase === 'error') return 'confuse';
-  if (phase === 'thinking' || phase === 'connecting' || phase === 'toolCalling' || phase === 'answering') return 'thinking';
-  return 'happy';
+/** Agent 岛内阶段 → hover 页汐月 mood（七态，见 DESIGN_SYSTEM §5.5） */
+function phaseToMood(phase: AgentPhase): AgentMood {
+  switch (phase) {
+    case 'connecting':
+      return 'calm';
+    case 'thinking':
+      return 'thinking';
+    case 'toolCalling':
+      return 'tool';
+    case 'answering':
+      return 'speaking';
+    case 'error':
+      return 'confuse';
+    case 'done':
+    default:
+      return 'happy';
+  }
 }
 
 /**

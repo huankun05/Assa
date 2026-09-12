@@ -111,6 +111,12 @@ export function XiyueAvatar({ mood }: { mood: AgentMood }): ReactElement {
         src={imgSrc}
         alt=""
         draggable={false}
+        onError={(e) => {
+          const el = e.currentTarget;
+          if (el.dataset.fallback === '1') return;
+          el.dataset.fallback = '1';
+          el.src = AVATAR_IMAGE_MAP.happy ?? imgSrc;
+        }}
       />
     );
   }

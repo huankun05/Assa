@@ -53,7 +53,7 @@ function openStandaloneChatWindow(): void {
 /**
  * Hover 汐月 AI 页
  * @description 左：状态头像 + 「名字·状态」主行 + 副行问候语；右：语音 / 文字聊天入口。
- *              mood 目前固定为 happy，后续接入 agent 真实状态后从 store 读取即可。
+ *              mood 从 store.agentMood 读取；岛内 Agent 阶段变化会写入七态之一。
  * @returns 汐月 AI Tab 元素
  */
 export function XiyueTab(): ReactElement {

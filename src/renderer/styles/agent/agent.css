@@ -39,7 +39,16 @@
   width: 74px;
   height: 74px;
   object-fit: contain;
+  object-position: center 20%;
   flex-shrink: 0;
+  animation: agent-icon-breathe 4s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+@keyframes agent-icon-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
 }
 
 .agent-text-area {
@@ -132,11 +141,6 @@
 .agent-action-deny:hover {
   color: rgba(var(--color-danger-rgb), 1);
   background: rgba(var(--color-danger-rgb), 0.12);
-}
-
-.agent-text-body.agent-text-auth {
-  color: rgba(var(--color-text-rgb), 0.7);
-  font-style: normal;
 }
 
 /** pill 模式下 agent 内容容器收窄高度 */

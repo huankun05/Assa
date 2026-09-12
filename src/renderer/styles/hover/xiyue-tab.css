@@ -72,31 +72,27 @@
   min-width: 0; /* 允许文字块收缩，配合 ellipsis 防撑破 */
 }
 
-/* 头像：SVG 与 <img> 共用同一套尺寸与主题适配 */
+/* 头像：SVG 与 <img> 共用尺寸；图片模式在下方覆盖 filter */
 .xiyue-avatar {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
   display: block;
   object-fit: cover;
+  object-position: center 18%;
   filter: brightness(0) invert(var(--icon-invert));
-}
-
-/* 图片模式：彩色头像不应用 SVG 的黑白 invert filter */
-img.xiyue-avatar {
-  filter: none;
-  border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-}
-
-/* ========== 头像微动系统（P0） ========== */
-
-/* 基础呼吸感：所有状态通用，极轻微 scale，模拟"活着"的感觉 */
-.xiyue-avatar {
   animation: xiyue-breathe 4s ease-in-out infinite;
   transform-origin: center bottom;
   will-change: transform;
   transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* 图片模式：彩色头像不应用 SVG 的黑白 invert；脸特写略偏上裁切 */
+img.xiyue-avatar {
+  filter: none;
+  border-radius: 50%;
+  object-position: center 16%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 @keyframes xiyue-breathe {
@@ -166,13 +162,13 @@ img.xiyue-avatar {
   50%      { transform: rotate(1.5deg) scale(1.01); }
 }
 
-/* speaking 说话：呼吸 + 快节奏轻微跳动（模拟说话节奏） */
+/* speaking 说话：柔和轻弹（0.45s 过吵，改为更稳的节奏） */
 .xiyue-avatar.mood-speaking {
-  animation: xiyue-speaking 0.45s ease-in-out infinite;
+  animation: xiyue-speaking 0.9s ease-in-out infinite;
 }
 @keyframes xiyue-speaking {
   0%, 100% { transform: scale(1) translateY(0); }
-  50%      { transform: scale(1.015) translateY(-1px); }
+  50%      { transform: scale(1.012) translateY(-1px); }
 }
 
 /* 系统开启"减少动画"时，全部禁用微动 */
@@ -231,16 +227,16 @@ img.xiyue-avatar {
 }
 
 .xiyue-status-dot--happy {
-  --dot-color: #34c759;
-  --dot-glow: rgba(52, 199, 89, 0.28);
-  --dot-glow-soft: rgba(52, 199, 89, 0.08);
+  --dot-color: rgba(var(--color-ok-rgb), 1);
+  --dot-glow: rgba(var(--color-ok-rgb), 0.28);
+  --dot-glow-soft: rgba(var(--color-ok-rgb), 0.08);
   animation-duration: 1.8s;
 }
 
 .xiyue-status-dot--thinking {
   --dot-color: rgba(var(--color-info-rgb), 1);
-  --dot-glow: rgba(64, 156, 255, 0.3);
-  --dot-glow-soft: rgba(64, 156, 255, 0.08);
+  --dot-glow: rgba(var(--color-info-rgb), 0.3);
+  --dot-glow-soft: rgba(var(--color-info-rgb), 0.08);
   animation-duration: 1s;
 }
 
@@ -252,16 +248,16 @@ img.xiyue-avatar {
 }
 
 .xiyue-status-dot--listening {
-  --dot-color: #ff3b30;
-  --dot-glow: rgba(255, 59, 48, 0.32);
-  --dot-glow-soft: rgba(255, 59, 48, 0.08);
+  --dot-color: rgba(var(--color-danger-rgb), 1);
+  --dot-glow: rgba(var(--color-danger-rgb), 0.32);
+  --dot-glow-soft: rgba(var(--color-danger-rgb), 0.08);
   animation-duration: 0.8s;
 }
 
 .xiyue-status-dot--confuse {
-  --dot-color: #ff9500;
-  --dot-glow: rgba(255, 149, 0, 0.3);
-  --dot-glow-soft: rgba(255, 149, 0, 0.08);
+  --dot-color: rgba(var(--color-warn-rgb), 1);
+  --dot-glow: rgba(var(--color-warn-rgb), 0.3);
+  --dot-glow-soft: rgba(var(--color-warn-rgb), 0.08);
   animation-duration: 1.4s;
 }
 
