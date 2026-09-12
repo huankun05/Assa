@@ -3,7 +3,8 @@
 > 配套：`DESIGN_SYSTEM.md` §5 / §9 / §10（M3）  
 > 状态：计划已定稿 2026-09-12 · 美术/生成/外包均适用  
 > 原则：**透明底 PNG**；禁止文字水印；32px 下表情可辨；暖色系与冷玻璃对冲。  
-> 过渡：差分未齐前代码只认少女路径，缺图共用已有少女图；**恐龙已归档，不进正式应用**。
+> 过渡：差分未齐前代码只认少女路径，缺图共用已有少女图；**恐龙已归档，不进正式应用**。  
+> **动效**：交付以**静态差分 PNG**为准；岛内「活人感」由 **CSS 微动**实现，**不依赖 Live2D**（见 §2.1.2）。
 
 ---
 
@@ -26,6 +27,15 @@
 
 ### 2.1 P0 · 必须（岛内 + hover 最小集）
 
+**构图总则（七张必须同一人、同一机位、同一服装）：**
+
+- **画幅**：正方形 512×512 或 1024×1024 导出，**导出缩到 256×256 PNG（透明底）** 入库；也可 256 直出
+- **构图**：**头肩胸像**（头顶到胸口）；hover 44px / Agent 74px 用
+- **脸部占比**：整图里脸约 45–55% 宽，**五官在 32px 缩略仍可辨**（眉/眼/嘴差分要夸张一点）
+- **视线**：正前或略偏观众，不要侧脸
+- **背景**：**全透明**，不要白底/黑底/渐变/光晕烘焙进图
+- **禁止**：文字、水印、logo、多角色、手持复杂道具遮脸、厚涂写实、3D 渲染感
+
 | 文件名 | 表情/状态 | 用途 | 尺寸建议 | 现状 |
 |---|---|---|---|---|
 | `xiyue_calm.png` | 平静待机 | 连接中 / idle | 256 透明 | 缺 |
@@ -35,6 +45,92 @@
 | `xiyue_listening.png` | 聆听 | 语音输入 | 256 透明 | 缺 |
 | `xiyue_confuse.png` | 困惑/出错 | error | 256 透明 | 缺 |
 | `xiyue_speaking.png` | 说话中 | 回答流/TTS | 256 透明 | 缺（P1 可缓） |
+
+#### 2.1.1 七张各自长什么样（生成提示词可直接用）
+
+> 下列为「表情差分说明 + 可粘贴的 AI 绘图提示词要点」。七张务必锁同一角色参考图（以现有 `xiyue_happy.png` 为锚点改表情，或先出一张「模板脸」再 7 连）。
+
+**1. `xiyue_calm.png` — 平静**
+
+- 眉放松，嘴角**平直或极轻微上扬**（不是笑）
+- 眼睛自然睁开，眼神柔和
+- 头正，肩放松
+- **不要**腮红、不要感叹号/气泡
+- 提示词要点：`gentle neutral smile, calm eyes, relaxed shoulders, soft expression`
+
+**2. `xiyue_happy.png` — 开心（已有则对齐它）**
+
+- 明显开心：嘴角上扬、眼睛微弯（可笑眼）
+- 轻度腮红可接受
+- 不要夸张张口大笑盖住五官
+- 提示词：`warm happy smile, slightly closed smiling eyes, light blush`
+
+**3. `xiyue_thinking.png` — 思考**
+
+- 视线**略向一侧/向上**，不是直视镜头
+- 一侧眉微挑，嘴微抿或一端略抬
+- 可加**小思考气泡/小灯泡线稿（可选，不遮脸）**；更干净的做法是**不加道具**，只靠眼神
+- 提示词：`thinking pose, eyes looking up-side, one eyebrow raised, slight smirk, thoughtful`
+
+**4. `xiyue_tool.png` — 专注操作（调用工具）**
+
+- 视线略向下（像看键盘/屏幕），眼神专注
+- 嘴闭合，眉略收
+- **不要**变成 confuse；可加极轻的「认真」感（下眼睑略紧）
+- 提示词：`focused concentration, looking slightly down, closed mouth, determined soft gaze`
+
+**5. `xiyue_listening.png` — 聆听**
+
+- 头**微微侧倾**（约 5–10°），眼神认真看向「说话的人」
+- 嘴闭合或极小张开，眉舒展
+- 可加**耳侧小音符/波纹（可选，小、不盖脸）**
+- 提示词：`listening attentively, slight head tilt, soft focused eyes, ready to hear`
+
+**6. `xiyue_confuse.png` — 困惑 / 出错**
+
+- 眉一高一低，嘴微张成小 o 或波浪嘴
+- 眼神困惑（瞳孔可略偏）
+- 可加**头顶小问号/小乱线（可选，小）**；32px 时问号别糊成一团
+- 提示词：`confused expression, one eyebrow raised, small open mouth, question mark mark, puzzled`
+
+**7. `xiyue_speaking.png` — 说话中**
+
+- 嘴**张开说话口型**（不是大笑），眼睁开有神
+- 像在认真说一句话的中间
+- 提示词：`speaking mid-sentence, open mouth talking pose, engaged eyes, lively`
+
+**统一锁参（写进生成 negative/正向）：**
+
+```
+正向关键：same character, consistent hair color and style, warm amber-brown hair,
+clean cel shading, anime portrait, head and shoulders, transparent background,
+high contrast face features readable at 32px
+
+负向：text, watermark, logo, multiple characters, photorealistic, 3d render,
+white background, complex background, busy props covering face
+```
+
+#### 2.1.2 仅静态图还是动图？（结论先写）
+
+| 方案 | 小尺寸（40–74px）效果 | 性能 | 成本 | 结论 |
+|---|---|---|---|---|
+| **静态 PNG + CSS 微动** | 好 | 极低 | 低 | **推荐（主路径）** |
+| 多帧 PNG / sprite 切换 | 一般，易抖 | 低 | 中 | 可选补充 |
+| Lottie JSON | 好 | 中 | 中高 | 大面板可后置 |
+| **Live2D / 骨骼** | 40px **看不清**细节，收益低 | 高 | 很高 | **不做默认**；仅大面板可选 |
+| 短视频/GIF 循环 | 差（糊、难切状态） | 中 | 中 | **不推荐**岛内 |
+
+**产品策略（已定，与 DESIGN_SYSTEM §5.6 一致）：**
+
+1. **交付物先仍是静态差分 PNG**（七张）——状态切换的核心信息靠「换脸 + 状态词 + 状态点」。
+2. **「不生硬」主要靠 CSS 微动**，不是靠 Live2D：
+   - 呼吸 `scale(1→1.02)` 约 4s
+   - 表情切换 250–300ms 淡入淡出 + 轻微上移
+   - thinking 左右微晃；listening 略放大 + 光晕
+3. **不要求**你先做出 Live2D 模型；若以后要「更活」，优先：**眨眼单帧可选**（P1，拆眼层）→ 大面板 Lottie。
+4. 若你生成工具支持，可**额外**导出 `*_blinking.png`（闭眼版）做眨眼；非必须。
+
+**一句话：你先交 7 张对齐好的静态差分；动效由前端 CSS 负责；Live2D 不是本阶段交付物。**
 
 ### 2.2 P1 · 建议
 
