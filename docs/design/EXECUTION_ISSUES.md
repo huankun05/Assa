@@ -18,11 +18,15 @@
 
 ## 下一阶段（2026-09-12 验收后）
 
-1. 番茄钟等 hover 视觉精修（用户点名待改）  
-2. 品牌图标出图 + 替换 electron-builder / tray（清单见 CHARACTER_ASSET_CHECKLIST §6B）  
-3. 引导页文案全面汐月化  
-4. 设置 IA 重划（可另开里程碑）  
-5. **不做**：P2 露头条  
+1. **AI 半成品/未做完善** → 全文见 `docs/AI_COMPLETION_PLAN.md`  
+   - P0：信任等级设置 UI、工具审计只读  
+   - P1：情绪→TTS/头像、记忆只读页、Silero 可选、浏览器工具收口  
+   - P2+：唤醒词、barge-in、CosyVoice、云端、记忆 LLM  
+2. 番茄钟等 hover 视觉精修  
+3. 品牌图标（CHARACTER_ASSET_CHECKLIST §6B）  
+4. 引导页汐月化  
+5. 设置 IA 重划  
+6. **不做**：P2 露头条  
 
 ## 后续计划（引导页）
 
