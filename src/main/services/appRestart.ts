@@ -76,8 +76,8 @@ export function registerRestartCleanup(fn: () => void): void {
   restartCleanup = fn;
 }
 
-/** 重启提示通知显示后到退出的等待时间（toast 异步投递，立即退出会丢通知） */
-const RESTART_TOAST_DELAY_MS = 1000;
+/** 静默重启：不弹系统通知，避免「闪一下窗口」再出现岛 */
+const RESTART_SILENT_EXIT_MS = 350;
 
 /**
  * 重启应用
@@ -113,22 +113,20 @@ export function restartApp(): void {
     safeLogError('[App] restart cleanup error:', err);
   }
 
-  showRestartToast();
-  // 尽快退出：electron-vite 父进程会随本进程结束而退出，restarter 等它释放端口后再拉起
-  setTimeout(() => app.exit(0), 600);
+  // 静默退出（不弹通知窗/Toast）
+  setTimeout(() => app.exit(0), RESTART_SILENT_EXIT_MS);
 }
 
 /**
- * 弹出重启提示的系统通知
- * @description 样式对齐 Windows 应用更新通知（如「应用将关闭以完成安装，
- *   安装结束后会自动重新打开」），让用户明确知道应用会自动回来
+ * 系统通知（默认不用）
+ * @description 重启改为静默；若将来需要提示，再打开此函数并接到 restartApp
  */
 function showRestartToast(): void {
   try {
     if (!Notification.isSupported()) return;
     new Notification({
       title: `${app.getName()} 正在重新启动`,
-      body: '应用将关闭以完成重启，结束后会自动重新打开，请稍候。'
+      body: '应用将关闭以完成重启，结束后会自动重新打开。'
     }).show();
   } catch (err) {
     safeLogError('[App] restart toast error:', err);
@@ -204,10 +202,12 @@ function waitPortFree(port) {
   while (alive(parentPid) && Date.now() < deadline) await sleep(300);
   logLine('parent gone');
   if (recordedPort) {
-    while (!(await waitPortFree(recordedPort)) && Date.now() < deadline) await sleep(300);
-    logLine('recorded port ' + recordedPort + ' free');
+    // 最多等 3s：占着也不用死等——新 vite 会自动改用空闲端口
+    const portDeadline = Math.min(deadline, Date.now() + 3000);
+    while (!(await waitPortFree(recordedPort)) && Date.now() < portDeadline) await sleep(200);
+    logLine('recorded port ' + recordedPort + ' check done');
   }
-  await sleep(1200);
+  await sleep(400);
   logLine('spawn electron-vite dev (no npm shell, no extra console)');
   const out = fs.openSync(log, 'a');
   const child = spawn(systemNode, [electronViteBin, 'dev'], {
