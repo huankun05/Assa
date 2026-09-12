@@ -30,6 +30,7 @@ import { LayoutPreviewSettingsPage } from './components/LayoutPreviewSettingsPag
 import { ExpandLayoutSettingsPage } from './components/ExpandLayoutSettingsPage';
 import { MaxExpandLayoutSettingsPage } from './components/MaxExpandLayoutSettingsPage';
 import { HideProcessSettingsPage } from './components/HideProcessSettingsPage';
+import { SecuritySettingsSection } from './components/SecuritySettingsSection';
 import { PositionSettingsPage } from './components/PositionSettingsPage';
 import { ThemeSettingsPage } from './components/ThemeSettingsPage';
 import { BehaviorSettingsPage } from './components/BehaviorSettingsPage';
@@ -222,6 +223,8 @@ export function AppSettingsSection({
             setAutoHideFullscreenWindows={setAutoHideFullscreenWindows}
           />
         );
+      case 'ai-security':
+        return <SecuritySettingsSection />;
       case 'position':
         return (
           <PositionSettingsPage

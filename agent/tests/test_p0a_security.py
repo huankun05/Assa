@@ -21,13 +21,16 @@ from agent import server  # noqa: E402
 
 @contextmanager
 def _config(**overrides):
-    """临时覆盖 xiyue.json 加载结果（identity 有模块级缓存）。"""
+    """临时覆盖 xiyue.json 加载结果（identity 有模块级缓存 + mtime 重载）。"""
     saved = identity._cached
+    saved_mtime = identity._cached_mtime
     identity._cached = {**identity._DEFAULT, **overrides}
+    identity._cached_mtime = -1.0  # 测试覆盖：与磁盘 mtime 永不匹配，避免被重载
     try:
         yield
     finally:
         identity._cached = saved
+        identity._cached_mtime = saved_mtime
 
 
 def test_trust_level_default_and_parsing() -> None:

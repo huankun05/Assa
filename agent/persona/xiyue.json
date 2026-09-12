@@ -26,6 +26,7 @@
     "max_rounds_per_turn": 8
   },
   "browser": {
+    "enabled": false,
     "allowed_domains": ["example.com", "localhost", "127.0.0.1", "github.com"]
   },
   "security": {

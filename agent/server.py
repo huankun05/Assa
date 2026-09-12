@@ -310,7 +310,22 @@ def _tool_def_from_schema(entry: dict) -> dict:
     }
 
 
-TOOL_DEFS = [_tool_def_from_schema(e) for e in _SCHEMA["tools"]]
+def _browser_enabled() -> bool:
+    """浏览器自动化开关：默认关（xiyue.json browser.enabled）。"""
+    try:
+        return bool(_load_json().get("browser", {}).get("enabled", False))
+    except Exception:
+        return False
+
+
+def _active_tool_entries() -> list[dict]:
+    entries = list(_SCHEMA["tools"])
+    if not _browser_enabled():
+        entries = [e for e in entries if not str(e.get("name", "")).startswith("browser.")]
+    return entries
+
+
+TOOL_DEFS = [_tool_def_from_schema(e) for e in _active_tool_entries()]
 
 # 工具 → 权限元数据（policy.py 裁决）；与主进程白名单同源
 _TOOL_POLICY: dict[str, tuple[str, list[str], bool]] = {}
@@ -337,6 +352,9 @@ for _entry in _SCHEMA["tools"]:
 def _decide_tool(tool_name: str):
     """policy.py 预检：返回 (authorizationRequired, denied)。信任等级读 xiyue.json security.trust_level。"""
     from agent.gate.policy import Ctx, ToolMeta, decide
+
+    if tool_name.startswith("browser.") and not _browser_enabled():
+        return True, True
 
     meta, risks, confirm = _TOOL_POLICY.get(tool_name, ("unknown", ["read"], True))
     tm = ToolMeta(id=tool_name, level=2 if confirm else 1, risks=risks, confirm=confirm)
@@ -629,10 +647,11 @@ def _extract_and_store_facts(user_text: str, reply: str) -> None:
 
 
 def _tts(text: str) -> Path | None:
-    """已迁移至 voice.tts。默认内存合成不落盘；XIYUE_TTS_DISK=1 时写 TTS_DIR。"""
+    """已迁移至 voice.tts。默认内存合成不落盘；情绪轻微影响语速。"""
+    speed = _emotion_tts_speed()
     if os.environ.get("XIYUE_TTS_DISK", "").strip() in ("", "0", "false", "False"):
-        return _tts_module.speak(text, keep_file=False)
-    return _tts_module.speak(text, keep_file=True)
+        return _tts_module.speak(text, keep_file=False, speed=speed)
+    return _tts_module.speak(text, keep_file=True, speed=speed)
 
 
 def _audio_b64(path: Path | None) -> str:
@@ -664,7 +683,26 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/emotion":
             try:
                 state = get_current_emotion()
-                self._send({"state": state, "enabled": is_emotion_enabled()})
+                mood = ""
+                pad_state = _get_emotion_state()
+                if pad_state is not None:
+                    try:
+                        mood = pad_state.get_mood_label()
+                    except Exception:
+                        mood = ""
+                self._send({"state": state, "mood": mood, "enabled": is_emotion_enabled()})
+            except Exception as e:
+                self._send({"error": str(e)}, 500)
+        elif self.path == "/memory/list":
+            try:
+                limit = 50
+                svc = _get_memory_service()
+                items: list[dict] = []
+                if svc is not None:
+                    raw = svc.list_memories(enabled=True)
+                    raw = [x for x in raw if x.get("layer") in ("L0", "L1", "L2", "L3", None, 0, 1, 2, 3)]
+                    items = raw[-limit:]
+                self._send({"items": items, "count": len(items)})
             except Exception as e:
                 self._send({"error": str(e)}, 500)
         else:
@@ -840,6 +878,7 @@ class Handler(BaseHTTPRequestHandler):
             emit("final", {
                 "reply": reply,
                 "audio_b64": _audio_b64(audio),
+                "emotionMood": get_current_emotion() or "",
             })
             _history.append({"role": "user", "content": text})
             _history.append({"role": "assistant", "content": reply})

@@ -48,6 +48,7 @@ _DEFAULT: dict[str, Any] = {
         "max_rounds_per_turn": 8,
     },
     "browser": {
+        "enabled": False,
         "allowed_domains": ["example.com", "localhost", "127.0.0.1", "github.com"],
     },
     "security": {
@@ -56,24 +57,34 @@ _DEFAULT: dict[str, Any] = {
 }
 
 _cached: dict[str, Any] | None = None
+_cached_mtime: float | None = None
 
 
 def _load_json() -> dict[str, Any]:
-    """加载 xiyue.json，缺失时返回默认配置。"""
-    global _cached
-    if _cached is not None:
+    """加载 xiyue.json；mtime 变化时自动重载（设置页写入 trust_level 后无需重启）。
+
+    测试可用 `_cached_mtime = -1.0` 强制使用内存覆盖、不读磁盘。
+    """
+    global _cached, _cached_mtime
+    if _cached is not None and _cached_mtime == -1.0:
         return _cached
     if PERSONA_JSON.exists():
         try:
+            mtime = PERSONA_JSON.stat().st_mtime
+            if _cached is not None and _cached_mtime == mtime:
+                return _cached
             with open(PERSONA_JSON, "r", encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict):
                 raise ValueError("xiyue.json 根必须是对象")
             _cached = {**_DEFAULT, **data}
+            _cached_mtime = mtime
             return _cached
         except Exception:
             pass
-    _cached = dict(_DEFAULT)
+    if _cached is None:
+        _cached = dict(_DEFAULT)
+        _cached_mtime = None
     return _cached
 
 

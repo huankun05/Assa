@@ -38,6 +38,7 @@ import { registerClaudeCodeStatusIpcHandlers } from './ipc/agent/claudeCodeStatu
 import { registerCodexStatusIpcHandlers } from './ipc/agent/codexStatusIpc';
 import { registerXiyueAgentIpcHandlers } from './ipc/agent/xiyueAgentIpc';
 import { registerXiyueIdentityIpcHandlers } from './ipc/agent/xiyueIdentity';
+import { registerXiyueSecurityIpcHandlers } from './ipc/agent/xiyueSecurityIpc';
 import { startXiyueAgent, stopXiyueAgent } from './services/xiyueAgentService';
 import { registerClipboardIpcHandlers } from './ipc/settings/clipboard';
 import { registerCaptureIpcHandlers } from './ipc/window/capture';
@@ -865,6 +866,7 @@ app.whenReady().then(() => {
   startXiyueAgent();
   registerXiyueAgentIpcHandlers();
   registerXiyueIdentityIpcHandlers();
+  registerXiyueSecurityIpcHandlers();
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);

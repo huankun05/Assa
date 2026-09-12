@@ -3947,6 +3947,21 @@
         "label": "SMTC",
         "desc": "System Media Transport Controls settings."
       }
+    },
+    "aiSecurity": {
+      "trustTitle": "AI Trust Level",
+      "trustHint": "Controls how freely Xiyue may run tools and read data. Changes apply immediately."
+    },
+    "audit": {
+      "title": "Tool Audit Log",
+      "hint": "Recent tool calls (read-only). Stored under userData/logs on this machine.",
+      "refresh": "Refresh",
+      "empty": "No tool calls yet"
+    },
+    "memory": {
+      "title": "Xiyue Memory (read-only)",
+      "hint": "Working memories distilled from chats. Full delete UI comes later.",
+      "empty": "No memories yet. Chat a bit and they will appear here."
     }
   },
   "idle": {

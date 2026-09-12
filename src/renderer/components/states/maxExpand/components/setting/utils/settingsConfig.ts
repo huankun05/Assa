@@ -53,7 +53,7 @@ export const WEATHER_LOCATION_PRIORITY_OPTIONS: Array<{ value: WeatherLocationPr
 
 export const SETTINGS_TABS = ['index', 'app', 'network', 'mail', 'weather', 'music', 'shortcut', 'update', 'pluginMarket', 'about'] as const;
 export type SettingsSidebarTabKey = (typeof SETTINGS_TABS)[number];
-export type AppSettingsPageKey = 'layout-preview' | 'hover-layout' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
+export type AppSettingsPageKey = 'layout-preview' | 'hover-layout' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'ai-security' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
 export type WeatherSettingsPageKey = 'location' | 'provider';
 export type MailSettingsPageKey = 'account' | 'imap' | 'preferences';
 export type MusicSettingsPageKey = 'whitelist' | 'lyrics' | 'smtc' | 'providers' | 'like';
@@ -70,6 +70,7 @@ export const SETTINGS_TAB_LABELS: Record<SettingsTabLabelKey, string> = {
   'maxexpand-layout': '全展开布局',
   album: '相册配置',
   'hide-process-list': '隐私与安全 · 隐藏窗口',
+  'ai-security': '隐私与安全 · AI 信任与审计',
   position: '位置校准',
   theme: '主题外观',
   language: '语言切换',
@@ -109,6 +110,7 @@ export const SETTINGS_TAB_DESCRIPTIONS: Record<Exclude<SettingsTabLabelKey, 'ind
   'maxexpand-layout': '自定义全展开界面各页面的显示顺序与可见性。',
   album: '相册轮播与相册入口相关配置。',
   'hide-process-list': '管理隐藏窗口名单与自动隐藏规则。',
+  'ai-security': 'AI 信任等级与工具审计记录。',
   position: '动态调整灵动岛位置并保存',
   theme: '切换深色、浅色或跟随系统主题。',
   language: '切换应用显示语言并即时生效。',
@@ -166,6 +168,7 @@ export const SETTINGS_TAB_ICONS: Partial<Record<SettingsTabLabelKey, string>> = 
   behavior: SvgIcon.INTERACTION,
   animation: SvgIcon.ANIMATION,
   'url-parser': SvgIcon.LINK,
+  'ai-security': SvgIcon.VERIFIED,
   'clipboard-history': SvgIcon.COPY,
   alarm: SvgIcon.TIMER,
   'break-reminder': SvgIcon.BREAK,
@@ -329,7 +332,7 @@ export function normalizeMaxExpandNavLayoutConfig(raw: unknown): MaxExpandNavLay
   return ordered;
 }
 
-export const APP_SETTINGS_PAGES: AppSettingsPageKey[] = ['layout-preview', 'expand-layout', 'maxexpand-layout', 'album', 'hide-process-list', 'position', 'theme', 'language', 'behavior', 'animation', 'url-parser', 'clipboard-history', 'alarm', 'break-reminder', 'autostart', 'sound', 'notification', 'performance', 'performance-monitor', 'screenshot-settings', 'control-center'];
+export const APP_SETTINGS_PAGES: AppSettingsPageKey[] = ['layout-preview', 'expand-layout', 'maxexpand-layout', 'album', 'hide-process-list', 'ai-security', 'position', 'theme', 'language', 'behavior', 'animation', 'url-parser', 'clipboard-history', 'alarm', 'break-reminder', 'autostart', 'sound', 'notification', 'performance', 'performance-monitor', 'screenshot-settings', 'control-center'];
 export const WEATHER_SETTINGS_PAGES: WeatherSettingsPageKey[] = ['location', 'provider'];
 export const WEATHER_SETTINGS_PAGE_LABELS: Record<WeatherSettingsPageKey, string> = {
   location: '定位配置',
@@ -377,6 +380,7 @@ export const NAV_CARDS: NavCardDef[] = [
   { id: 'maxexpand-layout', label: SETTINGS_TAB_LABELS['maxexpand-layout'], desc: SETTINGS_TAB_DESCRIPTIONS['maxexpand-layout'], icon: SETTINGS_TAB_ICONS['maxexpand-layout'], tab: 'app', appPage: 'maxexpand-layout' },
   { id: 'album', label: SETTINGS_TAB_LABELS.album, desc: SETTINGS_TAB_DESCRIPTIONS.album, icon: SETTINGS_TAB_ICONS.album, tab: 'app', appPage: 'album' },
   { id: 'hide-process-list', label: SETTINGS_TAB_LABELS['hide-process-list'], desc: SETTINGS_TAB_DESCRIPTIONS['hide-process-list'], icon: SETTINGS_TAB_ICONS['hide-process-list'], tab: 'app', appPage: 'hide-process-list' },
+  { id: 'ai-security', label: SETTINGS_TAB_LABELS['ai-security'], desc: SETTINGS_TAB_DESCRIPTIONS['ai-security'], icon: SETTINGS_TAB_ICONS['ai-security'], tab: 'app', appPage: 'ai-security' },
   { id: 'url-parser', label: SETTINGS_TAB_LABELS['url-parser'], desc: SETTINGS_TAB_DESCRIPTIONS['url-parser'], icon: SETTINGS_TAB_ICONS['url-parser'], tab: 'app', appPage: 'url-parser' },
   { id: 'position', label: SETTINGS_TAB_LABELS.position, desc: SETTINGS_TAB_DESCRIPTIONS.position, icon: SETTINGS_TAB_ICONS.position, tab: 'app', appPage: 'position' },
   { id: 'theme', label: SETTINGS_TAB_LABELS.theme, desc: SETTINGS_TAB_DESCRIPTIONS.theme, icon: SETTINGS_TAB_ICONS.theme, tab: 'app', appPage: 'theme' },
@@ -444,6 +448,7 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   // ── 软件设置 > 隐藏窗口管理 ──
   { label: '全屏时自动隐藏', desc: '检测到任意窗口进入全屏后自动隐藏灵动岛，退出全屏后自动显示。', labelKey: 'settings.app.hideProcess.fullscreenTitle', descKey: 'settings.app.hideProcess.fullscreenHint', tab: 'app', appPage: 'hide-process-list' },
   { label: '隐藏窗口管理', desc: '当黑名单进程对应窗口处于焦点状态时，将立即隐藏灵动岛；失去焦点后自动显示。', labelKey: 'settings.app.hideProcess.title', descKey: 'settings.app.hideProcess.hint', tab: 'app', appPage: 'hide-process-list' },
+  { label: 'AI 信任与审计', desc: '设置汐月自动执行工具的信任等级，并查看最近工具调用记录。', labelKey: 'settings.aiSecurity.trustTitle', descKey: 'settings.aiSecurity.trustHint', tab: 'app', appPage: 'ai-security' },
   { label: '当前运行的窗口', desc: '在列表中点击可将窗口加入 / 移出黑名单，支持按进程名搜索。', labelKey: 'settings.app.hideProcess.runningTitle', descKey: 'settings.app.hideProcess.runningHint', tab: 'app', appPage: 'hide-process-list' },
   // ── 软件设置 > 位置校准 ──
   { label: '锁定灵动岛位置', desc: '仅在 pill 模式下禁止通过鼠标拖动灵动岛，位置校准仍可使用。', labelKey: 'settings.app.position.lockTitle', descKey: 'settings.app.position.lockHint', tab: 'app', appPage: 'position' },

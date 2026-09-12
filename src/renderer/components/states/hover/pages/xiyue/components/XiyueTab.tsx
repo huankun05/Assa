@@ -67,6 +67,23 @@ export function XiyueTab(): ReactElement {
 
   useEffect(() => {
     getXiyueVisibleName().then(setVisibleName).catch(() => {});
+    /** 情绪 → 头像：仅在 happy 时微调，不覆盖 agent 工作态（thinking/tool 等） */
+    const timer = window.setInterval(() => {
+      const s = useIslandStore.getState();
+      if (s.state === 'agent' || s.state === 'stt') return;
+      if (s.agentMood !== 'happy') return;
+      window.api?.xiyueEmotionGet?.().then((emo) => {
+        const label = emo?.mood || emo?.state || '';
+        let next: AgentMood | null = null;
+        if (/兴奋|开心/.test(label)) next = 'happy';
+        else if (/平静/.test(label)) next = 'calm';
+        else if (/焦虑|困惑|悲伤/.test(label)) next = 'confuse';
+        if (next && next !== 'happy') {
+          useIslandStore.getState().setAgentMood(next);
+        }
+      }).catch(() => {});
+    }, 12000);
+    return () => window.clearInterval(timer);
   }, []);
 
   return (

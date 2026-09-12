@@ -169,6 +169,13 @@ const api = {
   hideWindowTemporarily: (durationMs = 3000): void => {
     ipcRenderer.send('window:temp-hide', durationMs);
   },
+  /** AI 信任等级（0–3），读写 agent/persona/xiyue.json */
+  xiyueTrustLevelGet: (): Promise<number> => ipcRenderer.invoke('xiyue:trust-level:get'),
+  xiyueTrustLevelSet: (level: number): Promise<number> => ipcRenderer.invoke('xiyue:trust-level:set', level),
+  /** 工具审计日志（最近 N 条，新在前） */
+  xiyueAuditLogList: (limit?: number): Promise<unknown[]> => ipcRenderer.invoke('xiyue:audit-log:list', limit),
+  xiyueMemoryList: (): Promise<{ items?: unknown[] }> => ipcRenderer.invoke('xiyue:memory-list'),
+  xiyueEmotionGet: (): Promise<{ state?: string; mood?: string } | null> => ipcRenderer.invoke('xiyue:emotion-get'),
   showWindow: (): void => {
     ipcRenderer.send('window:show');
   },

@@ -104,6 +104,11 @@ declare global {
       collapseWindow: (delayMs?: number) => void;
       hideWindow: () => void;
       hideWindowTemporarily: (durationMs?: number) => void;
+      xiyueTrustLevelGet: () => Promise<number>;
+      xiyueTrustLevelSet: (level: number) => Promise<number>;
+      xiyueAuditLogList: (limit?: number) => Promise<unknown[]>;
+      xiyueMemoryList: () => Promise<{ items?: unknown[]; error?: string }>;
+      xiyueEmotionGet: () => Promise<{ state?: string; mood?: string } | null>;
       showWindow: () => void;
       moveWindowDelta: (dx: number, dy: number) => void;
       getMousePosition: () => Promise<Point>;

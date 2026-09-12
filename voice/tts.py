@@ -40,12 +40,13 @@ def _get_kokoro_pipeline():
         return None
 
 
-def _synthesize_kokoro(text: str, out: Path) -> Path | None:
+def _synthesize_kokoro(text: str, out: Path, speed: float = 1.0) -> Path | None:
     pipe = _get_kokoro_pipeline()
     if pipe is None:
         return None
     try:
-        chunks = [audio for _gs, _ps, audio in pipe(text, voice="zf_xiaobei", speed=1.0)]
+        sp = max(0.7, min(1.4, float(speed or 1.0)))
+        chunks = [audio for _gs, _ps, audio in pipe(text, voice="zf_xiaobei", speed=sp)]
         if not chunks:
             return None
         audio = np.concatenate(chunks)
@@ -74,12 +75,13 @@ def _synthesize_pyttsx3(text: str, out: Path) -> Path | None:
         return None
 
 
-def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None) -> Path | None:
+def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None, speed: float = 1.0) -> Path | None:
     """合成语音。
 
     keep_file=True：写入 TTS_DIR 并返回路径。
     keep_file=False：默认（推荐）——临时目录合成后删除，业务目录不落盘；返回 None。
     keep_file=None：看环境变量 XIYUE_TTS_DISK（非空且非 0 时落盘）。
+    speed：语速倍率（Kokoro）；情绪可轻微调整。
     """
     if not text or not str(text).strip():
         return None
@@ -92,14 +94,14 @@ def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None) -> P
 
     if keep_file:
         out = TTS_DIR / f"out_{int(time.time() * 1000)}.wav"
-        result = _synthesize_kokoro(text, out)
+        result = _synthesize_kokoro(text, out, speed=speed)
         if result is None:
             result = _synthesize_pyttsx3(text, out)
         return result
 
     with tempfile.TemporaryDirectory(prefix="xiyue-tts-") as td:
         out = Path(td) / "out.wav"
-        result = _synthesize_kokoro(text, out)
+        result = _synthesize_kokoro(text, out, speed=speed)
         if result is None:
             result = _synthesize_pyttsx3(text, out)
         if result is None or not result.exists():
