@@ -34,7 +34,7 @@
 
 import { app, Notification } from 'electron';
 import { spawn } from 'child_process';
-import { appendFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 /** 重启路径禁止碰 console/stdout——管道断开时异步 EPIPE 会崩主进程 */
@@ -111,6 +111,21 @@ export function restartApp(): void {
     restartCleanup?.();
   } catch (err) {
     safeLogError('[App] restart cleanup error:', err);
+  }
+
+  /** 退出前清理本项目 dev 残留（按路径匹配；用系统 node，不用 electron） */
+  try {
+    const script = join(app.getAppPath(), 'scripts', 'clean-xiyue-dev-processes.ts');
+    const systemNode = 'E:/software/Nodejs/node.exe';
+    if (existsSync(script)) {
+      spawn(systemNode, [script], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      }).unref();
+    }
+  } catch {
+    // ignore
   }
 
   showRestartToast();

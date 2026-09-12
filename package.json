@@ -10,6 +10,8 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:clean": "node --experimental-strip-types scripts/clean-xiyue-dev-processes.ts && electron-vite dev",
+    "clean:dev-processes": "node --experimental-strip-types scripts/clean-xiyue-dev-processes.ts",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "test": "vitest run",
