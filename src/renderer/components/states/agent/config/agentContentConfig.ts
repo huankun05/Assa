@@ -26,17 +26,20 @@
 
 export type AgentPhase = 'connecting' | 'thinking' | 'toolCalling' | 'answering' | 'done' | 'error';
 
-/** 差分未齐前统一回落少女 happy（禁恐龙）；资源齐后替换为 calm/thinking/tool/… */
-const XIYUE_FALLBACK = 'image/agent/xiyue_happy.png';
-
+/**
+ * 阶段 → 少女素材（DESIGN_SYSTEM §5.5）。
+ * 缺文件时组件 onError 回落 happy；素材清单见 docs/design/CHARACTER_ASSET_CHECKLIST.md
+ */
 export const PHASE_IMAGE: Record<AgentPhase, string> = {
-  connecting: XIYUE_FALLBACK,
-  thinking: XIYUE_FALLBACK,
-  toolCalling: XIYUE_FALLBACK,
-  answering: XIYUE_FALLBACK,
-  done: XIYUE_FALLBACK,
-  error: XIYUE_FALLBACK,
+  connecting: 'image/agent/xiyue_calm.png',
+  thinking: 'image/agent/xiyue_thinking.png',
+  toolCalling: 'image/agent/xiyue_tool.png',
+  answering: 'image/agent/xiyue_speaking.png',
+  done: 'image/agent/xiyue_happy.png',
+  error: 'image/agent/xiyue_confuse.png',
 };
+
+export const PHASE_IMAGE_FALLBACK = 'image/agent/xiyue_happy.png';
 
 export const PHASE_LABEL: Record<AgentPhase, string> = {
   connecting: '正在连接…',

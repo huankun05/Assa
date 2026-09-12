@@ -26,32 +26,35 @@
 
 /**
  * @description 判断鼠标是否位于当前窗口范围内。
+ * @param hotspotOnly - true 时仅中心热区算命中（idle 防误触，DESIGN_SYSTEM P1）
  * @returns 鼠标在窗口内返回 true，否则返回 false。
  */
-export async function isMouseInWindow(): Promise<boolean> {
+export async function isMouseInWindow(hotspotOnly = false): Promise<boolean> {
   try {
     const mouseWindowState = await window.api?.getMouseWindowState?.();
+    let mousePosition: { x: number; y: number } | null = null;
+    let bounds: { x: number; y: number; width: number; height: number } | null = null;
+
     if (mouseWindowState) {
-      const { mousePosition, bounds } = mouseWindowState;
-      return (
-        mousePosition.x >= bounds.x
-        && mousePosition.x <= bounds.x + bounds.width
-        && mousePosition.y >= bounds.y
-        && mousePosition.y <= bounds.y + bounds.height
-      );
+      ({ mousePosition, bounds } = mouseWindowState);
+    } else {
+      mousePosition = await window.api?.getMousePosition() ?? null;
+      bounds = await window.api?.getWindowBounds() ?? null;
     }
 
-    const mousePos = await window.api?.getMousePosition();
-    const bounds = await window.api?.getWindowBounds();
+    if (!mousePosition || !bounds) return false;
 
-    if (!mousePos || !bounds) return false;
+    const inY = mousePosition.y >= bounds.y && mousePosition.y <= bounds.y + bounds.height;
+    if (!inY) return false;
 
-    return (
-      mousePos.x >= bounds.x
-      && mousePos.x <= bounds.x + bounds.width
-      && mousePos.y >= bounds.y
-      && mousePos.y <= bounds.y + bounds.height
-    );
+    if (!hotspotOnly) {
+      return mousePosition.x >= bounds.x && mousePosition.x <= bounds.x + bounds.width;
+    }
+
+    /** 中心热区：岛宽中部约 140px（不足则取 60% 宽） */
+    const hotspotW = Math.min(140, Math.max(80, Math.round(bounds.width * 0.55)));
+    const hotspotX = bounds.x + (bounds.width - hotspotW) / 2;
+    return mousePosition.x >= hotspotX && mousePosition.x <= hotspotX + hotspotW;
   } catch {
     return false;
   }

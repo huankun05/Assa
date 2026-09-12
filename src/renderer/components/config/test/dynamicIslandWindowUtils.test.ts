@@ -260,4 +260,21 @@ describe('isMouseInWindow', () => {
       expect(await isMouseInWindow()).toBe(false);
     });
   });
+
+  describe('hotspotOnly (idle center zone)', () => {
+    it('hits center hotspot', async () => {
+      // bounds x=0 w=260 → hotspot ~140 wide centered at 130 → 60..200
+      getMousePositionMock.mockResolvedValue({ x: 130, y: 20 });
+      getWindowBoundsMock.mockResolvedValue({ x: 0, y: 0, width: 260, height: 42 });
+      expect(await isMouseInWindow(true)).toBe(true);
+    });
+
+    it('misses left edge when hotspotOnly', async () => {
+      getMousePositionMock.mockResolvedValue({ x: 10, y: 20 });
+      getWindowBoundsMock.mockResolvedValue({ x: 0, y: 0, width: 260, height: 42 });
+      expect(await isMouseInWindow(true)).toBe(false);
+      // full bounds still true
+      expect(await isMouseInWindow(false)).toBe(true);
+    });
+  });
 });

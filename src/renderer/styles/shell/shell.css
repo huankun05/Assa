@@ -131,6 +131,15 @@
               box-shadow 0.68s ease;
 }
 
+/** 关闭弹性动画：平滑、无回弹过渡（App 设置主开关，非系统 reduced-motion） */
+.island-shell:not(.spring-animation) {
+  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              border-radius 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.28s ease,
+              box-shadow 0.28s ease;
+}
+
 .island-shell::before {
   content: '';
   position: absolute;

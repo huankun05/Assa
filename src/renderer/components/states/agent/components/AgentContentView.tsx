@@ -27,7 +27,7 @@
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AgentContentViewProps } from '../types/AgentContentView';
-import { PHASE_IMAGE, PHASE_LABEL } from '../config/agentContentConfig';
+import { PHASE_IMAGE, PHASE_IMAGE_FALLBACK, PHASE_LABEL } from '../config/agentContentConfig';
 
 /**
  * @description 渲染 Agent 文本区与授权操作区。
@@ -56,6 +56,12 @@ export function AgentContentView(props: AgentContentViewProps): ReactElement {
         src={PHASE_IMAGE[phase]}
         alt=""
         draggable={false}
+        onError={(e) => {
+          const el = e.currentTarget;
+          if (el.dataset.fallback === '1') return;
+          el.dataset.fallback = '1';
+          el.src = PHASE_IMAGE_FALLBACK;
+        }}
       />
       <div className="agent-text-area">
         <span className="agent-text-label">

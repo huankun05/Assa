@@ -113,7 +113,8 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
     const checkMousePosition = async (): Promise<void> => {
       if (aborted) return;
 
-      const inWindow = await isMouseInWindow();
+      /** idle 仅认中心热区，避免扫过整岛抢焦点（DESIGN_SYSTEM P1） */
+      const inWindow = await isMouseInWindow(state === 'idle');
       if (aborted) return;
 
       if (useIslandStore.getState().uiStateLocked) {
