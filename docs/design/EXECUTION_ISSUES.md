@@ -29,3 +29,7 @@
 - 公告 CSS 大范围 `rgba(255,255,255` → `text-rgb` 可能影响个别白字装饰，需目视浅色/深色
 - Agent 正文改单行截断后，授权卡仍两行 clamp；与「一行摘要」策略一致
 - `settings-card-action-btn-primary` 为新类，仅音乐登录处使用
+
+## 续跑（0b3ec80）
+
+- ControlCenterTab 导出；恐龙归档；hotkey CSS 并轨；番茄时长设置；隐私导航文案；浅色 token；天气最高/最低
