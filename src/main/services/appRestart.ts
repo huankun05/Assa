@@ -34,7 +34,7 @@
 
 import { app, Notification } from 'electron';
 import { spawn } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
+import { appendFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 /** 等待旧实例退出的轮询上限（约 2 分钟），防止隐藏脚本无限循环 */
@@ -121,15 +121,14 @@ function showRestartToast(): void {
 }
 
 /**
- * 派生 dev 会话重启脚本
- * @description 生成的 cmd 脚本会：等待旧进程退出（释放单实例锁）→ 等待
- *   ELECTRON_RENDERER_URL 端口释放（electron-vite CLI 与 vite server 已死）→
- *   在项目根目录重新执行 npm run dev。
- *   Windows 关键点：Electron 退出时 Job Object 可能连带杀掉子进程，
- *   因此必须用 `start` 再拉一层，把 restarter 从本进程作业中剥离。
+ * 派生 dev 会话重启器（Windows）
+ * @description 用 PowerShell `Start-Process -WindowStyle Hidden` 起完全独立进程，
+ *   避免 Electron Job Object 在 app.exit 时杀掉子进程；也避免 cmd start 闪终端。
+ *   等待旧 PID 退出 + renderer 端口释放后，在项目根用 node+npm-cli 拉起 npm run dev。
  */
 function spawnDevSessionRestarter(): void {
   const projectRoot = resolve(app.getAppPath());
+  const pid = process.pid;
 
   let rendererPort = '';
   try {
@@ -139,73 +138,52 @@ function spawnDevSessionRestarter(): void {
   }
 
   const tempDir = app.getPath('temp');
-  const logFile = join(tempDir, 'xiyue-dev-restart.log');
-  const scriptPath = join(tempDir, `xiyue-dev-restart-${process.pid}.cmd`);
-  const devScriptName = readDevScriptName(projectRoot);
+  const logFile = join(tempDir, 'xiyue-dev-restart.log').replace(/\\/g, '/');
+  const nodeExe = process.execPath.replace(/\\/g, '/');
+  // electron 进程的 execPath 是 electron.exe；应用侧 npm 用系统 node 更稳
+  const systemNode = 'E:/software/Nodejs/node.exe';
+  const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
+  const root = projectRoot.replace(/\\/g, '/');
+  const maxTries = RESTARTER_MAX_TRIES;
 
-  const lines: string[] = [
-    '@echo off',
-    'setlocal EnableDelayedExpansion',
-    `rem xiyue dev session restarter pid=${process.pid}`,
-    'set /a tries=0',
-    ':waitpid',
-    `tasklist /fi "PID eq ${process.pid}" 2>nul | find "${process.pid}" >nul 2>&1`,
-    'if not errorlevel 1 (',
-    '  set /a tries+=1',
-    `  if !tries! geq ${RESTARTER_MAX_TRIES} goto spawn`,
-    '  ping -n 2 127.0.0.1 >nul',
-    '  goto waitpid',
-    ')'
-  ];
+  const portWait = rendererPort
+    ? `$deadline=Get-Date; while((Get-Date) -lt $deadline.AddSeconds(${maxTries})) { $c=Get-NetTCPConnection -LocalPort ${rendererPort} -State Listen -EA SilentlyContinue; if(-not $c){break}; Start-Sleep -Milliseconds 500 }`
+    : '';
 
-  if (rendererPort) {
-    lines.push(
-      'set /a tries=0',
-      ':waitport',
-      `netstat -ano -p tcp 2>nul | find ":${rendererPort}" | find "LISTENING" >nul 2>&1`,
-      'if not errorlevel 1 (',
-      '  set /a tries+=1',
-      `  if !tries! geq ${RESTARTER_MAX_TRIES} goto spawn`,
-      '  ping -n 2 127.0.0.1 >nul',
-      '  goto waitport',
-      ')'
-    );
-  }
-
-  lines.push(
-    ':spawn',
-    `cd /d "${projectRoot}"`,
-    `echo ===== xiyue dev restart %date% %time% =====>> "${logFile}"`,
-  );
-
-  const viteCmd = join(projectRoot, 'node_modules', '.bin', 'electron-vite.cmd');
-  if (devScriptName) {
-    lines.push(
-      'where npm >nul 2>&1',
-      'if not errorlevel 1 (',
-      `  call npm run ${devScriptName} >> "${logFile}" 2>&1`,
-      ') else (',
-      `  call "${viteCmd}" dev >> "${logFile}" 2>&1`,
-      ')',
-    );
-  } else {
-    lines.push(`call "${viteCmd}" dev >> "${logFile}" 2>&1`);
-  }
-  lines.push('endlocal');
+  const ps = [
+    `$ErrorActionPreference='Continue'`,
+    `"===== xiyue restart restarter start pid=${pid} =====" | Add-Content -Encoding utf8 '${logFile}'`,
+    `$p=${pid}`,
+    `$deadline=Get-Date; while((Get-Process -Id $p -EA SilentlyContinue) -and ((Get-Date) -lt $deadline.AddSeconds(${maxTries}))) { Start-Sleep -Milliseconds 400 }`,
+    portWait,
+    `Start-Sleep -Milliseconds 800`,
+    `Set-Location '${root}'`,
+    `& '${systemNode}' '${npmCli}' run dev >> '${logFile}' 2>&1`,
+    `"===== restarter finished exit=$LASTEXITCODE =====" | Add-Content -Encoding utf8 '${logFile}'`,
+  ].join('; ');
 
   try {
-    writeFileSync(scriptPath, lines.join('\r\n') + '\r\n', 'ascii');
-    // start 脱离 Electron Job Object，避免 app.exit 时被一起杀掉
-    spawn('cmd.exe', ['/d', '/c', 'start', '/b', '', 'cmd.exe', '/d', '/c', scriptPath], {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true,
-      cwd: projectRoot,
-    }).unref();
-    console.log(`[App] dev 会话重启已排定: ${scriptPath} (log: ${logFile})`);
+    // 立刻写一行，证明「已排定」
+    appendFileSync(logFile, `===== scheduled by pid ${pid} rendererPort=${rendererPort || 'none'} =====\n`);
+    const child = spawn(
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', ps],
+      {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+        cwd: projectRoot,
+      },
+    );
+    child.unref();
+    console.log(`[App] dev restarter scheduled via powershell (log: ${logFile})`);
   } catch (err) {
-    console.error('[App] dev 会话重启脚本派生失败，回退为直接 relaunch:', err);
-    app.relaunch();
+    console.error('[App] powershell restarter spawn failed:', err);
+    try {
+      app.relaunch();
+    } catch {
+      // ignore
+    }
   }
 }
 
