@@ -27,7 +27,7 @@
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import type { useHover } from '../hooks/useHover';
-import { TimeTab } from '../pages/time';
+import { ControlCenterTab } from '../pages/time';
 import { LyricsTab } from '../pages/lyric';
 import { WeatherTab } from '../pages/weather';
 import { PomodoroTab } from '../pages/pomodoro';
@@ -69,7 +69,7 @@ export function HoverForm(props: HoverFormProps): ReactElement {
 
       <div className="hover-tab-content" onClick={(e) => e.stopPropagation()}>
         {hoverTab === 'time' && (
-          <TimeTab
+          <ControlCenterTab
             fullTimeStr={fullTimeStr}
             lunarStr={lunarStr}
             onPopoverChange={setPopoverActive}

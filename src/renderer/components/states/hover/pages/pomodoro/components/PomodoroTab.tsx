@@ -36,10 +36,6 @@ function formatMMSS(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
 }
 
-/** 默认专注时长（分钟）；后续可迁设置 store */
-const DEFAULT_WORK_MIN = 25;
-const DEFAULT_BREAK_MIN = 5;
-
 /** Hover 番茄钟页 */
 export function PomodoroTab(): ReactElement {
   const { t } = useTranslation();
@@ -52,9 +48,31 @@ export function PomodoroTab(): ReactElement {
     setPomodoroRunning,
   } = useIslandStore();
 
-  const workSec = DEFAULT_WORK_MIN * 60;
-  const breakSec = DEFAULT_BREAK_MIN * 60;
-  const [loopEnabled] = useState(true);
+  const [workMin, setWorkMin] = useState(25);
+  const [breakMin, setBreakMin] = useState(5);
+  const [loopEnabled, setLoopEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    window.api.storeRead('pomodoro-work-min').then((v) => {
+      if (cancelled || v == null) return;
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 1) setWorkMin(Math.min(120, Math.floor(n)));
+    }).catch(() => {});
+    window.api.storeRead('pomodoro-break-min').then((v) => {
+      if (cancelled || v == null) return;
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 1) setBreakMin(Math.min(60, Math.floor(n)));
+    }).catch(() => {});
+    window.api.storeRead('pomodoro-loop').then((v) => {
+      if (cancelled || v == null) return;
+      setLoopEnabled(Boolean(v));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const workSec = workMin * 60;
+  const breakSec = breakMin * 60;
 
   useEffect(() => {
     if (!pomodoroRunning) return;

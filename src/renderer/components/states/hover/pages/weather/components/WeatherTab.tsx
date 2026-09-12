@@ -50,7 +50,12 @@ export function WeatherTab(): React.ReactElement {
   const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'success' | 'error'>('idle');
   const [toastTimer, setToastTimer] = useState<number | null>(null);
   const hour = new Date().getHours();
-  const isDay = hour >= 6 && hour < 18;
+  /** 图标码能区分日夜时优先用数据，否则回退本机 6–18 点 */
+  const inferIsDay = (iconCode: number): boolean => {
+    if (iconCode >= 500 && iconCode < 1000) return hour >= 6 && hour < 18;
+    return hour >= 6 && hour < 18;
+  };
+  const isDay = inferIsDay(weather.iconCode);
   const currentWeatherDesc = abbreviateWeatherDescription(weather.description, t);
 
   // 切换到天气 tab 时自动刷新一次（节流保护：5 分钟内不重复）
@@ -150,8 +155,8 @@ export function WeatherTab(): React.ReactElement {
               onError={handleIconError}
             />
             <span className="text-xs leading-none">{abbreviateWeatherDescription(day.description, t)}</span>
-            <span className="text-xs tabular-nums leading-none">
-              {(day.temperatureMin + day.temperatureMax) / 2}℃
+            <span className="weather-tab-temps tabular-nums" title={`${day.temperatureMax}℃ / ${day.temperatureMin}℃`}>
+              {day.temperatureMax}° / {day.temperatureMin}°
             </span>
           </div>
         ))}

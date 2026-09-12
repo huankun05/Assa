@@ -24,4 +24,6 @@
  * @author 鸡哥
  */
 
+export { TimeTab as ControlCenterTab } from './components/TimeTab';
+/** @deprecated 使用 ControlCenterTab；保留 TimeTab 兼容旧引用 */
 export { TimeTab } from './components/TimeTab';

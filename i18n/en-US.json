@@ -660,7 +660,9 @@
       }
     },
     "settingsTab": {
-      "label": "Settings"
+      "label": "Settings",
+      "openWindow": "Open settings window",
+      "hint": "Full settings live in a separate window"
     },
     "translation": {
       "title": "Quick Translate",
@@ -2662,6 +2664,12 @@
           "enabled": "eIsland will start on login.",
           "highPriority": "Starts with higher priority for faster load."
         }
+      },
+      "pomodoro": {
+        "workMinTitle": "Work duration (minutes)",
+        "breakMinTitle": "Break duration (minutes)",
+        "loopTitle": "Auto-loop work/break",
+        "sectionDesc": "Default durations for the hover pomodoro strip"
       }
     },
     "common": {
@@ -3986,4 +3994,4 @@
       "loginCancelled": "Login cancelled or timed out"
     }
   }
-}
+}\n

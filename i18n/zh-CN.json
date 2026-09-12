@@ -662,7 +662,9 @@
       }
     },
     "settingsTab": {
-      "label": "设置"
+      "label": "设置",
+      "openWindow": "打开设置窗口",
+      "hint": "完整设置在独立窗口中进行"
     },
     "translation": {
       "title": "快速翻译",
@@ -2664,6 +2666,12 @@
           "enabled": "系统登录后将自动启动灵动岛。",
           "highPriority": "以高优先级启动，更早完成加载。"
         }
+      },
+      "pomodoro": {
+        "workMinTitle": "工作时长（分钟）",
+        "breakMinTitle": "休息时长（分钟）",
+        "loopTitle": "自动循环工作/休息",
+        "sectionDesc": "控制灵动岛番茄钟精简页使用的默认时长"
       }
     },
     "common": {
@@ -3988,4 +3996,4 @@
       "loginCancelled": "登录已取消或超时"
     }
   }
-}
+}\n

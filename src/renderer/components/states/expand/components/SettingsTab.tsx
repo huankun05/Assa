@@ -20,7 +20,7 @@
 
 /**
  * @file SettingsTab.tsx
- * @description Expanded 设置 Tab
+ * @description Expanded 设置 Tab：明确打开独立设置窗（DESIGN_SYSTEM §4A）
  * @author 鸡哥
  */
 
@@ -29,13 +29,22 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * 设置 Tab
- * @description 展开状态下的设置面板
+ * @description 不在大面板内嵌完整设置；点击打开独立设置窗
  */
 export function SettingsTab(): React.ReactElement {
   const { t } = useTranslation();
   return (
-    <div className="expand-tab-panel">
-      <span className="text-sm text-[var(--color-island-text)] opacity-40">{t('expanded.settingsTab.label')}</span>
+    <div className="expand-tab-panel expand-settings-entry">
+      <button
+        type="button"
+        className="settings-card-action-btn"
+        onClick={() => { window.api.openSettingsWindow().catch(() => {}); }}
+      >
+        {t('expanded.settingsTab.openWindow', { defaultValue: '打开设置窗口' })}
+      </button>
+      <p className="expand-settings-entry-hint">
+        {t('expanded.settingsTab.hint', { defaultValue: '完整设置在独立窗口中进行' })}
+      </p>
     </div>
   );
 }

@@ -158,6 +158,13 @@
   gap: 6px;
 }
 
+.weather-tab-temps {
+  font-size: 11px;
+  line-height: 1;
+  color: rgba(var(--color-text-rgb), 0.75);
+  white-space: nowrap;
+}
+
 .weather-tab-forecast-icon {
   width: 18px;
   height: 18px;

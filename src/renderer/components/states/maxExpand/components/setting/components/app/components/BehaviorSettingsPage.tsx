@@ -62,6 +62,9 @@ export function BehaviorSettingsPage({
   const [hoverScreenshotMode, setHoverScreenshotMode] = useState<HoverScreenshotMode>('region');
   const [idleClickExpand, setIdleClickExpand] = useState<boolean>(true);
   const [shapeMode, setShapeMode] = useState<IslandShapeMode>('notch');
+  const [pomodoroWorkMin, setPomodoroWorkMin] = useState(25);
+  const [pomodoroBreakMin, setPomodoroBreakMin] = useState(5);
+  const [pomodoroLoop, setPomodoroLoop] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +90,20 @@ export function BehaviorSettingsPage({
     window.api.idleClickExpandGet().then((v) => {
       if (cancelled) return;
       setIdleClickExpand(v);
+    }).catch(() => {});
+    window.api.storeRead('pomodoro-work-min').then((v) => {
+      if (cancelled || v == null) return;
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 1) setPomodoroWorkMin(Math.min(120, Math.floor(n)));
+    }).catch(() => {});
+    window.api.storeRead('pomodoro-break-min').then((v) => {
+      if (cancelled || v == null) return;
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 1) setPomodoroBreakMin(Math.min(60, Math.floor(n)));
+    }).catch(() => {});
+    window.api.storeRead('pomodoro-loop').then((v) => {
+      if (cancelled || v == null) return;
+      setPomodoroLoop(Boolean(v));
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -235,6 +252,58 @@ export function BehaviorSettingsPage({
                 }}
               />
               {t('settings.app.behavior.idleClickExpandToggle', { defaultValue: '空闲状态下点击展开（禁用悬停自动展开）' })}
+            </label>
+          </div>
+        </div>
+
+        <div className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-title">{t('settings.app.pomodoro.workMinTitle', { defaultValue: '工作时长（分钟）' })}</div>
+            <div className="settings-card-subtitle">{t('settings.app.pomodoro.sectionDesc', { defaultValue: '控制灵动岛番茄钟精简页使用的默认时长' })}</div>
+          </div>
+          <div className="settings-card-inline-row">
+            <label className="settings-field">
+              <span className="settings-field-label">{t('settings.app.pomodoro.workMinTitle', { defaultValue: '工作时长（分钟）' })}</span>
+              <input
+                className="settings-field-input"
+                type="number"
+                min={1}
+                max={120}
+                value={pomodoroWorkMin}
+                onChange={(e) => {
+                  const v = Math.max(1, Math.min(120, Number(e.target.value) || 25));
+                  setPomodoroWorkMin(v);
+                  window.api.storeWrite('pomodoro-work-min', v).catch(() => {});
+                }}
+              />
+            </label>
+            <label className="settings-field">
+              <span className="settings-field-label">{t('settings.app.pomodoro.breakMinTitle', { defaultValue: '休息时长（分钟）' })}</span>
+              <input
+                className="settings-field-input"
+                type="number"
+                min={1}
+                max={60}
+                value={pomodoroBreakMin}
+                onChange={(e) => {
+                  const v = Math.max(1, Math.min(60, Number(e.target.value) || 5));
+                  setPomodoroBreakMin(v);
+                  window.api.storeWrite('pomodoro-break-min', v).catch(() => {});
+                }}
+              />
+            </label>
+          </div>
+          <div className="settings-card-inline-row">
+            <label className="settings-card-check">
+              <input
+                type="checkbox"
+                checked={pomodoroLoop}
+                onChange={(e) => {
+                  setPomodoroLoop(e.target.checked);
+                  window.api.storeWrite('pomodoro-loop', e.target.checked).catch(() => {});
+                }}
+              />
+              {t('settings.app.pomodoro.loopTitle', { defaultValue: '自动循环工作/休息' })}
             </label>
           </div>
         </div>

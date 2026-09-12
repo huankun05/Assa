@@ -85,6 +85,17 @@
   height: 100%;
 }
 
+.expand-settings-entry {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.expand-settings-entry-hint {
+  font-size: 11px;
+  color: rgba(var(--color-text-rgb), 0.45);
+  margin: 0;
+}
+
 /** Expanded 底部导航点容器 — 水平居中 */
 .expand-nav-dots {
   display: flex;
