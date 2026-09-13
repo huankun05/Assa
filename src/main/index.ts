@@ -868,6 +868,7 @@ registerAppLifecycleHandlers({
  * 应用就绪入口，初始化窗口、注册 IPC 处理器并响应 macOS dock 点击重建窗口
  */
 app.whenReady().then(() => {
+  app.setName('汐月');
   electronApp.setAppUserModelId('com.xiyue.app');
 
   /** 汐月 Hermes Python 侧车：启动 + IPC 桥 */

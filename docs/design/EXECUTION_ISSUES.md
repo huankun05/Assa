@@ -58,3 +58,13 @@
 ## 续跑（0b3ec80）
 
 - ControlCenterTab 导出；恐龙归档；hotkey CSS 并轨；番茄时长设置；隐私导航文案；浅色 token；天气最高/最低
+
+## 托盘重启 · soft-restart（2026-09-13 已验收）
+
+| 项 | 结论 |
+|---|---|
+| 方案 | dev：写 `data/soft-restart.flag` + `app.exit`；electron-vite close 读 flag 原地再拉 electron（不整段重开 CLI） |
+| 根因修复 | ① CLI `root===undefined` 时旧补丁 `realpathSync(root)` 抛错吞掉 → 改 `root \|\| process.cwd()` 多路径找 flag（`420110d`）② `app.exit` 在本机不生效 → `process.exit` + VBS 隐藏 `taskkill` 兜底（`c80ce08`）③ 外部强杀勿用 `cmd ping`（Windows Terminal 闪窗）→ VBS Run style 0（`9eef07b`） |
+| 提示 | 恢复右下角系统通知；标题写死「汐月正在重新启动」；`app.setName('汐月')` |
+| 补丁 | `scripts/patch-electron-vite-hide-console.js`（postinstall 幂等）；chunk 名 `lib-q6ns0vZr.js` 随 electron-vite 升级可能变 |
+| 验收 | 见 `docs/ACCEPTANCE_CHECKLIST.md` §I |

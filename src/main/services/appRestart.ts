@@ -185,7 +185,7 @@ function showRestartToast(): void {
   try {
     if (!Notification.isSupported()) return;
     const toast = new Notification({
-      title: `${app.getName()} 正在重新启动`,
+      title: '汐月正在重新启动',
       body: '应用将关闭以完成重启，结束后会自动重新打开。'
     });
     toast.show();
