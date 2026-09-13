@@ -3358,10 +3358,30 @@
   color: rgba(var(--color-text-rgb), 0.8);
 }
 .settings-lyrics-source-btn.active {
-  background: rgba(var(--color-text-rgb), 0.18);
-  border-color: rgba(var(--color-text-rgb), 0.7);
-  color: var(--color-island-text);
-  box-shadow: 0 0 0 1px rgba(var(--color-text-rgb), 0.4);
+  background: #eaf3ff !important;
+  border-color: #4d9fff !important;
+  color: #1a73e8 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #4d9fff 25%, transparent) !important;
+  font-weight: 600;
+}
+
+.settings-lyrics-source-btn {
+  background: #fff !important;
+  border-color: #e6eaf2 !important;
+  color: #151820 !important;
+}
+
+[data-theme='dark'] .settings-lyrics-source-btn {
+  background: #171a21 !important;
+  border-color: #2a2f3a !important;
+  color: #f2f4f8 !important;
+}
+
+[data-theme='dark'] .settings-lyrics-source-btn.active {
+  background: #1a2a3f !important;
+  border-color: #64aaff !important;
+  color: #8ec2ff !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #64aaff 25%, transparent) !important;
 }
 
 .settings-language-flag-icon {
