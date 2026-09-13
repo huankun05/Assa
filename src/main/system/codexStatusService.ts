@@ -20,7 +20,14 @@
  */
 
 import { app, type BrowserWindow } from 'electron';
-import { type Dirent, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  promises as fsp,
+  readFileSync,
+  writeFileSync,
+} from 'fs';
+import type { Dirent } from 'fs';
 import { dirname, join } from 'path';
 import type { ClaudeCodeHeatmapDaily } from '../types/system/ClaudeCodeHeatmapDailyCount';
 import type { ClaudeCodeHookEvent } from '../types/system/ClaudeCodeHookEvent';
@@ -55,7 +62,8 @@ interface PersistedCodexState {
 
 const MAX_EVENTS = 120;
 const MAX_SESSION_EVENTS = 40;
-const DEFAULT_POLL_INTERVAL_MS = 5000;
+/** 5s→15s：同步/异步扫盘都会产生 IO 压力，CLI 状态不需要秒级新鲜度 */
+const DEFAULT_POLL_INTERVAL_MS = 15000;
 
 function emptySnapshot(sessionsPath: string, enabled: boolean, running: boolean): ClaudeCodeStatusSnapshot {
   return {
@@ -71,35 +79,37 @@ function emptySnapshot(sessionsPath: string, enabled: boolean, running: boolean)
   };
 }
 
-function collectJsonlFiles(root: string): FileEntry[] {
-  if (!existsSync(root)) return [];
+async function collectJsonlFilesAsync(root: string): Promise<FileEntry[]> {
+  if (!existsSync(root)) return Promise.resolve([]);
   const output: FileEntry[] = [];
-  const visit = (directory: string): void => {
+
+  const visit = async (directory: string): Promise<void> => {
     if (output.length >= MAX_CLI_SESSIONS) return;
     let entries: Dirent<string>[];
     try {
-      entries = readdirSync(directory, { withFileTypes: true, encoding: 'utf-8' });
+      entries = await fsp.readdir(directory, { withFileTypes: true, encoding: 'utf-8' });
     } catch {
       return;
     }
-    entries.sort((a, b) => b.name.localeCompare(a.name)).some((entry) => {
-      if (output.length >= MAX_CLI_SESSIONS) return true;
+    entries.sort((a, b) => b.name.localeCompare(a.name));
+    for (const entry of entries) {
+      if (output.length >= MAX_CLI_SESSIONS) return;
       const path = join(directory, entry.name);
       if (entry.isDirectory()) {
-        visit(path);
-        return false;
+        await visit(path);
+        continue;
       }
-      if (!entry.isFile() || !entry.name.endsWith('.jsonl')) return false;
+      if (!entry.isFile() || !entry.name.endsWith('.jsonl')) continue;
       try {
-        const stat = statSync(path);
+        const stat = await fsp.stat(path);
         output.push({ path, mtimeMs: stat.mtimeMs, size: stat.size });
       } catch {
-        // 文件可能在扫描时被 Codex 轮换，下一轮会重新发现。
+        // 文件可能在扫描时被 Codex 轮换
       }
-      return false;
-    });
+    }
   };
-  visit(root);
+
+  await visit(root);
   return output.sort((a, b) => b.mtimeMs - a.mtimeMs).slice(0, MAX_CLI_SESSIONS);
 }
 
@@ -132,7 +142,8 @@ export function createCodexStatusService(options: CreateCodexStatusServiceOption
   const persistPath = join(app.getPath('userData'), 'eIsland_store', 'codex-status-state.json');
   const cache = new Map<string, CachedSession>();
   let timer: ReturnType<typeof setInterval> | null = null;
-  let enabled = true;
+  /** 默认关闭：避免一启动就扫 ~/.codex/sessions 弹「检测到 Codex」 */
+  let enabled = false;
   let clearBefore = 0;
   let deletedBeforeBySession: Record<string, number> = {};
   let snapshot = emptySnapshot(sessionsPath, enabled, false);
@@ -142,13 +153,13 @@ export function createCodexStatusService(options: CreateCodexStatusServiceOption
     try {
       if (!existsSync(persistPath)) return;
       const persisted = JSON.parse(readFileSync(persistPath, 'utf-8')) as Partial<PersistedCodexState>;
-      enabled = persisted.enabled !== false;
+      enabled = persisted.enabled === true;
       clearBefore = typeof persisted.clearBefore === 'number' ? persisted.clearBefore : 0;
       deletedBeforeBySession = persisted.deletedBeforeBySession && typeof persisted.deletedBeforeBySession === 'object'
         ? persisted.deletedBeforeBySession
         : {};
     } catch {
-      // 配置损坏时回退为默认启用，不阻塞应用启动。
+      enabled = false;
     }
   };
 
@@ -167,25 +178,31 @@ export function createCodexStatusService(options: CreateCodexStatusServiceOption
     win.webContents.send('codex:status-updated', snapshot);
   };
 
-  const rebuildSnapshot = (): void => {
+  const rebuildSnapshot = async (): Promise<void> => {
     const now = Date.now();
-    const files = collectJsonlFiles(sessionsPath);
+    const files = await collectJsonlFilesAsync(sessionsPath);
     const activePaths = new Set(files.map((file) => file.path));
     cache.forEach((_value, path) => {
       if (!activePaths.has(path)) cache.delete(path);
     });
 
-    const parsedSessions = files.flatMap((file) => {
+    await Promise.all(files.map(async (file) => {
       const cached = cache.get(file.path);
-      if (cached && cached.mtimeMs === file.mtimeMs && cached.size === file.size) return cached.parsed ? [cached.parsed] : [];
+      if (cached && cached.mtimeMs === file.mtimeMs && cached.size === file.size) return;
       let parsed: ParsedCodexSession | null = null;
       try {
-        parsed = parseCodexSessionContent(readFileSync(file.path, 'utf-8'), file.path, file.mtimeMs, now);
+        const content = await fsp.readFile(file.path, 'utf-8');
+        parsed = parseCodexSessionContent(content, file.path, file.mtimeMs, now);
       } catch {
         parsed = null;
       }
       cache.set(file.path, { mtimeMs: file.mtimeMs, size: file.size, parsed });
-      return parsed ? [parsed] : [];
+    }));
+
+    const parsedSessions: ParsedCodexSession[] = [];
+    files.forEach((file) => {
+      const cached = cache.get(file.path);
+      if (cached?.parsed) parsedSessions.push(cached.parsed);
     });
 
     const heatmap: ClaudeCodeHeatmapDaily = {};
@@ -227,8 +244,14 @@ export function createCodexStatusService(options: CreateCodexStatusServiceOption
 
   const startPolling = (): void => {
     if (timer || !enabled) return;
-    timer = setInterval(rebuildSnapshot, options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS);
-    rebuildSnapshot();
+    let inFlight = false;
+    const tick = (): void => {
+      if (inFlight) return;
+      inFlight = true;
+      void rebuildSnapshot().finally(() => { inFlight = false; });
+    };
+    timer = setInterval(tick, options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS);
+    tick();
   };
 
   async function start(): Promise<void> {
@@ -267,7 +290,7 @@ export function createCodexStatusService(options: CreateCodexStatusServiceOption
     clearBefore = Date.now();
     deletedBeforeBySession = {};
     persistState();
-    rebuildSnapshot();
+    void rebuildSnapshot();
     return snapshot;
   }
 
@@ -277,7 +300,7 @@ export function createCodexStatusService(options: CreateCodexStatusServiceOption
       deletedBeforeBySession[sessionId] = deletedAt;
     });
     persistState();
-    rebuildSnapshot();
+    void rebuildSnapshot();
     return snapshot;
   }
 

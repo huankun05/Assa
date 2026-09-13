@@ -98,10 +98,6 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
  */
 function openSettingsWindow(): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
-    // dev：每次打开强制 reload，避免「关闭即隐藏」把旧 bundle 一直挂在内存里
-    if (is.dev) {
-      void settingsWindow.webContents.reload();
-    }
     if (settingsWindow.isVisible()) {
       settingsWindow.focus();
     } else {

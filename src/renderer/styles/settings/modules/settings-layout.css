@@ -8069,3 +8069,43 @@ button.settings-user-image-translation-image-wrap:hover {
   border-color: #2a2f3a !important;
   color: #f2f4f8 !important;
 }
+
+
+/* ===== settings-v2 分段按钮强覆盖（主题页深色/浅色等） ===== */
+.settings-v2 .settings-lyrics-source-btn {
+  background: #fff !important;
+  border: 1px solid #e6eaf2 !important;
+  color: #151820 !important;
+  border-radius: 10px !important;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none !important;
+}
+
+.settings-v2 .settings-lyrics-source-btn:hover {
+  background: #f8fafc !important;
+  border-color: #d5dbe8 !important;
+  color: #151820 !important;
+}
+
+.settings-v2 .settings-lyrics-source-btn.active,
+.settings-v2 .settings-lyrics-source-btn.active:hover {
+  background: #eaf3ff !important;
+  border-color: #4d9fff !important;
+  color: #1a73e8 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #4d9fff 22%, transparent) !important;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .settings-v2 .settings-lyrics-source-btn {
+  background: #171a21 !important;
+  border-color: #2a2f3a !important;
+  color: #f2f4f8 !important;
+}
+
+[data-theme='dark'] .settings-v2 .settings-lyrics-source-btn.active,
+[data-theme='dark'] .settings-v2 .settings-lyrics-source-btn.active:hover {
+  background: #1a2a3f !important;
+  border-color: #64aaff !important;
+  color: #8ec2ff !important;
+}

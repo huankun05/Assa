@@ -1143,6 +1143,7 @@ app.whenReady().then(() => {
   setTimeout(() => {
     void claudeCodeStatusService.start();
   }, 3000);
+  // Codex 会话监视默认关；仅加载持久化状态（默认 enabled=false 时不轮询、不通知）
   setTimeout(() => {
     void codexStatusService.start();
   }, 8000);
