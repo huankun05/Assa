@@ -34,7 +34,7 @@
 
 import { app, Notification } from 'electron';
 import { spawn } from 'child_process';
-import { appendFileSync, existsSync, realpathSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, realpathSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 /** 重启路径禁止碰 console/stdout——管道断开时异步 EPIPE 会崩主进程 */
@@ -110,13 +110,7 @@ export function restartApp(): void {
       // 软重启：只让 electron-vite 原地再拉一次 electron，不整段重开 CLI（无闪窗）
       const flag = softRestartFlagPath();
       const dir = join(flag, '..');
-      try {
-        if (!existsSync(dir)) {
-          writeFileSync(join(dir, '.keep'), '', 'utf-8');
-        }
-      } catch {
-        // ignore mkdir via .keep
-      }
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
       writeFileSync(flag, String(process.pid), 'utf-8');
       safeLog('[App] soft-restart flag written', flag);
     } else {
