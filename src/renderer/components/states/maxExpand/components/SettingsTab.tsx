@@ -2210,7 +2210,7 @@ export function SettingsTab(): ReactElement {
             />
           )}
           {navMode === 'detail' && (
-            <div className="settings-root">
+            <div className="settings-root settings-v2">
               <div className="settings-layout">
                 <header className="page-header settings-page-header-enter">
                   <button
@@ -2226,7 +2226,7 @@ export function SettingsTab(): ReactElement {
                     <span className="page-header-title">{detailTitle}</span>
                   </h1>
                 </header>
-                <div className="settings-scroll scrollbar-none">
+                <div className="settings-v2-body settings-scroll scrollbar-none">
             <>
           {activeTab === 'index' && (
             <IndexSettingsSection
