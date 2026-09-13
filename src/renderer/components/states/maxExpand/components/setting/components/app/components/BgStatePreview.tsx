@@ -7,7 +7,7 @@ import {
   ISLAND_BG_POSITION_X_STORE_KEY,
   ISLAND_BG_POSITION_Y_STORE_KEY,
   LOCAL_ISLAND_BG_SYNC_EVENT,
-} from '../../config/settingsTabConfig';
+} from '../../../config/settingsTabConfig';
 
 type PreviewStateId = 'idle' | 'hover' | 'expand' | 'maxExpand';
 
