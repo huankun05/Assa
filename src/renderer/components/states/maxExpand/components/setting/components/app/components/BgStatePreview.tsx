@@ -28,15 +28,33 @@ const PREVIEW_STATES: PreviewStateDef[] = [
 
 const PREVIEW_W = 560;
 const PREVIEW_PAD = 8;
-const DEFAULT_POS: PosMap = {
-  idle: { x: 50, y: 50 },
-  hover: { x: 50, y: 50 },
-  expand: { x: 50, y: 50 },
-  maxExpand: { x: 50, y: 50 },
-};
 
 function clampPct(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function applyObjectPosition(el: HTMLElement | null, x: number, y: number): void {
+  if (!el) return;
+  el.style.objectPosition = `${x}% ${y}%`;
+}
+
+function syncIslandLayer(x: number, y: number, stateId: PreviewStateId): void {
+  const layer = document.getElementById('island-bg-layer');
+  if (layer) {
+    layer.style.backgroundPosition = `${x}% ${y}%`;
+    layer.style.backgroundSize = 'cover';
+  }
+  window.dispatchEvent(new CustomEvent(LOCAL_ISLAND_BG_SYNC_EVENT, {
+    detail: { posX: x, posY: y, stateId },
+  }));
+}
+
+function persistStatePos(stateId: PreviewStateId, x: number, y: number): void {
+  const keys = getIslandBgPositionKeys(stateId);
+  void window.api.storeWrite(keys.x, x);
+  void window.api.storeWrite(keys.y, y);
+  void window.api.storeWrite('island-bg-position-x', x);
+  void window.api.storeWrite('island-bg-position-y', y);
 }
 
 export interface BgStatePreviewProps {
@@ -56,17 +74,20 @@ export function BgStatePreview({
 }: BgStatePreviewProps): ReactElement | null {
   const { t } = useTranslation();
   const [stateId, setStateId] = useState<PreviewStateId>('hover');
-  const [pos, setPos] = useState<PosMap>(DEFAULT_POS);
+  const [pos, setPos] = useState<PosMap>({
+    idle: { x: 50, y: 50 },
+    hover: { x: 50, y: 50 },
+    expand: { x: 50, y: 50 },
+    maxExpand: { x: 50, y: 50 },
+  });
+  const mediaRef = useRef<HTMLElement | null>(null);
   const draggingRef = useRef(false);
-  const loadedRef = useRef(false);
+  const draftRef = useRef({ x: 50, y: 50 });
 
   const current = PREVIEW_STATES.find((s) => s.id === stateId) ?? PREVIEW_STATES[1];
   const cur = pos[stateId];
 
-  /** 仅挂载时读一次 store，拖拽过程中不回读，避免重置 */
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
     let cancelled = false;
     void Promise.all(
       PREVIEW_STATES.map(async (s) => {
@@ -83,33 +104,23 @@ export function BgStatePreview({
       }),
     ).then((rows) => {
       if (cancelled) return;
-      setPos((prev) => {
-        const next = { ...prev };
-        for (const r of rows) next[r.id] = { x: r.x, y: r.y };
-        return next;
-      });
+      const next: PosMap = {
+        idle: { x: 50, y: 50 },
+        hover: { x: 50, y: 50 },
+        expand: { x: 50, y: 50 },
+        maxExpand: { x: 50, y: 50 },
+      };
+      for (const r of rows) next[r.id] = { x: r.x, y: r.y };
+      setPos(next);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
-  const applyLive = useCallback((x: number, y: number) => {
-    const el = document.getElementById('island-bg-layer');
-    if (el) {
-      el.style.backgroundPosition = `${x}% ${y}%`;
-      el.style.backgroundSize = 'cover';
-    }
-    window.dispatchEvent(new CustomEvent(LOCAL_ISLAND_BG_SYNC_EVENT, {
-      detail: { posX: x, posY: y, stateId },
-    }));
-  }, [stateId]);
-
-  const persistPos = useCallback((id: PreviewStateId, x: number, y: number) => {
-    const keys = getIslandBgPositionKeys(id);
-    void window.api.storeWrite(keys.x, x);
-    void window.api.storeWrite(keys.y, y);
-    void window.api.storeWrite('island-bg-position-x', x);
-    void window.api.storeWrite('island-bg-position-y', y);
-  }, []);
+  useEffect(() => {
+    draftRef.current = { x: cur.x, y: cur.y };
+    applyObjectPosition(mediaRef.current, cur.x, cur.y);
+    syncIslandLayer(cur.x, cur.y, stateId);
+  }, [stateId, cur.x, cur.y]);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!mediaType || !previewUrl) return;
@@ -130,20 +141,28 @@ export function BgStatePreview({
     const x = clampPct(((e.clientX - rect.left) / Math.max(1, rect.width)) * 100);
     const yRaw = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 100;
     const y = clampPct(100 - yRaw);
-    setPos((prev) => ({ ...prev, [stateId]: { x, y } }));
-    applyLive(x, y);
+    draftRef.current = { x, y };
+    // 只改 DOM，不 setState，避免拖拽中重渲染/回读
+    applyObjectPosition(mediaRef.current, x, y);
   };
 
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>): void => {
+  const onPointerUp = (): void => {
     if (!draggingRef.current) return;
     draggingRef.current = false;
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
-    const p = pos[stateId];
-    persistPos(stateId, p.x, p.y);
+    const { x, y } = draftRef.current;
+    setPos((prev) => ({ ...prev, [stateId]: { x, y } }));
+    syncIslandLayer(x, y, stateId);
+    persistStatePos(stateId, x, y);
+  };
+
+  const onSlider = (axis: 'x' | 'y', raw: number): void => {
+    const v = clampPct(raw);
+    const next = axis === 'x' ? { x: v, y: cur.y } : { x: cur.x, y: v };
+    draftRef.current = next;
+    setPos((prev) => ({ ...prev, [stateId]: next }));
+    applyObjectPosition(mediaRef.current, next.x, next.y);
+    syncIslandLayer(next.x, next.y, stateId);
+    persistStatePos(stateId, next.x, next.y);
   };
 
   if (!mediaType || !previewUrl) return null;
@@ -191,6 +210,7 @@ export function BgStatePreview({
         >
           {mediaType === 'video' ? (
             <video
+              ref={(el) => { mediaRef.current = el; }}
               src={previewUrl}
               className="settings-bg-state-media"
               style={posStyle}
@@ -201,6 +221,7 @@ export function BgStatePreview({
             />
           ) : (
             <img
+              ref={(el) => { mediaRef.current = el; }}
               src={previewUrl}
               alt=""
               className="settings-bg-state-media"
@@ -230,13 +251,7 @@ export function BgStatePreview({
             min={0}
             max={100}
             value={cur.x}
-            onChange={(e) => {
-              const v = clampPct(Number(e.target.value));
-              const next = { x: v, y: cur.y };
-              setPos((prev) => ({ ...prev, [stateId]: next }));
-              applyLive(next.x, next.y);
-              persistPos(stateId, next.x, next.y);
-            }}
+            onChange={(e) => onSlider('x', Number(e.target.value))}
           />
         </label>
         <label className="settings-field">
@@ -246,22 +261,18 @@ export function BgStatePreview({
             min={0}
             max={100}
             value={cur.y}
-            onChange={(e) => {
-              const v = clampPct(Number(e.target.value));
-              const next = { x: cur.x, y: v };
-              setPos((prev) => ({ ...prev, [stateId]: next }));
-              applyLive(next.x, next.y);
-              persistPos(stateId, next.x, next.y);
-            }}
+            onChange={(e) => onSlider('y', Number(e.target.value))}
           />
         </label>
         <button
           type="button"
           className="settings-card-action-btn"
           onClick={() => {
+            draftRef.current = { x: 50, y: 50 };
             setPos((prev) => ({ ...prev, [stateId]: { x: 50, y: 50 } }));
-            applyLive(50, 50);
-            persistPos(stateId, 50, 50);
+            applyObjectPosition(mediaRef.current, 50, 50);
+            syncIslandLayer(50, 50, stateId);
+            persistStatePos(stateId, 50, 50);
           }}
         >
           {t('settings.app.theme.bgResetPos', { defaultValue: '居中' })}

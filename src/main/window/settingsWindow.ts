@@ -120,9 +120,15 @@ function openSettingsWindow(): void {
 
   const win = createSettingsWindow(true);
   settingsWindow = win;
-  // 首次创建：ready-to-show + did-finish-load 双保险，避免要点两次
+  // 首次创建：立即显示白底壳，内容加载完再刷新——避免「点了没反应」
+  try {
+    win.showInactive();
+    setTimeout(() => show(win), 30);
+  } catch {
+    // ignore
+  }
   win.webContents.once('did-finish-load', () => {
-    setTimeout(() => show(win), 80);
+    setTimeout(() => show(win), 50);
   });
 }
 
