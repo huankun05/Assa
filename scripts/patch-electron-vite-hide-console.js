@@ -33,13 +33,13 @@ const spawnNew = "{ stdio: 'ignore', windowsHide: true, detached: true }";
 const closeOld = `ps.on('close', process.exit);`;
 const closeNew = `ps.on('close', (code) => {
         try {
-            const tmp = process.env.TEMP || process.env.TMP || process.env.TMPDIR || '.';
-            const flag = path.join(tmp, 'xiyue-soft-restart.flag');
+            const rootReal = fs.realpathSync(root);
+            const flag = path.join(rootReal, 'data', 'soft-restart.flag');
             if (fs.existsSync(flag)) {
                 fs.unlinkSync(flag);
                 setTimeout(() => {
                     try { startElectron(root); } catch (e) { console.error(e); }
-                }, 700);
+                }, 1500);
                 return;
             }
         } catch (e) { /* ignore */ }

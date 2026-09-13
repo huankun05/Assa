@@ -34,7 +34,7 @@
 
 import { app, Notification } from 'electron';
 import { spawn } from 'child_process';
-import { appendFileSync, existsSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, realpathSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 /** 重启路径禁止碰 console/stdout——管道断开时异步 EPIPE 会崩主进程 */
@@ -77,7 +77,17 @@ export function registerRestartCleanup(fn: () => void): void {
 }
 
 /** 静默重启：不弹系统通知，避免「闪一下窗口」再出现岛 */
-const RESTART_SILENT_EXIT_MS = 350;
+const RESTART_SILENT_EXIT_MS = 400;
+
+/** 软重启标志：放在项目 data/ 下，主进程与 electron-vite 同一真实路径 */
+function softRestartFlagPath(): string {
+  try {
+    const root = realpathSync(app.getAppPath());
+    return join(root, 'data', 'soft-restart.flag');
+  } catch {
+    return join(app.getPath('temp'), 'xiyue-soft-restart.flag');
+  }
+}
 
 /**
  * 重启应用
@@ -98,8 +108,15 @@ export function restartApp(): void {
   try {
     if (!app.isPackaged) {
       // 软重启：只让 electron-vite 原地再拉一次 electron，不整段重开 CLI（无闪窗）
-      const tmp = process.env.TEMP || process.env.TMP || process.env.TMPDIR || app.getPath('temp');
-      const flag = join(tmp, 'xiyue-soft-restart.flag');
+      const flag = softRestartFlagPath();
+      const dir = join(flag, '..');
+      try {
+        if (!existsSync(dir)) {
+          writeFileSync(join(dir, '.keep'), '', 'utf-8');
+        }
+      } catch {
+        // ignore mkdir via .keep
+      }
       writeFileSync(flag, String(process.pid), 'utf-8');
       safeLog('[App] soft-restart flag written', flag);
     } else {
