@@ -10,7 +10,6 @@ import {
   TRUST_LEVEL_CARDS,
   type TrustLevelInternal,
 } from '../../../../../../utils/security/permissionCards';
-import '../../../../../../../styles/announcement/announcement.css';
 
 interface AuditRow {
   t?: string;
