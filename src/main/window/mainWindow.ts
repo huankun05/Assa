@@ -1,4 +1,4 @@
-﻿/*
+/*
  * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
  * https://github.com/JNTMTMTM/eIsland
  *
@@ -174,6 +174,11 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
     });
 
     options.setMainWindow(mainWindow);
+    mainWindow.on('closed', () => {
+      if (options.getMainWindow() === mainWindow) {
+        options.setMainWindow(null);
+      }
+    });
 
     mainWindow.setIgnoreMouseEvents(true, { forward: true });
     mainWindow.setAlwaysOnTop(true, 'screen-saver');

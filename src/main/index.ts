@@ -27,7 +27,7 @@
 import { app, BrowserWindow, globalShortcut, protocol, net, ipcMain } from 'electron';
 import { join, resolve as resolvePath, sep } from 'path';
 import { pathToFileURL } from 'url';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { electronApp, optimizer } from '@electron-toolkit/utils';
 import { autoUpdater } from 'electron-updater';
 import { createTray, destroyTray, toggleTray } from './tray';
@@ -71,6 +71,7 @@ import { broadcastSettingChange, registerSettingsPreviewHandler } from './utils/
 import { registerAppLifecycleHandlers } from './services/appLifecycle';
 import { applyChromiumPerformanceFlags } from './services/chromiumFlags';
 import { createHotkeyService } from './services/hotkeyService';
+import { registerRestartCleanup, quitAppFast, isApplicationQuitting, isRestarting } from './services/appRestart';
 import { initUpdaterService } from './services/updaterService';
 import { createCaptureWindowService } from './window/captureWindow';
 import { createMainWindowService } from './window/mainWindow';
@@ -164,8 +165,37 @@ try {
 /** 防止 Electron 创建多个实例 */
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
-  app.quit();
+  /**
+   * 必须立刻退出：仅 app.quit() 会继续执行模块初始化（whenReady、建窗、托盘…），
+   * 在 soft-restart 窗口期会与主实例抢锁/叠托盘，并触发重复重启提示。
+   */
+  try {
+    app.exit(0);
+  } catch {
+    // ignore
+  }
+  process.exit(0);
 }
+
+/** 主进程未捕获异常写入临时日志，便于排查「用着用着退出」 */
+process.on('uncaughtException', (err) => {
+  try {
+    const { appendFileSync } = require('fs') as typeof import('fs');
+    const { join: joinPath } = require('path') as typeof import('path');
+    appendFileSync(joinPath(app.getPath('temp'), 'xiyue-dev-restart.log'), `[fatal] uncaughtException ${err?.stack || err}\n`);
+  } catch {
+    // ignore
+  }
+});
+process.on('unhandledRejection', (reason) => {
+  try {
+    const { appendFileSync } = require('fs') as typeof import('fs');
+    const { join: joinPath } = require('path') as typeof import('path');
+    appendFileSync(joinPath(app.getPath('temp'), 'xiyue-dev-restart.log'), `[fatal] unhandledRejection ${String(reason)}\n`);
+  } catch {
+    // ignore
+  }
+});
 
 let mainWindow: BrowserWindow | null = null;
 let agentVoiceInputWindow: BrowserWindow | null = null;
@@ -850,28 +880,54 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
+/** 退出/重启统一清理：托盘退出、退出快捷键、will-quit 共用，避免路径不一致导致子进程残留 */
+function runAppExitCleanup(): void {
+  autoHideWatcher.stop();
+  externalAgentWatcher.stop();
+  claudeCodeStatusService.stop();
+  codexStatusService.stop();
+  stopClipboardUrlWatcher();
+  smtcService.cleanupWorker();
+  neteaseWatcherLauncher.stop();
+  void disposeLocalOcrWorker();
+  stopLocalOcrMtService();
+  stopXiyueAgent();
+  stopSystemLevelMonitors();
+  destroyTray();
+  try {
+    globalShortcut.unregisterAll();
+  } catch {
+    // ignore
+  }
+}
+
+registerRestartCleanup(runAppExitCleanup);
+
 registerAppLifecycleHandlers({
   getMainWindow: () => mainWindow,
   onWillQuit: () => {
-    autoHideWatcher.stop();
-    externalAgentWatcher.stop();
-    claudeCodeStatusService.stop();
-    stopClipboardUrlWatcher();
-    smtcService.cleanupWorker();
-    neteaseWatcherLauncher.stop();
-    void disposeLocalOcrWorker();
-    stopLocalOcrMtService();
-    destroyTray();
-    globalShortcut.unregisterAll();
+    runAppExitCleanup();
   },
   onWindowAllClosed: () => {
-    autoHideWatcher.stop();
-    externalAgentWatcher.stop();
-    smtcService.cleanupWorker();
-    neteaseWatcherLauncher.stop();
-    destroyTray();
-    if (process.platform !== 'darwin') {
-      app.quit();
+    // 岛是托盘常驻应用：仅在明确退出（托盘/快捷键/quitAppFast）时才 teardown。
+    // 否则（主窗被销毁、渲染崩溃等）应重建主窗，而不是整应用消失。
+    if (isApplicationQuitting() || isRestarting()) {
+      autoHideWatcher.stop();
+      externalAgentWatcher.stop();
+      smtcService.cleanupWorker();
+      neteaseWatcherLauncher.stop();
+      destroyTray();
+      return;
+    }
+    try {
+      mainWindow = null;
+      setTimeout(() => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+          mainWindowService.createWindow();
+        }
+      }, 50);
+    } catch {
+      // 重建失败则保持进程在托盘，不自杀
     }
   },
 });
@@ -884,8 +940,44 @@ app.whenReady().then(() => {
   app.setName('汐月');
   electronApp.setAppUserModelId('com.xiyue.app');
 
-  /** 汐月 Hermes Python 侧车：启动 + IPC 桥 */
-  startXiyueAgent();
+  /**
+   * 启动时清掉「过期」的 soft-restart 残留：
+   * 正常 soft-restart 由 electron-vite 先删 flag 再拉起本实例；
+   * 若 flag 仍存在且已超过数秒，多半是异常中断残留，继续留着会在下次退出时再触发一轮重启。
+   */
+  try {
+    const flagPath = join(app.getAppPath(), 'data', 'soft-restart.flag');
+    if (existsSync(flagPath)) {
+      const ageMs = Date.now() - statSync(flagPath).mtimeMs;
+      if (ageMs > 8_000) {
+        unlinkSync(flagPath);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  /** 清理历史 force-kill VBS，避免脏文件堆积 */
+  try {
+    const tempDir = app.getPath('temp');
+    const vbsPrefix = 'xiyue-force-kill-';
+    for (const name of readdirSync(tempDir)) {
+      if (name.startsWith(vbsPrefix) && name.endsWith('.vbs')) {
+        try {
+          unlinkSync(join(tempDir, name));
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  /** 汐月 Hermes Python 侧车：延后 2s 启动，避免与主窗创建抢 CPU/磁盘 */
+  setTimeout(() => {
+    startXiyueAgent();
+  }, 2000);
   registerXiyueAgentIpcHandlers();
   registerXiyueIdentityIpcHandlers();
   registerXiyueSecurityIpcHandlers();
@@ -976,18 +1068,32 @@ app.whenReady().then(() => {
   }
 
   smtcService.initWorker();
-  neteaseWatcherLauncher.start();
+  /** netease-watcher 含 DLL 注入，易触发杀软扫描 → 延后启动 */
+  setTimeout(() => {
+    neteaseWatcherLauncher.start();
+  }, 3500);
   setSmtcAccessor(smtcService.getSmtcSessionRuntime, smtcService.getCurrentDeviceId);
-  startClipboardUrlWatcher({
-    getWindow: () => mainWindow,
-    getEnabled: clipboardUrlState.getMonitorEnabled,
-    getDetectMode: clipboardUrlState.getDetectMode,
-    getBlacklist: clipboardUrlState.getBlacklist,
-  });
+
+  /**
+   * 非关键服务错峰启动：避免 whenReady 与窗口创建/Vite 首屏争抢 CPU/IO。
+   * 剪贴板监听、CLI 状态扫描、自动隐藏、外部 Agent 检测均可延后数秒而不影响核心体验。
+   */
+  setTimeout(() => {
+    startClipboardUrlWatcher({
+      getWindow: () => mainWindow,
+      getEnabled: clipboardUrlState.getMonitorEnabled,
+      getDetectMode: clipboardUrlState.getDetectMode,
+      getBlacklist: clipboardUrlState.getBlacklist,
+    });
+  }, 4000);
 
   registerIpcHandlers();
-  void claudeCodeStatusService.start();
-  void codexStatusService.start();
+  setTimeout(() => {
+    void claudeCodeStatusService.start();
+  }, 3000);
+  setTimeout(() => {
+    void codexStatusService.start();
+  }, 8000);
 
   // 读取持久化白名单
   nowPlayingWhitelist = readWhitelistConfig();
@@ -1001,8 +1107,12 @@ app.whenReady().then(() => {
   autoHideWatcher.setConfiguredHideWindowTitleList([...savedHideProcessList]);
   autoHideWatcher.setAutoHideFullscreenWindows(readAutoHideFullscreenWindowsConfig());
   if (process.platform === 'win32') {
-    autoHideWatcher.start();
-    externalAgentWatcher.start();
+    setTimeout(() => {
+      autoHideWatcher.start();
+    }, 5000);
+    setTimeout(() => {
+      externalAgentWatcher.start();
+    }, 6000);
   }
 
   // 读取持久化快捷键并注册
@@ -1070,10 +1180,6 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindowService.createWindow();
   });
 
-  /** 退出时清理汐月 Hermes Python 侧车与 helper 常驻进程 */
-  app.on('will-quit', () => {
-    stopXiyueAgent();
-    stopSystemLevelMonitors();
-  });
+  /** will-quit 清理已在 registerAppLifecycleHandlers → runAppExitCleanup 中统一处理 */
 });
 
