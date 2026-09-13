@@ -38,7 +38,7 @@ export function WelcomeStep({ onComplete, onPrev }: WelcomeStepProps): ReactElem
   return (
     <div className="guide-step">
       <div className="guide-step-header">
-        <h2>{t('guide.welcome.title', { defaultValue: '欢迎使用 eIsland' })}</h2>
+        <h2>{t('guide.welcome.title', { defaultValue: '欢迎使用汐月' })}</h2>
         <p>{t('guide.welcome.subtitle', { defaultValue: '配置完成，开始体验灵动岛吧' })}</p>
       </div>
       <div className="guide-welcome-video">

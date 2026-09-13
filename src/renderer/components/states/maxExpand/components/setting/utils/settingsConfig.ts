@@ -499,6 +499,8 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   // ── 软件设置 > 实用工具 ──
   { label: '实用工具', desc: '常用应用操作与日志工具', labelKey: 'settings.labels.autostart', descKey: 'settings.app.autostart.toolsHint', tab: 'app', appPage: 'autostart' },
   { label: '开机自启', desc: '设置系统启动时是否自动运行灵动岛', labelKey: 'settings.app.autostart.title', descKey: 'settings.app.autostart.hint', tab: 'app', appPage: 'autostart' },
+  // ── 软件设置 > 番茄钟时长 ──
+  { label: '番茄钟时长', desc: '控制灵动岛番茄钟精简页使用的默认时长', labelKey: 'settings.app.pomodoro.sectionTitle', descKey: 'settings.app.pomodoro.sectionDesc', tab: 'app', appPage: 'behavior' },
   { label: '控制中心按钮', desc: '配置 Hover 控制中心（时间页）按钮的显示与顺序。', labelKey: 'settings.app.controlCenter.title', descKey: 'settings.app.controlCenter.hint', tab: 'app', appPage: 'control-center' },
   // ── 软件设置 > 声音设置 ──
   { label: '全局音量', desc: '影响闹钟与音效的整体输出音量。', labelKey: 'settings.sound.global.title', descKey: 'settings.sound.global.hint', tab: 'app', appPage: 'sound' },

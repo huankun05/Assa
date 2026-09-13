@@ -313,7 +313,7 @@
         },
         "shortcut": {
           "toggleIsland": "Hide/Show",
-          "quitIsland": "Quit eIsland",
+          "quitIsland": "Quit Xiyue",
           "resetPosition": "Reset position shortcut",
           "screenshot": "Area screenshot",
           "switchSong": "Switch song"
@@ -2649,8 +2649,8 @@
       },
       "autostart": {
         "toolsHint": "Common app actions and log tools",
-        "quit": "Quit eIsland",
-        "restart": "Restart eIsland",
+        "quit": "Quit Xiyue",
+        "restart": "Restart Xiyue",
         "openLogs": "Open logs folder",
         "clearLogs": "Clear log cache",
         "logsClearing": "Clearing...",
@@ -2665,11 +2665,12 @@
         },
         "status": {
           "disabled": "Auto start is disabled.",
-          "enabled": "eIsland will start on login.",
+          "enabled": "Xiyue will start on login.",
           "highPriority": "Starts with higher priority for faster load."
         }
       },
       "pomodoro": {
+        "sectionTitle": "Pomodoro durations",
         "workMinTitle": "Work duration (minutes)",
         "breakMinTitle": "Break duration (minutes)",
         "loopTitle": "Auto-loop work/break",
@@ -2944,8 +2945,8 @@
           "hint": "Click Edit and press keys (e.g. Alt+X, Ctrl+Shift+H)"
         },
         "quitApp": {
-          "title": "Quit eIsland Shortcut",
-          "hint": "Press to quit eIsland immediately"
+          "title": "Quit Xiyue Shortcut",
+          "hint": "Press to quit Xiyue immediately"
         },
         "resetPosition": {
           "title": "Reset Position Shortcut",
@@ -3413,7 +3414,7 @@
         "register": "Sign Up",
         "loginBtn": "Sign In",
         "registerBtn": "Create account",
-        "hint": "Sign in and registration are powered by eIsland server",
+        "hint": "Sign in and registration are powered by Xiyue server",
         "entryTitle": "Sign in to manage avatar, profile, and account security settings",
         "gotoLogin": "Go to Sign In",
         "gotoRegister": "Go to Sign Up",

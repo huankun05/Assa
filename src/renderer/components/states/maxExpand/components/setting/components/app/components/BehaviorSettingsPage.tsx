@@ -258,7 +258,7 @@ export function BehaviorSettingsPage({
 
         <div className="settings-card">
           <div className="settings-card-header">
-            <div className="settings-card-title">{t('settings.app.pomodoro.workMinTitle', { defaultValue: '工作时长（分钟）' })}</div>
+            <div className="settings-card-title">{t('settings.app.pomodoro.sectionTitle', { defaultValue: '番茄钟时长' })}</div>
             <div className="settings-card-subtitle">{t('settings.app.pomodoro.sectionDesc', { defaultValue: '控制灵动岛番茄钟精简页使用的默认时长' })}</div>
           </div>
           <div className="settings-card-inline-row">
