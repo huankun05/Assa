@@ -2552,7 +2552,9 @@
         "fontJetbrainsMono": "JetBrains Mono",
         "fontConsolas": "Consolas",
         "addCustomFont": "添加字体",
-        "defaultOpacitySuffix": "（默认透明度 {{opacity}}%）"
+        "defaultOpacitySuffix": "（默认透明度 {{opacity}}%）",
+        "bgDragHint": "在预览上拖拽调整背景位置",
+        "bgResetPos": "居中"
       },
       "behavior": {
         "mouseLeaveTitle": "鼠标移开自动收回",

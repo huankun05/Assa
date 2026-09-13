@@ -2550,7 +2550,9 @@
         "fontJetbrainsMono": "JetBrains Mono",
         "fontConsolas": "Consolas",
         "addCustomFont": "Add Font",
-        "defaultOpacitySuffix": " (default opacity {{opacity}}%)"
+        "defaultOpacitySuffix": " (default opacity {{opacity}}%)",
+        "bgDragHint": "Drag on preview to adjust position",
+        "bgResetPos": "Center"
       },
       "behavior": {
         "mouseLeaveTitle": "Auto collapse on mouse leave",

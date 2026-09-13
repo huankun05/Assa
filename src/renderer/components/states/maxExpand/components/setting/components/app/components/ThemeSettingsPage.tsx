@@ -31,6 +31,7 @@ import { BUILTIN_WALLPAPERS } from '../../../../../../../../assets/wallpaper/bui
 import useIslandStore from '../../../../../../../../store/slices';
 import { SvgIcon } from '../../../../../../../../utils/SvgIcon';
 import { injectFontFace } from '../../../../../../../../utils/font';
+import { BgStatePreview } from './BgStatePreview';
 import type { AppSettingsSectionProps } from './types';
 
 type ThemeSettingsPageProps = Pick<
@@ -613,35 +614,14 @@ export function ThemeSettingsPage({
 
           {bgMediaType && bgMediaPreviewUrl && (
             <div className="settings-card-subgroup">
-              <div className="settings-card-subgroup-title">{t('settings.app.theme.previewLabel', { defaultValue: '实时预览' })}</div>
-              <div className="settings-bg-preview">
-                {bgMediaType === 'video' ? (
-                  <video
-                    key={bgMediaPreviewUrl}
-                    ref={bgPreviewVideoRef}
-                    src={bgMediaPreviewUrl}
-                    className="settings-bg-preview-img"
-                    autoPlay
-                    muted={bgVideoMuted || bgVideoVolume <= 0}
-                    playsInline
-                    preload="auto"
-                    style={{ objectFit: bgVideoFit }}
-                    onLoadedMetadata={(event) => {
-                      event.currentTarget.loop = false;
-                      event.currentTarget.volume = Math.max(0, Math.min(1, bgVideoVolume));
-                      event.currentTarget.playbackRate = Math.max(0.25, Math.min(3, bgVideoRate));
-                    }}
-                    onCanPlay={(event) => {
-                      event.currentTarget.loop = false;
-                      event.currentTarget.volume = Math.max(0, Math.min(1, bgVideoVolume));
-                      event.currentTarget.playbackRate = Math.max(0.25, Math.min(3, bgVideoRate));
-                      event.currentTarget.play().catch(() => {});
-                    }}
-                  />
-                ) : (
-                  <img src={bgMediaPreviewUrl} alt={t('settings.app.theme.previewAlt', { defaultValue: '背景预览' })} className="settings-bg-preview-img" />
-                )}
-              </div>
+              <div className="settings-card-subgroup-title">{t('settings.app.theme.previewLabel', { defaultValue: '状态预览与位置' })}</div>
+              <BgStatePreview
+                mediaType={bgMediaType}
+                previewUrl={bgMediaPreviewUrl}
+                videoFit={bgVideoFit}
+                opacity={bgImageOpacity}
+                blur={bgImageBlur}
+              />
             </div>
           )}
         </div>

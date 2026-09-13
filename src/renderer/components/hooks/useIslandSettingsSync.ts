@@ -125,9 +125,15 @@ export function useIslandSettingsSync(options: UseIslandSettingsSyncOptions): vo
         window.api?.storeRead?.(ISLAND_BG_VIDEO_VOLUME_STORE_KEY) as Promise<number | null>,
         window.api?.storeRead?.(ISLAND_BG_VIDEO_RATE_STORE_KEY) as Promise<number | null>,
         window.api?.storeRead?.(ISLAND_BG_VIDEO_HW_DECODE_STORE_KEY) as Promise<boolean | null>,
-      ]).then(async ([mediaRaw, legacyImage, videoFit, videoMuted, videoLoop, bgOpacity, bgBlur, videoVolume, videoRate, videoHwDecode]) => {
+        window.api?.storeRead?.('island-bg-position-x') as Promise<number | null>,
+        window.api?.storeRead?.('island-bg-position-y') as Promise<number | null>,
+      ]).then(async ([mediaRaw, legacyImage, videoFit, videoMuted, videoLoop, bgOpacity, bgBlur, videoVolume, videoRate, videoHwDecode, posX, posY]) => {
         const el = document.getElementById('island-bg-layer');
         if (!el) return;
+        if (typeof posX === 'number' && typeof posY === 'number') {
+          el.style.backgroundPosition = `${posX}% ${posY}%`;
+          el.style.backgroundSize = 'cover';
+        }
         if (videoFit === 'cover' || videoFit === 'contain') {
           setBgVideoFit(videoFit);
         }
@@ -251,6 +257,19 @@ export function useIslandSettingsSync(options: UseIslandSettingsSyncOptions): vo
           const v = typeof value === 'number' && Number.isFinite(value) ? value : 0;
           bgBlurRef.current = Math.max(0, Math.min(20, Math.round(v)));
           el.style.filter = bgBlurRef.current > 0 ? `blur(${bgBlurRef.current}px)` : 'none';
+        }
+        if (channel === 'store:island-bg-position-x' || channel === 'store:island-bg-position-y') {
+          const el = document.getElementById('island-bg-layer');
+          if (!el) return;
+          void Promise.all([
+            window.api.storeRead('island-bg-position-x'),
+            window.api.storeRead('island-bg-position-y'),
+          ]).then(([px, py]) => {
+            const x = typeof px === 'number' ? px : 50;
+            const y = typeof py === 'number' ? py : 50;
+            el.style.backgroundPosition = `${x}% ${y}%`;
+            el.style.backgroundSize = 'cover';
+          }).catch(() => {});
         }
         if (channel === `store:${ISLAND_BG_VIDEO_FIT_STORE_KEY}`) {
           if (value === 'cover' || value === 'contain') {

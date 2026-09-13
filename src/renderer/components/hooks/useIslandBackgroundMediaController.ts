@@ -77,6 +77,7 @@ export function useIslandBackgroundMediaController(): IslandBackgroundMediaContr
 
     if (media?.type === 'image' && previewUrl) {
       el.style.backgroundImage = `url(${previewUrl})`;
+      el.style.backgroundSize = 'cover';
       applyLayerVisibility();
       setBgMedia(null);
       return;

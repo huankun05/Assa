@@ -8269,3 +8269,132 @@ button.settings-user-image-translation-image-wrap:hover {
   border-color: #2a2f3a !important;
   color: #f2f4f8 !important;
 }
+
+
+/* ===== 壁纸分状态预览 ===== */
+.settings-bg-state-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.settings-bg-state-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-bg-state-tab {
+  appearance: none;
+  border: 1px solid #e6eaf2;
+  background: #fff;
+  color: #151820;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.settings-bg-state-tab:hover {
+  border-color: #d5dbe8;
+}
+
+.settings-bg-state-tab.active {
+  background: #eaf3ff;
+  border-color: #4d9fff;
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .settings-bg-state-tab {
+  background: #171a21;
+  border-color: #2a2f3a;
+  color: #f2f4f8;
+}
+
+[data-theme='dark'] .settings-bg-state-tab.active {
+  background: #1a2a3f;
+  border-color: #64aaff;
+  color: #8ec2ff;
+}
+
+.settings-bg-state-stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.settings-bg-state-canvas {
+  position: relative;
+  overflow: hidden;
+  background: #0b0d12;
+  border: 1px solid #e6eaf2;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.settings-bg-state-canvas:active {
+  cursor: grabbing;
+}
+
+.settings-bg-state-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.settings-bg-state-viewport {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px dashed rgba(77, 159, 255, 0.85);
+  box-shadow: 0 0 0 9999px rgba(10, 12, 18, 0.28);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.settings-bg-state-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.55);
+  color: #fff;
+  pointer-events: none;
+}
+
+.settings-bg-state-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.settings-bg-state-controls .settings-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+  flex: 1;
+}
+
+.settings-bg-state-controls input[type='range'] {
+  flex: 1;
+  accent-color: #4d9fff;
+}
