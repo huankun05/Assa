@@ -9,7 +9,7 @@ import {
   DEFAULT_TRUST_LEVEL,
   TRUST_LEVEL_CARDS,
   type TrustLevelInternal,
-} from '../../../../../../utils/security/permissionCards';
+} from '../../../../../../../../utils/security/permissionCards';
 
 interface AuditRow {
   t?: string;
