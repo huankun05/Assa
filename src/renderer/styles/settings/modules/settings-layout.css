@@ -144,7 +144,7 @@
   margin: 0 auto;
   height: 100%;
   width: 100%;
-  max-width: 960px;
+  max-width: 1120px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -165,7 +165,7 @@
   flex-wrap: nowrap;
   align-items: center;
   gap: 16px;
-  padding: 28px 32px 20px;
+  padding: 18px 24px 16px;
   background: #fff;
   border-bottom: 1px solid #e6eaf2;
   flex-shrink: 0;
@@ -230,8 +230,9 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px 32px 40px;
+  padding: 16px 24px 32px;
   background: transparent;
+  box-sizing: border-box;
 }
 
 .settings-v2-label {
@@ -249,8 +250,8 @@
 .settings-quick-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 28px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 @media (max-width: 900px) {
@@ -262,15 +263,16 @@
 .settings-quick-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 12px;
+  padding: 14px 16px;
   background: #fff;
   border: 1px solid #e6eaf2;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
   transition: border-color 150ms, background 150ms, box-shadow 150ms;
   text-align: left;
   font-family: inherit;
+  box-shadow: 0 1px 2px rgba(21, 40, 80, 0.03);
 }
 
 .settings-quick-item:hover {
@@ -344,9 +346,10 @@
   gap: 2px;
   background: #fff;
   border: 1px solid #e6eaf2;
-  border-radius: 12px;
-  padding: 6px;
-  box-shadow: 0 1px 2px rgba(21, 40, 80, 0.04), 0 8px 24px rgba(21, 40, 80, 0.04);
+  border-radius: 14px;
+  padding: 4px;
+  box-shadow: 0 1px 2px rgba(21, 40, 80, 0.03), 0 8px 20px rgba(21, 40, 80, 0.04);
+  overflow: hidden;
 }
 
 [data-theme='dark'] .settings-cat-card {
@@ -360,7 +363,7 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 14px;
+  padding: 12px 14px;
   border: none;
   border-radius: 10px;
   background: transparent;

@@ -41,6 +41,19 @@
   font-family: var(--island-ui-font);
   overflow: hidden;
   letter-spacing: -0.12px;
+  box-sizing: border-box;
+}
+
+/* 设置窗：无边框 + 圆角 + 冷色底 */
+.settings-window.cw-root {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #f4f6fa;
+}
+
+[data-theme='dark'] .settings-window.cw-root {
+  background: #0e1014;
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .cw-bg-layer {
@@ -463,7 +476,8 @@
 }
 
 [data-theme='light'] .cw-chrome {
-  background: #e8e8ed;
+  background: #eef1f6;
+  border-radius: 12px 12px 0 0;
 }
 
 [data-theme='light'] .cw-tab {

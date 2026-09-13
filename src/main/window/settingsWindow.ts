@@ -40,14 +40,14 @@ let settingsWindow: BrowserWindow | null = null;
  */
 function createSettingsWindow(autoShow: boolean): BrowserWindow {
   const win = new BrowserWindow({
-    width: 1155,
-    height: 640,
-    minWidth: 960,
-    minHeight: 600,
+    width: 1240,
+    height: 760,
+    minWidth: 980,
+    minHeight: 640,
     show: false,
     frame: false,
     transparent: false,
-    backgroundColor: '#000000',
+    backgroundColor: '#f4f6fa',
     resizable: true,
     icon: is.dev
       ? join(__dirname, '../../resources/icon/xiyue_256x256.ico')

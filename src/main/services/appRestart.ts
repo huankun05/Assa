@@ -34,7 +34,7 @@
 
 import { app, Notification } from 'electron';
 import { spawn } from 'child_process';
-import { appendFileSync, existsSync, mkdirSync, realpathSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, realpathSync, unlinkSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 /** 重启路径禁止碰 console/stdout——管道断开时异步 EPIPE 会崩主进程 */
@@ -57,7 +57,9 @@ const RESTARTER_MAX_TRIES = 120;
 /** 是否已处于重启流程中（托盘 / IPC / Agent 工具可能并发触发，只允许一次） */
 let restarting = false;
 
-/** 重启前清理回调（app.exit 跳过 will-quit，需显式执行与正常退出一致的清理） */
+/** 是否正处于强制退出流程（设置窗口 close 会 preventDefault，退出时需放行） */
+let applicationQuitting = false;
+
 let restartCleanup: (() => void) | null = null;
 
 /**
@@ -66,6 +68,14 @@ let restartCleanup: (() => void) | null = null;
  */
 export function isRestarting(): boolean {
   return restarting;
+}
+
+/**
+ * 是否正处于强制退出流程
+ * @description 设置窗口等「关闭即隐藏」的窗口在退出时必须放行 close，否则 app.quit/exit 被卡住
+ */
+export function isApplicationQuitting(): boolean {
+  return applicationQuitting;
 }
 
 /**
@@ -78,6 +88,66 @@ export function registerRestartCleanup(fn: () => void): void {
 
 /** 重启前提示延时：先让右下角系统通知露出，再退出 */
 const RESTART_SILENT_EXIT_MS = 900;
+
+/** 快速退出延时：清理同步完成后立刻 exit，无需等通知 */
+const FAST_QUIT_EXIT_MS = 50;
+
+/** 外部强杀兜底延时：主循环卡死时独立进程杀 PID */
+const FAST_QUIT_FORCE_KILL_MS = 1500;
+
+/** 当前已挂起的 force-kill VBS 路径（干净退出时删掉，避免 PID 复用误杀新实例） */
+let pendingForceKillVbsPath: string | null = null;
+
+/** 干净退出时取消 force-kill 兜底：否则 soft-restart 后新 Electron 若复用 PID 会被 taskkill 掉 */
+function cancelPendingForceKill(): void {
+  if (!pendingForceKillVbsPath) return;
+  try {
+    if (existsSync(pendingForceKillVbsPath)) unlinkSync(pendingForceKillVbsPath);
+  } catch {
+    // ignore
+  }
+  pendingForceKillVbsPath = null;
+}
+
+process.on('exit', () => {
+  cancelPendingForceKill();
+});
+
+/**
+ * 快速退出应用
+ * @description 托盘「退出」/ 退出快捷键 / app:quit 统一入口。
+ *   不走 app.quit()：设置窗口 close 会 preventDefault 改为隐藏，会卡住优雅退出；
+ *   且 will-quit 清理含杀子进程等，Windows 上可能等不到。
+ *   与 restartApp 同路径：显式清理 → app.exit → process.exit → 外部 taskkill 兜底。
+ */
+export function quitAppFast(): void {
+  if (applicationQuitting) return;
+  applicationQuitting = true;
+  safeLog('[App] quitAppFast start');
+
+  try {
+    restartCleanup?.();
+  } catch (err) {
+    safeLogError('[App] quit cleanup error:', err);
+  }
+
+  setTimeout(() => {
+    safeLog('[App] force exit now');
+    cancelPendingForceKill();
+    try {
+      app.exit(0);
+    } catch {
+      // ignore
+    }
+    try {
+      process.exit(0);
+    } catch {
+      // ignore
+    }
+  }, FAST_QUIT_EXIT_MS);
+
+  scheduleExternalForceKill(process.pid, FAST_QUIT_FORCE_KILL_MS);
+}
 
 /** 软重启标志：放在项目 data/ 下，主进程与 electron-vite 同一真实路径 */
 function softRestartFlagPath(): string {
@@ -131,9 +201,12 @@ export function restartApp(): void {
     safeLogError('[App] restart cleanup error:', err);
   }
 
-  // 进程内退出：部分环境 app.exit 会被卡住，必须再加一发 process.exit
+  // 进程内退出：app.exit + process.exit。
+  // soft-restart **不挂** 外部 taskkill：VBS 已在 Sleep 时删文件停不掉，
+  // PID 复用会在 1.3s 后误杀刚拉起的新实例，表现为「用着用着直接崩」。
   setTimeout(() => {
     safeLog('[App] exit now');
+    cancelPendingForceKill();
     try {
       app.exit(0);
     } catch {
@@ -145,26 +218,31 @@ export function restartApp(): void {
       // ignore
     }
   }, RESTART_SILENT_EXIT_MS);
-
-  // 进程外兜底：主循环若卡死导致 setTimeout 不跑，用独立进程强杀本 PID
-  scheduleExternalForceKill(process.pid, RESTART_SILENT_EXIT_MS + 400);
 }
 
 /**
  * 外部强杀兜底
  * @description 写 flag 后主进程可能卡在同步清理/原生回调里，事件循环 setTimeout 不触发。
  *   用 VBS 隐藏启动（Run style 0），不要用 cmd——Windows Terminal 会闪控制台。
+ *   VBS 内先查进程是否仍存在再 taskkill，降低 PID 复用误杀新实例的概率。
  */
 function scheduleExternalForceKill(pid: number, delayMs: number): void {
   try {
     const tempDir = app.getPath('temp');
     const vbsPath = join(tempDir, `xiyue-force-kill-${pid}.vbs`);
     const vbs = [
+      'On Error Resume Next',
       'Set sh = CreateObject("WScript.Shell")',
       `WScript.Sleep ${Math.max(0, delayMs)}`,
-      `sh.Run "taskkill /f /pid ${pid}", 0, False`,
+      'Set col = GetObject("winmgmts:root\\cimv2").ExecQuery("SELECT * FROM Win32_Process WHERE ProcessId = ' + pid + '")',
+      'If col.Count > 0 Then',
+      `  sh.Run "taskkill /f /pid ${pid}", 0, False`,
+      'End If',
+      'On Error Resume Next',
+      'CreateObject("Scripting.FileSystemObject").DeleteFile WScript.ScriptFullName',
     ].join('\r\n');
     writeFileSync(vbsPath, vbs, 'ascii');
+    pendingForceKillVbsPath = vbsPath;
     const child = spawn('wscript.exe', [vbsPath], {
       detached: true,
       stdio: 'ignore',
