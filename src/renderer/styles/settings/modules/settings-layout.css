@@ -106,7 +106,7 @@
   animation: maxExpandFadeIn 0.2s ease forwards;
 }
 
-/* 设置壳：desk-pet 式全宽单列 + 冷玻璃 */
+/* ===== 设置壳：desk-pet 结构 + 汐月 accent ===== */
 .max-expand-settings-layout.max-expand-settings-layout--single {
   display: block;
   width: 100%;
@@ -115,247 +115,279 @@
   gap: 0;
 }
 
-.settings-shell-panel--full {
+/* 透明壳：内容区不要再叠一层玻璃边框，手感才像 desk-pet */
+.settings-shell-panel.settings-shell-panel--full {
   width: 100%;
   height: 100%;
   padding: 0;
-  border-radius: 16px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  backdrop-filter: none;
+  overflow: visible;
+  display: block;
 }
 
-/* 页头：返回 + 大标题；搜索固定右侧，不与标题抢位 */
-.settings-page {
+.settings-root {
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
   background: transparent;
 }
 
-.settings-page-header {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  flex-shrink: 0;
-  padding: 18px 18px 12px;
-  border-bottom: 1px solid rgba(var(--color-text-rgb), 0.06);
-  background: rgba(var(--color-text-rgb), 0.02);
-  backdrop-filter: blur(8px);
-  position: relative;
-  z-index: 5;
-}
-
-.settings-page-header-title-block {
-  flex: 1;
-  min-width: 0;
+.settings-layout {
+  margin: 0 auto;
+  height: 100%;
+  width: 100%;
+  max-width: 960px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  min-height: 0;
 }
 
-.settings-page-header-kicker {
-  font-size: 11px;
-  color: rgba(var(--color-text-rgb), 0.45);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* PageHeader — 对齐 desk-pet PageHeader */
+.page-header {
+  position: relative;
+  z-index: 99;
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 16px 24px;
+  background: transparent;
 }
 
-.settings-page-header-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  color: rgba(var(--color-text-rgb), 0.95);
-  letter-spacing: 0.2px;
-  line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+@keyframes page-header-enter {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.settings-page-back {
+.settings-page-header-enter {
+  animation: page-header-enter 250ms ease forwards;
+}
+
+.page-header-back {
   appearance: none;
   border: none;
-  background: rgba(var(--color-text-rgb), 0.06);
-  color: rgba(var(--color-text-rgb), 0.8);
+  background: transparent;
+  color: rgba(var(--color-text-rgb), 0.65);
+  font-size: 28px;
+  line-height: 1;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  font-size: 22px;
-  line-height: 1;
+  padding: 0;
+  margin: 0;
   cursor: pointer;
   flex-shrink: 0;
-  margin-bottom: 2px;
-  padding: 0;
+  transition: color 0.2s ease, opacity 0.2s ease;
 }
 
-.settings-page-back:hover {
-  background: color-mix(in srgb, var(--color-island-accent) 14%, transparent);
+.page-header-back:hover {
   color: var(--color-island-accent);
 }
 
-.settings-page-header-actions {
-  flex-shrink: 0;
-  width: min(240px, 42%);
-}
-
-.settings-page-body {
-  flex: 1;
-  min-height: 0;
-  padding: 14px 18px 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.settings-page-body--scroll {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.settings-page-lead {
-  margin: 0 0 12px;
-  font-size: 12px;
-  color: rgba(var(--color-text-rgb), 0.55);
-}
-
-/* 搜索（页头右侧） */
-.settings-search {
-  position: relative;
-  width: 100%;
-}
-
-.settings-search-icon {
-  position: absolute;
-  left: 11px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(var(--color-text-rgb), 0.45);
+.page-header-back.is-hidden {
+  opacity: 0;
   pointer-events: none;
 }
 
-.settings-search-input {
-  width: 100%;
-  height: 34px;
-  padding: 0 28px 0 32px;
-  border-radius: 10px;
-  border: 1px solid rgba(var(--color-text-rgb), 0.1);
-  background: rgba(var(--color-text-rgb), 0.05);
-  color: rgba(var(--color-text-rgb), 0.95);
-  font-size: 12px;
-  outline: none;
-  box-sizing: border-box;
-  backdrop-filter: blur(8px);
+.page-header-title-wrap {
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
 }
 
-.settings-search-input:focus {
-  border-color: color-mix(in srgb, var(--color-island-accent) 45%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-island-accent) 14%, transparent);
+.page-header-kicker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(-80%);
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(var(--color-text-rgb), 0.38);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.page-header-title {
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: rgba(var(--color-text-rgb), 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 384px;
+  max-width: 42%;
+}
+
+/* 搜索 — 对齐 SettingsSearch */
+.settings-search-box {
+  position: relative;
+  width: 100%;
+}
+
+.settings-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--color-text-rgb), 0.12);
+  background: rgba(var(--color-text-rgb), 0.04);
+  padding: 8px 12px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.settings-search-field:focus-within {
+  border-color: color-mix(in srgb, var(--color-island-accent) 40%, transparent);
+  background: rgba(var(--color-text-rgb), 0.02);
+}
+
+.settings-search-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: rgba(var(--color-text-rgb), 0.4);
+  line-height: 1;
+}
+
+.settings-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: rgba(var(--color-text-rgb), 0.85);
+  padding: 0;
+}
+
+.settings-search-input::placeholder {
+  color: rgba(var(--color-text-rgb), 0.4);
 }
 
 .settings-search-clear {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
   border: none;
   background: transparent;
-  color: rgba(var(--color-text-rgb), 0.55);
+  color: rgba(var(--color-text-rgb), 0.35);
   font-size: 16px;
   cursor: pointer;
-  width: 22px;
-  height: 22px;
+  line-height: 1;
+  padding: 0;
 }
 
-.settings-search-results {
+.settings-search-clear:hover {
+  color: rgba(var(--color-text-rgb), 0.6);
+}
+
+.settings-search-dropdown {
   position: absolute;
-  z-index: 30;
-  left: 0;
   right: 0;
-  top: calc(100% + 6px);
-  max-height: 240px;
-  overflow-y: auto;
+  top: 100%;
+  z-index: 50;
+  margin-top: 8px;
+  width: 100%;
+  overflow: hidden;
   border-radius: 12px;
-  border: 1px solid rgba(var(--color-text-rgb), 0.12);
-  background: color-mix(in srgb, var(--color-island-bg) 92%, transparent);
-  backdrop-filter: blur(18px) saturate(1.25);
-  box-shadow: 0 14px 32px rgba(var(--color-shadow-rgb), 0.35);
-  padding: 4px;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  background: color-mix(in srgb, var(--color-island-bg) 96%, transparent);
+  box-shadow: 0 12px 28px rgba(var(--color-shadow-rgb), 0.28);
+  backdrop-filter: blur(16px);
 }
 
 .settings-search-empty {
-  padding: 12px;
-  font-size: 12px;
-  color: rgba(var(--color-text-rgb), 0.5);
+  padding: 20px 16px;
   text-align: center;
+  font-size: 13px;
+  color: rgba(var(--color-text-rgb), 0.4);
 }
 
-.settings-search-hit {
+.settings-search-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.settings-search-result {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  text-align: left;
   border: none;
   background: transparent;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: left;
   cursor: pointer;
-  color: rgba(var(--color-text-rgb), 0.92);
+  color: rgba(var(--color-text-rgb), 0.88);
+  transition: background 0.15s ease;
 }
 
-.settings-search-hit:hover {
+.settings-search-result.is-active,
+.settings-search-result:hover {
   background: color-mix(in srgb, var(--color-island-accent) 12%, transparent);
 }
 
-.settings-search-hit-title {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.settings-search-hit-desc {
-  font-size: 11px;
-  color: rgba(var(--color-text-rgb), 0.5);
-  line-height: 1.35;
-}
-
-/* 全宽入口卡（desk-pet IconItem 同构，汐月 mono 图标） */
-.settings-menu-list {
+.settings-search-result-text {
+  min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 100%;
 }
 
-.settings-menu-item {
-  position: relative;
+.settings-search-result-title {
+  font-size: 13px;
+  color: rgba(var(--color-text-rgb), 0.9);
+  white-space: nowrap;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  text-align: left;
-  appearance: none;
-  border: 2px solid rgba(var(--color-text-rgb), 0.08);
-  border-radius: 12px;
-  padding: 20px;
-  min-height: 76px;
-  cursor: pointer;
-  color: rgba(var(--color-text-rgb), 0.92);
-  background: rgba(var(--color-text-rgb), 0.035);
-  backdrop-filter: blur(10px);
-  box-shadow: none;
-  animation: settings-menu-in 0.28s ease both;
-  transition: all 0.4s ease-in-out;
+  text-overflow: ellipsis;
 }
 
-@keyframes settings-menu-in {
+.settings-search-result-desc {
+  font-size: 11px;
+  color: rgba(var(--color-text-rgb), 0.42);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 16px 48px;
+}
+
+.settings-menu-list--page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* fade-in-up — 对齐 desk-pet @keyframes */
+@keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -363,103 +395,133 @@
   }
 }
 
-.settings-menu-item::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 28%;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--color-island-accent) 0%, transparent),
-    transparent
-  );
-  opacity: 0;
-  transition: width 0.35s ease, opacity 0.35s ease;
-  pointer-events: none;
+/* menu-icon-item — 1:1 对齐 desk-pet settings.css，色改汐月 accent */
+.menu-icon-item {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: rgba(var(--color-text-rgb), 0.04);
+  border: 2px solid rgba(var(--color-text-rgb), 0.07);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: left;
+  cursor: pointer;
+  filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+  transition: all 0.4s ease-in-out;
+  color: rgba(var(--color-text-rgb), 0.9);
 }
 
-.settings-menu-item::after {
+.menu-icon-item:hover {
+  border-color: color-mix(in srgb, var(--color-island-accent) 30%, transparent);
+  filter: drop-shadow(0 4px 4px rgba(var(--color-shadow-rgb), 0.28));
+}
+
+.menu-icon-item::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(var(--color-text-rgb), 0.12) 1px, transparent 1px);
-  background-size: 10px 10px;
-  mask-image: linear-gradient(165deg, white 25%, transparent 55%);
-  -webkit-mask-image: linear-gradient(165deg, white 25%, transparent 55%);
+  z-index: 0;
+  width: 25%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-island-accent) 0%, transparent),
+    transparent
+  );
+  mask-image: linear-gradient(120deg, white 30%, transparent 50%);
+  -webkit-mask-image: linear-gradient(120deg, white 30%, transparent 50%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: all 0.4s ease-in-out;
   pointer-events: none;
 }
 
-.settings-menu-item:hover {
-  border-color: color-mix(in srgb, var(--color-island-accent) 30%, transparent);
-  background: color-mix(in srgb, var(--color-island-accent) 5%, rgba(var(--color-text-rgb), 0.035));
-  transform: none;
-  filter: drop-shadow(0 4px 4px rgba(var(--color-shadow-rgb), 0.35));
-}
-
-.settings-menu-item:hover::before {
-  width: 88%;
-  opacity: 1;
+.menu-icon-item:hover::before {
   background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--color-island-accent) 16%, transparent),
-    color-mix(in srgb, var(--color-island-accent) 6%, transparent) 45%,
+    to right,
+    color-mix(in srgb, var(--color-island-accent) 20%, transparent),
+    color-mix(in srgb, var(--color-island-accent) 10%, transparent) 40%,
     transparent
   );
+  width: 85%;
+  opacity: 1;
 }
 
-.settings-menu-item:hover::after {
-  opacity: 0.45;
+.menu-icon-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(circle, rgba(var(--color-text-rgb), 0.14) 1px, transparent 1px);
+  background-size: 10px 10px;
+  mask-image: linear-gradient(165deg, white 30%, transparent 50%);
+  -webkit-mask-image: linear-gradient(165deg, white 30%, transparent 50%);
+  transition: all 0.4s ease-in-out;
+  pointer-events: none;
 }
 
-.settings-menu-item-content {
+.menu-icon-item:hover::after {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-island-accent) 40%, transparent) 1px, transparent 1px);
+}
+
+.menu-icon-item-content {
   position: relative;
   z-index: 1;
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-right: 72px;
+  gap: 6px;
+  padding-right: 88px;
 }
 
-.settings-menu-item-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: rgba(var(--color-text-rgb), 0.95);
-  letter-spacing: 0.1px;
+.menu-icon-item-title {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: rgba(var(--color-text-rgb), 0.9);
+  transition: color 0.4s ease-in-out;
 }
 
-.settings-menu-item-desc {
-  font-size: 12px;
-  color: rgba(var(--color-text-rgb), 0.55);
+.menu-icon-item-description {
+  font-size: 14px;
+  font-weight: 400;
   line-height: 1.4;
+  color: rgba(var(--color-text-rgb), 0.48);
+  transition: color 0.4s ease-in-out, opacity 0.4s ease-in-out;
 }
 
-.settings-menu-item-icon {
+.menu-icon-item:hover .menu-icon-item-title {
+  color: var(--color-island-accent);
+}
+
+.menu-icon-item:hover .menu-icon-item-description {
+  color: var(--color-island-accent);
+  opacity: 0.8;
+}
+
+.menu-icon-item-icon {
   position: absolute;
-  right: 4px;
-  bottom: 50%;
-  transform: translateY(50%);
-  width: 72px;
-  height: 72px;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
-  opacity: 0.35;
+  opacity: 0.5;
   filter: brightness(0) invert(var(--icon-invert));
   transition: all 0.4s ease-in-out;
   pointer-events: none;
   z-index: 0;
 }
 
-.settings-menu-item:hover .settings-menu-item-icon {
-  opacity: 0.85;
-  transform: translateY(46%) scale(1.2);
-  filter: brightness(0) invert(var(--icon-invert)) sepia(1) saturate(5) hue-rotate(190deg);
-}
-
-.settings-menu-item:hover .settings-menu-item-title {
-  color: var(--color-island-accent);
+.menu-icon-item:hover .menu-icon-item-icon {
+  opacity: 1;
+  transform: translateY(16px) scale(1.2);
+  filter: brightness(0) invert(var(--icon-invert)) sepia(1) saturate(6) hue-rotate(190deg);
 }
 
 .max-expand-settings-layout {

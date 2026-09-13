@@ -2210,22 +2210,23 @@ export function SettingsTab(): ReactElement {
             />
           )}
           {navMode === 'detail' && (
-            <div className="settings-page settings-page--detail">
-              <header className="settings-page-header">
-                <button
-                  type="button"
-                  className="settings-page-back"
-                  onClick={backFromDetail}
-                  aria-label={t('settings.nav.backToCategory', { defaultValue: '返回' })}
-                >
-                  ‹
-                </button>
-                <div className="settings-page-header-title-block">
-                  <span className="settings-page-header-kicker">{detailKicker}</span>
-                  <h1 className="settings-page-header-title">{detailTitle}</h1>
-                </div>
-              </header>
-              <div className="settings-page-body settings-page-body--scroll">
+            <div className="settings-root">
+              <div className="settings-layout">
+                <header className="page-header settings-page-header-enter">
+                  <button
+                    type="button"
+                    className="page-header-back"
+                    onClick={backFromDetail}
+                    aria-label={t('settings.nav.backToCategory', { defaultValue: '返回' })}
+                  >
+                    ‹
+                  </button>
+                  <h1 className="page-header-title-wrap">
+                    <span className="page-header-kicker">{detailKicker}</span>
+                    <span className="page-header-title">{detailTitle}</span>
+                  </h1>
+                </header>
+                <div className="settings-scroll scrollbar-none">
             <>
           {activeTab === 'index' && (
             <IndexSettingsSection
@@ -2683,6 +2684,7 @@ export function SettingsTab(): ReactElement {
 
           {activeTab === 'about' && <AboutSettingsSection aboutVersion={aboutVersion} initialPage={aboutInitialPage} />}
             </>
+                </div>
               </div>
             </div>
           )}

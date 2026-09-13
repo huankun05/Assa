@@ -1,7 +1,7 @@
 /**
- * 分类子项列表：全宽单列（desk-pet IconItem 同构）
+ * 分类子项列表：与主页同一套 page-header + menu-icon-item
  */
-import type { ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   SettingsCategory,
@@ -20,43 +20,58 @@ export function SettingsCategoryHub({
   onBack,
 }: SettingsCategoryHubProps): ReactElement {
   const { t } = useTranslation();
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    headerRef.current?.classList.remove('settings-page-header-enter');
+    void headerRef.current?.offsetWidth;
+    headerRef.current?.classList.add('settings-page-header-enter');
+  }, [category.id]);
 
   return (
-    <div className="settings-page">
-      <header className="settings-page-header">
-        <button
-          type="button"
-          className="settings-page-back"
-          onClick={onBack}
-          aria-label={t('settings.nav.backToCategory', { defaultValue: '返回' })}
-        >
-          ‹
-        </button>
-        <div className="settings-page-header-title-block">
-          <span className="settings-page-header-kicker">{category.desc}</span>
-          <h1 className="settings-page-header-title">{category.label}</h1>
-        </div>
-      </header>
+    <div className="settings-root">
+      <div className="settings-layout">
+        <header ref={headerRef} className="page-header settings-page-header-enter">
+          <button
+            type="button"
+            className="page-header-back"
+            onClick={onBack}
+            aria-label={t('settings.home.backHome', { defaultValue: '返回主页' })}
+          >
+            ‹
+          </button>
+          <h1 className="page-header-title-wrap">
+            <span className="page-header-kicker">{category.desc}</span>
+            <span className="page-header-title">{category.label}</span>
+          </h1>
+        </header>
 
-      <div className="settings-page-body settings-page-body--scroll">
-        <div className="settings-menu-list">
-          {(category.items ?? []).map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              className="settings-menu-item"
-              style={{ animationDelay: `${index * 40}ms` }}
-              onClick={() => onOpenItem(item.dest)}
-            >
-              <span className="settings-menu-item-content">
-                <span className="settings-menu-item-title">{item.label}</span>
-                <span className="settings-menu-item-desc">{item.desc}</span>
-              </span>
-              {item.icon ? (
-                <img className="settings-menu-item-icon" src={item.icon} alt="" aria-hidden="true" />
-              ) : null}
-            </button>
-          ))}
+        <div className="settings-scroll scrollbar-none">
+          <div className="settings-menu-list settings-menu-list--page">
+            {(category.items ?? []).map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                className="menu-icon-item"
+                style={{
+                  animation: 'fade-in-up 250ms ease forwards',
+                  animationDelay: `${index * 50}ms`,
+                  opacity: 0,
+                }}
+                onClick={() => onOpenItem(item.dest)}
+              >
+                <div className="menu-icon-item-content">
+                  <div className="menu-icon-item-title">{item.label}</div>
+                  <div className="menu-icon-item-description">
+                    <span>{item.desc}</span>
+                  </div>
+                </div>
+                {item.icon ? (
+                  <img className="menu-icon-item-icon" src={item.icon} alt="" aria-hidden="true" />
+                ) : null}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
