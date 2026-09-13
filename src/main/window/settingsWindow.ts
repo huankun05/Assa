@@ -97,16 +97,33 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
  * 打开设置窗口（若已打开则直接显示/聚焦，否则创建并自动显示）
  */
 function openSettingsWindow(): void {
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    if (settingsWindow.isVisible()) {
-      settingsWindow.focus();
-    } else {
-      settingsWindow.show();
-      settingsWindow.focus();
+  const show = (win: BrowserWindow): void => {
+    try {
+      if (win.isDestroyed()) return;
+      if (!win.isVisible()) win.show();
+      win.focus();
+    } catch {
+      // ignore
     }
+  };
+
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    show(settingsWindow);
+    // ready-to-show 可能已错过：再兜一次
+    setTimeout(() => {
+      if (settingsWindow && !settingsWindow.isDestroyed() && !settingsWindow.isVisible()) {
+        show(settingsWindow);
+      }
+    }, 120);
     return;
   }
-  settingsWindow = createSettingsWindow(true);
+
+  const win = createSettingsWindow(true);
+  settingsWindow = win;
+  // 首次创建：ready-to-show + did-finish-load 双保险，避免要点两次
+  win.webContents.once('did-finish-load', () => {
+    setTimeout(() => show(win), 80);
+  });
 }
 
 /**

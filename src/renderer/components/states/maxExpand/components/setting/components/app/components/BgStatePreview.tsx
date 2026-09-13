@@ -9,6 +9,7 @@ import {
 } from '../../../config/settingsTabConfig';
 
 type PreviewStateId = 'idle' | 'hover' | 'expand' | 'maxExpand';
+type PosMap = Record<PreviewStateId, { x: number; y: number }>;
 
 interface PreviewStateDef {
   id: PreviewStateId;
@@ -27,6 +28,12 @@ const PREVIEW_STATES: PreviewStateDef[] = [
 
 const PREVIEW_W = 560;
 const PREVIEW_PAD = 8;
+const DEFAULT_POS: PosMap = {
+  idle: { x: 50, y: 50 },
+  hover: { x: 50, y: 50 },
+  expand: { x: 50, y: 50 },
+  maxExpand: { x: 50, y: 50 },
+};
 
 function clampPct(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -49,29 +56,43 @@ export function BgStatePreview({
 }: BgStatePreviewProps): ReactElement | null {
   const { t } = useTranslation();
   const [stateId, setStateId] = useState<PreviewStateId>('hover');
-  const [posX, setPosX] = useState(50);
-  const [posY, setPosY] = useState(50);
+  const [pos, setPos] = useState<PosMap>(DEFAULT_POS);
   const draggingRef = useRef(false);
-  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedRef = useRef(false);
 
   const current = PREVIEW_STATES.find((s) => s.id === stateId) ?? PREVIEW_STATES[1];
+  const cur = pos[stateId];
 
-  /** 切换状态时加载该状态独立位置（各状态互不影响） */
+  /** 仅挂载时读一次 store，拖拽过程中不回读，避免重置 */
   useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
     let cancelled = false;
-    const keys = getIslandBgPositionKeys(stateId);
-    void Promise.all([
-      window.api.storeRead(keys.x),
-      window.api.storeRead(keys.y),
-    ]).then(([x, y]) => {
+    void Promise.all(
+      PREVIEW_STATES.map(async (s) => {
+        const keys = getIslandBgPositionKeys(s.id);
+        const [x, y] = await Promise.all([
+          window.api.storeRead(keys.x),
+          window.api.storeRead(keys.y),
+        ]);
+        return {
+          id: s.id as PreviewStateId,
+          x: typeof x === 'number' ? clampPct(x) : 50,
+          y: typeof y === 'number' ? clampPct(y) : 50,
+        };
+      }),
+    ).then((rows) => {
       if (cancelled) return;
-      setPosX(typeof x === 'number' ? clampPct(x) : 50);
-      setPosY(typeof y === 'number' ? clampPct(y) : 50);
+      setPos((prev) => {
+        const next = { ...prev };
+        for (const r of rows) next[r.id] = { x: r.x, y: r.y };
+        return next;
+      });
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [stateId]);
+  }, []);
 
-  const applyPosition = useCallback((x: number, y: number, persist: boolean) => {
+  const applyLive = useCallback((x: number, y: number) => {
     const el = document.getElementById('island-bg-layer');
     if (el) {
       el.style.backgroundPosition = `${x}% ${y}%`;
@@ -80,48 +101,49 @@ export function BgStatePreview({
     window.dispatchEvent(new CustomEvent(LOCAL_ISLAND_BG_SYNC_EVENT, {
       detail: { posX: x, posY: y, stateId },
     }));
-    window.api.settingsPreview('store:island-bg-position-x', x).catch(() => {});
-    window.api.settingsPreview('store:island-bg-position-y', y).catch(() => {});
-    if (persist) {
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
-      persistTimerRef.current = setTimeout(() => {
-        const keys = getIslandBgPositionKeys(stateId);
-        void window.api.storeWrite(keys.x, x);
-        void window.api.storeWrite(keys.y, y);
-        // 同步全局键，便于当前岛实例立即应用
-        void window.api.storeWrite('island-bg-position-x', x);
-        void window.api.storeWrite('island-bg-position-y', y);
-        persistTimerRef.current = null;
-      }, 200);
-    }
   }, [stateId]);
+
+  const persistPos = useCallback((id: PreviewStateId, x: number, y: number) => {
+    const keys = getIslandBgPositionKeys(id);
+    void window.api.storeWrite(keys.x, x);
+    void window.api.storeWrite(keys.y, y);
+    void window.api.storeWrite('island-bg-position-x', x);
+    void window.api.storeWrite('island-bg-position-y', y);
+  }, []);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!mediaType || !previewUrl) return;
     e.preventDefault();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    e.stopPropagation();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
     draggingRef.current = true;
   };
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return;
+    e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = clampPct(((e.clientX - rect.left) / Math.max(1, rect.width)) * 100);
-    // 拖拽方向与 object-position 垂直方向相反：向下拖 → 看到图上方
     const yRaw = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 100;
     const y = clampPct(100 - yRaw);
-    setPosX(x);
-    setPosY(y);
-    applyPosition(x, y, true);
+    setPos((prev) => ({ ...prev, [stateId]: { x, y } }));
+    applyLive(x, y);
   };
 
   const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>): void => {
+    if (!draggingRef.current) return;
     draggingRef.current = false;
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {
       // ignore
     }
+    const p = pos[stateId];
+    persistPos(stateId, p.x, p.y);
   };
 
   if (!mediaType || !previewUrl) return null;
@@ -131,7 +153,7 @@ export function BgStatePreview({
   const frameH = Math.round(current.h * scale);
   const posStyle: CSSProperties = {
     objectFit: videoFit,
-    objectPosition: `${posX}% ${posY}%`,
+    objectPosition: `${cur.x}% ${cur.y}%`,
     opacity: Math.max(0, Math.min(100, opacity)) / 100,
     filter: blur > 0 ? `blur(${blur}px)` : 'none',
   };
@@ -169,7 +191,6 @@ export function BgStatePreview({
         >
           {mediaType === 'video' ? (
             <video
-              key={`${previewUrl}-${stateId}`}
               src={previewUrl}
               className="settings-bg-state-media"
               style={posStyle}
@@ -180,7 +201,6 @@ export function BgStatePreview({
             />
           ) : (
             <img
-              key={`${previewUrl}-${stateId}`}
               src={previewUrl}
               alt=""
               className="settings-bg-state-media"
@@ -204,30 +224,34 @@ export function BgStatePreview({
 
       <div className="settings-bg-state-controls">
         <label className="settings-field">
-          <span className="settings-field-label">水平 {posX}%</span>
+          <span className="settings-field-label">水平 {cur.x}%</span>
           <input
             type="range"
             min={0}
             max={100}
-            value={posX}
+            value={cur.x}
             onChange={(e) => {
               const v = clampPct(Number(e.target.value));
-              setPosX(v);
-              applyPosition(v, posY, true);
+              const next = { x: v, y: cur.y };
+              setPos((prev) => ({ ...prev, [stateId]: next }));
+              applyLive(next.x, next.y);
+              persistPos(stateId, next.x, next.y);
             }}
           />
         </label>
         <label className="settings-field">
-          <span className="settings-field-label">垂直 {posY}%</span>
+          <span className="settings-field-label">垂直 {cur.y}%</span>
           <input
             type="range"
             min={0}
             max={100}
-            value={posY}
+            value={cur.y}
             onChange={(e) => {
               const v = clampPct(Number(e.target.value));
-              setPosY(v);
-              applyPosition(posX, v, true);
+              const next = { x: cur.x, y: v };
+              setPos((prev) => ({ ...prev, [stateId]: next }));
+              applyLive(next.x, next.y);
+              persistPos(stateId, next.x, next.y);
             }}
           />
         </label>
@@ -235,9 +259,9 @@ export function BgStatePreview({
           type="button"
           className="settings-card-action-btn"
           onClick={() => {
-            setPosX(50);
-            setPosY(50);
-            applyPosition(50, 50, true);
+            setPos((prev) => ({ ...prev, [stateId]: { x: 50, y: 50 } }));
+            applyLive(50, 50);
+            persistPos(stateId, 50, 50);
           }}
         >
           {t('settings.app.theme.bgResetPos', { defaultValue: '居中' })}
