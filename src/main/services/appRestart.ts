@@ -153,20 +153,25 @@ export function restartApp(): void {
 /**
  * 外部强杀兜底
  * @description 写 flag 后主进程可能卡在同步清理/原生回调里，事件循环 setTimeout 不触发。
- *   另起 detached cmd，延时后 taskkill /f，不依赖本进程 JS 是否还能调度。
+ *   用 VBS 隐藏启动（Run style 0），不要用 cmd——Windows Terminal 会闪控制台。
  */
 function scheduleExternalForceKill(pid: number, delayMs: number): void {
   try {
-    const waitSec = Math.max(1, Math.ceil(delayMs / 1000));
-    // ping 延时比 timeout 更稳（不依赖控制台/exitcode）
-    const script = `ping -n ${waitSec + 1} 127.0.0.1 >nul & taskkill /f /pid ${pid}`;
-    const child = spawn('cmd.exe', ['/c', script], {
+    const tempDir = app.getPath('temp');
+    const vbsPath = join(tempDir, `xiyue-force-kill-${pid}.vbs`);
+    const vbs = [
+      'Set sh = CreateObject("WScript.Shell")',
+      `WScript.Sleep ${Math.max(0, delayMs)}`,
+      `sh.Run "taskkill /f /pid ${pid}", 0, False`,
+    ].join('\r\n');
+    writeFileSync(vbsPath, vbs, 'ascii');
+    const child = spawn('wscript.exe', [vbsPath], {
       detached: true,
       stdio: 'ignore',
       windowsHide: true,
     });
     child.unref();
-    safeLog('[App] external force-kill scheduled', { pid, waitSec });
+    safeLog('[App] external force-kill scheduled', { pid, delayMs, vbsPath });
   } catch (err) {
     safeLogError('[App] external force-kill schedule failed:', err);
   }
