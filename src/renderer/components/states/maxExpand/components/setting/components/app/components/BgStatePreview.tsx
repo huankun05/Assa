@@ -1,11 +1,10 @@
 /**
- * 壁纸分状态预览：切换岛尺寸 + 拖拽调整背景位置 + 裁剪框示意
+ * 壁纸分状态预览：各岛状态独立位置 + 拖拽调整 + 裁剪框示意
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ISLAND_BG_POSITION_X_STORE_KEY,
-  ISLAND_BG_POSITION_Y_STORE_KEY,
+  getIslandBgPositionKeys,
   LOCAL_ISLAND_BG_SYNC_EVENT,
 } from '../../../config/settingsTabConfig';
 
@@ -19,7 +18,6 @@ interface PreviewStateDef {
   radius: number;
 }
 
-/** 与 storeConfig / islandDimensions 对齐的设计尺寸 */
 const PREVIEW_STATES: PreviewStateDef[] = [
   { id: 'idle', label: '空闲', w: 260, h: 42, radius: 21 },
   { id: 'hover', label: '悬停', w: 500, h: 60, radius: 0 },
@@ -58,18 +56,20 @@ export function BgStatePreview({
 
   const current = PREVIEW_STATES.find((s) => s.id === stateId) ?? PREVIEW_STATES[1];
 
+  /** 切换状态时加载该状态独立位置（各状态互不影响） */
   useEffect(() => {
     let cancelled = false;
-    void window.api.storeRead(ISLAND_BG_POSITION_X_STORE_KEY).then((v) => {
-      if (cancelled || typeof v !== 'number') return;
-      setPosX(clampPct(v));
-    }).catch(() => {});
-    void window.api.storeRead(ISLAND_BG_POSITION_Y_STORE_KEY).then((v) => {
-      if (cancelled || typeof v !== 'number') return;
-      setPosY(clampPct(v));
+    const keys = getIslandBgPositionKeys(stateId);
+    void Promise.all([
+      window.api.storeRead(keys.x),
+      window.api.storeRead(keys.y),
+    ]).then(([x, y]) => {
+      if (cancelled) return;
+      setPosX(typeof x === 'number' ? clampPct(x) : 50);
+      setPosY(typeof y === 'number' ? clampPct(y) : 50);
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [stateId]);
 
   const applyPosition = useCallback((x: number, y: number, persist: boolean) => {
     const el = document.getElementById('island-bg-layer');
@@ -78,19 +78,23 @@ export function BgStatePreview({
       el.style.backgroundSize = 'cover';
     }
     window.dispatchEvent(new CustomEvent(LOCAL_ISLAND_BG_SYNC_EVENT, {
-      detail: { posX: x, posY: y },
+      detail: { posX: x, posY: y, stateId },
     }));
     window.api.settingsPreview('store:island-bg-position-x', x).catch(() => {});
     window.api.settingsPreview('store:island-bg-position-y', y).catch(() => {});
     if (persist) {
       if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
       persistTimerRef.current = setTimeout(() => {
-        void window.api.storeWrite(ISLAND_BG_POSITION_X_STORE_KEY, x);
-        void window.api.storeWrite(ISLAND_BG_POSITION_Y_STORE_KEY, y);
+        const keys = getIslandBgPositionKeys(stateId);
+        void window.api.storeWrite(keys.x, x);
+        void window.api.storeWrite(keys.y, y);
+        // 同步全局键，便于当前岛实例立即应用
+        void window.api.storeWrite('island-bg-position-x', x);
+        void window.api.storeWrite('island-bg-position-y', y);
         persistTimerRef.current = null;
       }, 200);
     }
-  }, []);
+  }, [stateId]);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!mediaType || !previewUrl) return;
@@ -103,7 +107,9 @@ export function BgStatePreview({
     if (!draggingRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = clampPct(((e.clientX - rect.left) / Math.max(1, rect.width)) * 100);
-    const y = clampPct(((e.clientY - rect.top) / Math.max(1, rect.height)) * 100);
+    // 拖拽方向与 object-position 垂直方向相反：向下拖 → 看到图上方
+    const yRaw = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 100;
+    const y = clampPct(100 - yRaw);
     setPosX(x);
     setPosY(y);
     applyPosition(x, y, true);
@@ -163,7 +169,7 @@ export function BgStatePreview({
         >
           {mediaType === 'video' ? (
             <video
-              key={previewUrl}
+              key={`${previewUrl}-${stateId}`}
               src={previewUrl}
               className="settings-bg-state-media"
               style={posStyle}
@@ -174,6 +180,7 @@ export function BgStatePreview({
             />
           ) : (
             <img
+              key={`${previewUrl}-${stateId}`}
               src={previewUrl}
               alt=""
               className="settings-bg-state-media"

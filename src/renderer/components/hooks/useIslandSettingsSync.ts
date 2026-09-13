@@ -43,6 +43,7 @@ import {
   normalizeBgMediaConfig,
   resolveBgMediaPreviewUrl,
 } from '../config/dynamicIslandConfig';
+import { getIslandBgPositionKeys, type IslandBgPosState } from '../config/settingsTabConfig';
 import { ISLAND_POSITION_LOCKED_STORE_KEY } from '../../../shared/storeKeys';
 import { ISLAND_AUTO_DIM_ENABLED_STORE_KEY, ISLAND_AUTO_DIM_DELAY_STORE_KEY, DEFAULT_AUTO_DIM_DELAY_SEC } from './useIslandAutoDim';
 import type { IslandBgMediaConfig, UpdateSourceKey } from '../config/dynamicIslandConfig';
@@ -125,14 +126,26 @@ export function useIslandSettingsSync(options: UseIslandSettingsSyncOptions): vo
         window.api?.storeRead?.(ISLAND_BG_VIDEO_VOLUME_STORE_KEY) as Promise<number | null>,
         window.api?.storeRead?.(ISLAND_BG_VIDEO_RATE_STORE_KEY) as Promise<number | null>,
         window.api?.storeRead?.(ISLAND_BG_VIDEO_HW_DECODE_STORE_KEY) as Promise<boolean | null>,
-        window.api?.storeRead?.('island-bg-position-x') as Promise<number | null>,
-        window.api?.storeRead?.('island-bg-position-y') as Promise<number | null>,
-      ]).then(async ([mediaRaw, legacyImage, videoFit, videoMuted, videoLoop, bgOpacity, bgBlur, videoVolume, videoRate, videoHwDecode, posX, posY]) => {
+      ]).then(async ([mediaRaw, legacyImage, videoFit, videoMuted, videoLoop, bgOpacity, bgBlur, videoVolume, videoRate, videoHwDecode]) => {
         const el = document.getElementById('island-bg-layer');
         if (!el) return;
-        if (typeof posX === 'number' && typeof posY === 'number') {
-          el.style.backgroundPosition = `${posX}% ${posY}%`;
-          el.style.backgroundSize = 'cover';
+        {
+          const state = useIslandStore.getState().state as string;
+          const posState: IslandBgPosState =
+            state === 'maxExpand' ? 'maxExpand'
+              : state === 'expanded' || state === 'notification' || state === 'agent' || state === 'stt' || state === 'cli'
+                ? 'expand'
+                : state === 'hover' || state === 'lyrics' || state === 'lyricsTranslation'
+                  ? 'hover'
+                  : 'idle';
+          const keys = getIslandBgPositionKeys(posState);
+          void Promise.all([window.api.storeRead(keys.x), window.api.storeRead(keys.y)])
+            .then(([px, py]) => {
+              const x = typeof px === 'number' ? px : 50;
+              const y = typeof py === 'number' ? py : 50;
+              el.style.backgroundPosition = `${x}% ${y}%`;
+              el.style.backgroundSize = 'cover';
+            }).catch(() => {});
         }
         if (videoFit === 'cover' || videoFit === 'contain') {
           setBgVideoFit(videoFit);
@@ -258,18 +271,26 @@ export function useIslandSettingsSync(options: UseIslandSettingsSyncOptions): vo
           bgBlurRef.current = Math.max(0, Math.min(20, Math.round(v)));
           el.style.filter = bgBlurRef.current > 0 ? `blur(${bgBlurRef.current}px)` : 'none';
         }
-        if (channel === 'store:island-bg-position-x' || channel === 'store:island-bg-position-y') {
+        if (channel === 'store:island-bg-position-x' || channel === 'store:island-bg-position-y'
+          || channel.startsWith('store:island-bg-position-')) {
           const el = document.getElementById('island-bg-layer');
           if (!el) return;
-          void Promise.all([
-            window.api.storeRead('island-bg-position-x'),
-            window.api.storeRead('island-bg-position-y'),
-          ]).then(([px, py]) => {
-            const x = typeof px === 'number' ? px : 50;
-            const y = typeof py === 'number' ? py : 50;
-            el.style.backgroundPosition = `${x}% ${y}%`;
-            el.style.backgroundSize = 'cover';
-          }).catch(() => {});
+          const st = useIslandStore.getState().state as string;
+          const posState: IslandBgPosState =
+            st === 'maxExpand' ? 'maxExpand'
+              : st === 'expanded' || st === 'notification' || st === 'agent' || st === 'stt' || st === 'cli'
+                ? 'expand'
+                : st === 'hover' || st === 'lyrics' || st === 'lyricsTranslation'
+                  ? 'hover'
+                  : 'idle';
+          const keys = getIslandBgPositionKeys(posState);
+          void Promise.all([window.api.storeRead(keys.x), window.api.storeRead(keys.y)])
+            .then(([px, py]) => {
+              const x = typeof px === 'number' ? px : 50;
+              const y = typeof py === 'number' ? py : 50;
+              el.style.backgroundPosition = `${x}% ${y}%`;
+              el.style.backgroundSize = 'cover';
+            }).catch(() => {});
         }
         if (channel === `store:${ISLAND_BG_VIDEO_FIT_STORE_KEY}`) {
           if (value === 'cover' || value === 'contain') {
@@ -483,5 +504,33 @@ export function useIslandSettingsSync(options: UseIslandSettingsSyncOptions): vo
       if (animFrameId) cancelAnimationFrame(animFrameId);
       unsub?.();
     };
+  }, []);
+
+  /** 岛状态切换时按当前状态应用独立壁纸位置 */
+  useEffect(() => {
+    let lastState = useIslandStore.getState().state;
+    const unsub = useIslandStore.subscribe(() => {
+      const next = useIslandStore.getState().state;
+      if (next === lastState) return;
+      lastState = next;
+      const el = document.getElementById('island-bg-layer');
+      if (!el) return;
+      const posState: IslandBgPosState =
+        next === 'maxExpand' ? 'maxExpand'
+          : next === 'expanded' || next === 'notification' || next === 'agent' || next === 'stt' || next === 'cli'
+            ? 'expand'
+            : next === 'hover' || next === 'lyrics' || next === 'lyricsTranslation'
+              ? 'hover'
+              : 'idle';
+      const keys = getIslandBgPositionKeys(posState);
+      void Promise.all([window.api.storeRead(keys.x), window.api.storeRead(keys.y)])
+        .then(([px, py]) => {
+          const x = typeof px === 'number' ? px : 50;
+          const y = typeof py === 'number' ? py : 50;
+          el.style.backgroundPosition = `${x}% ${y}%`;
+          el.style.backgroundSize = 'cover';
+        }).catch(() => {});
+    });
+    return unsub;
   }, []);
 }

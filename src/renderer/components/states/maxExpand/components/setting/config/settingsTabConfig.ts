@@ -38,6 +38,16 @@ export const ISLAND_BG_VIDEO_RATE_STORE_KEY = 'island-bg-video-rate';
 export const ISLAND_BG_VIDEO_HW_DECODE_STORE_KEY = 'island-bg-video-hw-decode';
 export const ISLAND_BG_POSITION_X_STORE_KEY = 'island-bg-position-x';
 export const ISLAND_BG_POSITION_Y_STORE_KEY = 'island-bg-position-y';
+
+/** 壁纸位置按岛状态拆分：idle / hover / expand / maxExpand */
+export type IslandBgPosState = 'idle' | 'hover' | 'expand' | 'maxExpand';
+
+export function getIslandBgPositionKeys(state: IslandBgPosState): { x: string; y: string } {
+  return {
+    x: `island-bg-position-${state}-x`,
+    y: `island-bg-position-${state}-y`,
+  };
+}
 export const ISLAND_BG_SYNC_SYSTEM_WALLPAPER_STORE_KEY = 'island-bg-sync-system-wallpaper';
 export const STANDALONE_WINDOW_MAC_CONTROLS_STORE_KEY = 'standalone-window-mac-controls';
 export const ISLAND_DISPLAY_STORE_KEY = 'island-display-id';
