@@ -69,3 +69,13 @@
 | 补丁 | `scripts/patch-electron-vite-hide-console.js`（postinstall 幂等）；chunk 名 `lib-q6ns0vZr.js` 随 electron-vite 升级可能变 |
 | 验收 | 见 `docs/ACCEPTANCE_CHECKLIST.md` §I |
 | 系统通知品牌 | Windows toast 头跟 **AUMID + 安装快捷方式** 走，不跟 title。dev=`Electron` 难改；打包用 `appId=com.xiyue.app` + `productName=汐月` + `win.icon=xiyue_256x256.ico`，与主进程 `setAppUserModelId('com.xiyue.app')` 对齐后应显示汐月图标/名称 |
+
+## 后续计划 · 角色详情面板（2026-09-13）
+
+| 项 | 内容 |
+|---|---|
+| 现状 | 仅 hover 汐月页：七态头像 + 状态点 + 时段问候；**无**独立角色/情绪展板 |
+| 用户预期 | 点头像进入「角色展示」：情绪说明、七态预览、人格/能力介绍；**不要**再进聊天（与 💬 重复） |
+| 方案草案 | 独立 StandaloneTab 或 maxExpand 子页 `character`：当前 mood 高亮、七态图廊、情绪→行为说明；入口=点头像 / 名字区 |
+| 优先级 | P1（体验完整度）；缺品牌设定文案时可先做结构+现有 mood 文案 |
+| 不做混用 | 聊天仍走 💬 / 语音麦克风；角色面板不承载输入框 |
