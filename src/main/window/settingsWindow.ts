@@ -1,4 +1,4 @@
-﻿/*
+/*
  * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
  * https://github.com/JNTMTMTM/eIsland
  *
@@ -27,9 +27,10 @@
  * @author 鸡哥
  */
 
-import { app, BrowserWindow, shell } from 'electron';
+import { BrowserWindow, shell } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
+import { isApplicationQuitting } from '../services/appRestart';
 
 let settingsWindow: BrowserWindow | null = null;
 
@@ -67,7 +68,9 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
   // 关闭即隐藏而非销毁：拦截 'close'（含窗口 X 按钮、Alt+F4、windowClose），
   // 保留渲染进程常驻，下次打开无需重建与重新 loadURL，实现秒开。
   // 只在首次打开过后产生常驻内存（关闭不销毁仅隐藏），启动阶段零额外占用。
+  // 强制退出时必须放行 close，否则 app.quit/exit 会被 preventDefault 卡住。
   win.on('close', (event) => {
+    if (isApplicationQuitting()) return;
     event.preventDefault();
     win.hide();
   });
@@ -95,6 +98,10 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
  */
 function openSettingsWindow(): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
+    // dev：每次打开强制 reload，避免「关闭即隐藏」把旧 bundle 一直挂在内存里
+    if (is.dev) {
+      void settingsWindow.webContents.reload();
+    }
     if (settingsWindow.isVisible()) {
       settingsWindow.focus();
     } else {
