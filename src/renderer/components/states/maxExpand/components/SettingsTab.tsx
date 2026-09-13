@@ -2393,8 +2393,6 @@ export function SettingsTab(): ReactElement {
               appSettingsPages={APP_SETTINGS_PAGES}
               settingsTabLabels={translatedSettingsTabLabels}
               setAppSettingsPage={openAppPage}
-              hubOpen={appHubOpen}
-              onBackToHub={() => setAppHubOpen(true)}
             />
           )}
 
