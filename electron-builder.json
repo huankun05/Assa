@@ -22,6 +22,10 @@
       "filter": ["**/*"]
     },
     {
+      "from": "resources/settings-loading.html",
+      "to": "settings-loading.html"
+    },
+    {
       "from": "resources/capture.html",
       "to": "capture.html"
     },

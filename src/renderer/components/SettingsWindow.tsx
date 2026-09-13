@@ -41,7 +41,6 @@ const MAC_CONTROLS_KEY = 'standalone-window-mac-controls';
 export function SettingsWindow(): ReactElement {
   const { t } = useTranslation();
   const [macControls, setMacControls] = useState(false);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -57,23 +56,15 @@ export function SettingsWindow(): ReactElement {
     const unsub = window.api.onSettingsChanged?.((channel: string, value: unknown) => {
       if (channel === `store:${MAC_CONTROLS_KEY}` && typeof value === 'boolean') setMacControls(value);
     });
-    const timer = window.setTimeout(() => setReady(true), 280);
     return () => {
       window.removeEventListener('keydown', onKey);
-      window.clearTimeout(timer);
       unsub?.();
     };
   }, []);
 
   return (
     <div className="cw-root settings-window">
-      {!ready && (
-        <div className="settings-window-loading" aria-busy="true">
-          <div className="settings-window-spinner" />
-          <span>{t('settings.loading', { defaultValue: '加载中…' })}</span>
-        </div>
-      )}
-      <div className="cw-chrome" style={ready ? undefined : { opacity: 0.45 }}>
+      <div className="cw-chrome">
         <img className="cw-window-icon" src={windowIcon} alt="" aria-hidden="true" />
         <div className="cw-chrome__drag" />
         <div className={`cw-chrome__controls${macControls ? ' cw-chrome__controls--mac' : ''}`}>
@@ -102,7 +93,7 @@ export function SettingsWindow(): ReactElement {
         </div>
       </div>
 
-      <div className="cw-viewport" style={ready ? undefined : { opacity: 0.35, pointerEvents: 'none' }}>
+      <div className="cw-viewport">
         <SettingsTab />
       </div>
     </div>

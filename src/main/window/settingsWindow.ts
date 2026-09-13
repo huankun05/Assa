@@ -29,6 +29,7 @@
 
 import { BrowserWindow, shell } from 'electron';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import { is } from '@electron-toolkit/utils';
 import { isApplicationQuitting } from '../services/appRestart';
 
@@ -60,6 +61,32 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
       spellcheck: false,
     },
   });
+
+  // 先加载本机转圈页，再切到设置应用，避免空壳白屏
+  const loadingHtml = join(
+    is.dev
+      ? process.cwd()
+      : process.resourcesPath,
+    is.dev ? 'resources/settings-loading.html' : 'settings-loading.html',
+  );
+  const settingsUrl = is.dev && process.env['ELECTRON_RENDERER_URL']
+    ? process.env['ELECTRON_RENDERER_URL'] + '/DynamicIslandSettings.html'
+    : join(__dirname, '../renderer/DynamicIslandSettings.html');
+
+  if (existsSync(loadingHtml)) {
+    win.loadFile(loadingHtml);
+    win.webContents.once('did-finish-load', () => {
+      if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+        win.loadURL(settingsUrl);
+      } else {
+        win.loadFile(settingsUrl);
+      }
+    });
+  } else if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    win.loadURL(settingsUrl);
+  } else {
+    win.loadFile(settingsUrl);
+  }
 
   if (autoShow) {
     win.on('ready-to-show', () => win.show());
@@ -120,16 +147,13 @@ function openSettingsWindow(): void {
 
   const win = createSettingsWindow(true);
   settingsWindow = win;
-  // 首次创建：立即显示白底壳，内容加载完再刷新——避免「点了没反应」
+  // 立即显示：先看到加载页，而不是空白窗
   try {
-    win.showInactive();
-    setTimeout(() => show(win), 30);
+    win.show();
+    win.focus();
   } catch {
     // ignore
   }
-  win.webContents.once('did-finish-load', () => {
-    setTimeout(() => show(win), 50);
-  });
 }
 
 /**
