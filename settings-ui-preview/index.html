@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>汐月设置 UI 改进示意</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --surface: #ffffff;
+      --border: #e6eaf2;
+      --border-strong: #d5dbe8;
+      --ink: #151820;
+      --muted: #6b7386;
+      --faint: #9aa3b5;
+      --accent: #4d9fff;
+      --accent-ink: #1a73e8;
+      --accent-soft: #eaf3ff;
+      --accent-soft-hover: #dcecff;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 2px rgba(21, 40, 80, 0.04), 0 8px 24px rgba(21, 40, 80, 0.04);
+      --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: #e8ecf4;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 48px;
+      gap: 16px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #5a6478;
+      text-align: center;
+      max-width: 720px;
+      line-height: 1.5;
+    }
+
+    .window {
+      width: min(1080px, 100%);
+      height: min(760px, 92vh);
+      background: var(--bg);
+      border-radius: 14px;
+      box-shadow:
+        0 0 0 1px rgba(21, 40, 80, 0.08),
+        0 24px 64px rgba(21, 40, 80, 0.14);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chrome {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chrome-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e2e6ef;
+    }
+    .chrome-dot:nth-child(1) { background: #ff5f57; }
+    .chrome-dot:nth-child(2) { background: #febc2e; }
+    .chrome-dot:nth-child(3) { background: #28c840; }
+
+    .chrome-title {
+      margin-left: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      background: linear-gradient(135deg, var(--accent), #7c5cff);
+      display: inline-block;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      padding: 28px 32px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .topbar-main { flex: 1; min-width: 0; }
+
+    .topbar h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .topbar p {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .search {
+      width: 300px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg);
+      flex-shrink: 0;
+      transition: border-color 150ms, box-shadow 150ms, background 150ms;
+    }
+    .search:focus-within,
+    .search:hover {
+      background: var(--surface);
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+    .search svg { width: 15px; height: 15px; stroke: var(--faint); flex-shrink: 0; }
+    .search input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 13px;
+      color: var(--ink);
+      font-family: inherit;
+    }
+    .search input::placeholder { color: var(--faint); }
+
+    .body {
+      flex: 1;
+      overflow: auto;
+      padding: 24px 32px 40px;
+    }
+
+    /* 快速入口 */
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--faint);
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+
+    .quick {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .quick-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms, box-shadow 150ms;
+      text-align: left;
+      font-family: inherit;
+    }
+    .quick-item:hover {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+      background: var(--accent-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .q-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .q-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+    .quick-item strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+    .quick-item span {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    /* 分类行列表 */
+    .cat-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      box-shadow: var(--shadow);
+    }
+
+    .cat-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 14px 14px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      transition: background 150ms;
+    }
+    .cat-row:hover { background: var(--accent-soft); }
+    .cat-row:active { background: var(--accent-soft-hover); }
+
+    .cat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--accent-ink);
+      flex-shrink: 0;
+      transition: background 150ms, border-color 150ms;
+    }
+    .cat-row:hover .cat-icon {
+      background: var(--surface);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    }
+    .cat-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+    .cat-text { flex: 1; min-width: 0; }
+    .cat-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+    .cat-text span {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cat-meta {
+      font-size: 12px;
+      color: var(--faint);
+      flex-shrink: 0;
+    }
+    .cat-chev {
+      width: 18px;
+      height: 18px;
+      color: var(--faint);
+      flex-shrink: 0;
+    }
+    .cat-chev svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.75; }
+
+    /* 行式设置组 */
+    .panel {
+      display: none;
+      animation: fade 160ms ease-out;
+    }
+    .panel.is-active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .back-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .back-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 150ms, border-color 150ms;
+    }
+    .back-btn:hover {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+      color: var(--accent-ink);
+    }
+    .back-row h2 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .back-row p {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .group {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .group-title {
+      padding: 12px 16px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--faint);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .row:first-of-type { border-top: none; }
+
+    .row-text { flex: 1; min-width: 0; }
+    .row-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .row-text span {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .seg {
+      display: inline-flex;
+      padding: 3px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      gap: 2px;
+    }
+    .seg button {
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 120ms, color 120ms;
+    }
+    .seg button.is-on {
+      background: var(--surface);
+      color: var(--accent-ink);
+      box-shadow: 0 1px 2px rgba(21, 40, 80, 0.06);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 1px 2px rgba(21,40,80,0.06);
+    }
+
+    .switch {
+      width: 40px;
+      height: 24px;
+      border-radius: 999px;
+      background: #c9d0de;
+      border: none;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 160ms;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      transition: transform 160ms;
+    }
+    .switch.is-on { background: var(--accent); }
+    .switch.is-on::after { transform: translateX(16px); }
+
+    .slider-wrap {
+      width: 160px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slider-wrap input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+    }
+    .slider-wrap em {
+      font-style: normal;
+      font-size: 12px;
+      color: var(--muted);
+      width: 36px;
+      text-align: right;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-ink);
+      background: var(--accent-soft);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    /* 深色演示开关 */
+    .theme-toggle {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 20;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    body.dark {
+      --bg: #0e1014;
+      --surface: #171a21;
+      --border: #2a2f3a;
+      --border-strong: #3a4150;
+      --ink: #f2f4f8;
+      --muted: #9aa3b5;
+      --faint: #6b7386;
+      --accent: #64aaff;
+      --accent-ink: #8ec2ff;
+      --accent-soft: #1a2a3f;
+      --accent-soft-hover: #22364f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.25);
+    }
+    body.dark .window { box-shadow: 0 0 0 1px #2a2f3a, 0 24px 64px rgba(0,0,0,0.45); }
+    body.dark .switch { background: #3a4150; }
+    body.dark .switch.is-on { background: var(--accent); }
+    body.dark .seg button.is-on { background: #243044; }
+    body.dark .cat-icon { background: #12151b; }
+  </style>
+</head>
+<body>
+  <p class="hint">
+    汐月设置 · 改进方向示意（Linear / Apple 设置密度 + 汐月蓝）<br />
+    点分类进详情 · 右下角可切深色 · 此页仅预览，未接真实应用
+  </p>
+
+  <div class="window">
+    <div class="chrome">
+      <span class="chrome-dot"></span>
+      <span class="chrome-dot"></span>
+      <span class="chrome-dot"></span>
+      <div class="chrome-title">
+        <span class="brand-mark"></span>
+        设置
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div class="panel is-active" id="panel-home">
+      <header class="topbar">
+        <div class="topbar-main">
+          <h1>设置</h1>
+          <p>搜索配置，或从分类进入</p>
+        </div>
+        <div class="search" role="search">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="搜索设置…" />
+        </div>
+      </header>
+      <div class="body">
+        <div class="section-label">快速入口</div>
+        <div class="quick">
+          <button class="quick-item" type="button" data-go="appearance">
+            <span class="q-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg></span>
+            <div>
+              <strong>外观</strong>
+              <span>主题与动效</span>
+            </div>
+          </button>
+          <button class="quick-item" type="button" data-go="ai">
+            <span class="q-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div>
+              <strong>AI 与隐私</strong>
+              <span>信任与审计</span>
+            </div>
+          </button>
+          <button class="quick-item" type="button" data-go="system">
+            <span class="q-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-linecap="round"/></svg></span>
+            <div>
+              <strong>系统</strong>
+              <span>声音与性能</span>
+            </div>
+          </button>
+          <button class="quick-item" type="button" data-go="media">
+            <span class="q-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+            <div>
+              <strong>媒体</strong>
+              <span>歌曲与天气</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="section-label">全部分类</div>
+        <div class="cat-list">
+          <button class="cat-row" type="button" data-go="appearance">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18h1.5a2.5 2.5 0 000-5H12a2 2 0 010-4h4.5A4.5 4.5 0 0012 3z"/><circle cx="7.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="7" r="1" fill="currentColor" stroke="none"/></svg></span>
+            <span class="cat-text">
+              <strong>外观</strong>
+              <span>主题、布局、位置与动效</span>
+            </span>
+            <span class="cat-meta">8 项</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="ai">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cat-text">
+              <strong>AI 与隐私</strong>
+              <span>信任等级、窗口隐藏与数据边界</span>
+            </span>
+            <span class="cat-meta">5 项</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="system">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9c.2.6.8 1 1.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" stroke-linejoin="round"/></svg></span>
+            <span class="cat-text">
+              <strong>系统</strong>
+              <span>声音、通知、性能与网络</span>
+            </span>
+            <span class="cat-meta">7 项</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="media">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+            <span class="cat-text">
+              <strong>媒体</strong>
+              <span>歌曲、歌词与天气</span>
+            </span>
+            <span class="cat-meta">2 项</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="appearance">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cat-text">
+              <strong>交互</strong>
+              <span>行为、提醒与快捷键</span>
+            </span>
+            <span class="cat-meta">4 项</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="system">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" stroke-linecap="round"/></svg></span>
+            <span class="cat-text">
+              <strong>账号与更新</strong>
+              <span>邮箱、更新、市场与关于</span>
+            </span>
+            <span class="cat-meta">4 项</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPEARANCE LIST -->
+    <div class="panel" id="panel-appearance">
+      <header class="topbar">
+        <div class="topbar-main">
+          <h1>外观</h1>
+          <p>主题、布局、位置与动效</p>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="在此分类中搜索…" />
+        </div>
+      </header>
+      <div class="body">
+        <div class="back-row">
+          <button class="back-btn" type="button" data-go="home" aria-label="返回">‹</button>
+          <div>
+            <h2>外观</h2>
+            <p>点选子项进入详细设置</p>
+          </div>
+        </div>
+        <div class="cat-list">
+          <button class="cat-row" type="button" data-go="theme">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2" stroke-linecap="round"/></svg></span>
+            <span class="cat-text">
+              <strong>主题外观</strong>
+              <span>深色 / 浅色 / 跟随系统，壁纸与透明度</span>
+            </span>
+            <span class="badge">常用</span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="theme">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M4 12h16M4 6h16M4 18h10" stroke-linecap="round"/></svg></span>
+            <span class="cat-text">
+              <strong>布局预览</strong>
+              <span>Expand 总览控件与时钟样式</span>
+            </span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="theme">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9" stroke-linecap="round"/></svg></span>
+            <span class="cat-text">
+              <strong>软件动画</strong>
+              <span>弹性、速度与启动画面</span>
+            </span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <button class="cat-row" type="button" data-go="theme">
+            <span class="cat-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7l3-7z" stroke-linejoin="round"/></svg></span>
+            <span class="cat-text">
+              <strong>位置校准</strong>
+              <span>多显示器与岛位置微调</span>
+            </span>
+            <span class="cat-chev"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- THEME DETAIL -->
+    <div class="panel" id="panel-theme">
+      <header class="topbar">
+        <div class="topbar-main">
+          <h1>主题外观</h1>
+          <p>外观 · 主题外观</p>
+        </div>
+      </header>
+      <div class="body">
+        <div class="back-row">
+          <button class="back-btn" type="button" data-go="appearance" aria-label="返回">‹</button>
+          <div>
+            <h2>主题外观</h2>
+            <p>行式设置 · 与系统设置同构</p>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-title">外观</div>
+          <div class="row">
+            <div class="row-text">
+              <strong>主题模式</strong>
+              <span>深色、浅色或跟随系统</span>
+            </div>
+            <div class="seg" role="group">
+              <button type="button" class="is-on">浅色</button>
+              <button type="button">深色</button>
+              <button type="button">系统</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-text">
+              <strong>灵动岛透明度</strong>
+              <span>数值越低越透明</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" min="10" max="100" value="82" />
+              <em>82%</em>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-text">
+              <strong>独立窗控制按钮</strong>
+              <span>右上角显示 macOS 风格三点</span>
+            </div>
+            <button class="switch is-on" type="button" aria-label="toggle"></button>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-title">壁纸与背景</div>
+          <div class="row">
+            <div class="row-text">
+              <strong>壁纸背景</strong>
+              <span>内置壁纸或本地图片 / 视频</span>
+            </div>
+            <span class="badge">已设置</span>
+          </div>
+          <div class="row">
+            <div class="row-text">
+              <strong>背景模糊</strong>
+              <span>毛玻璃强度</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" min="0" max="40" value="14" />
+              <em>14</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-title">字体</div>
+          <div class="row">
+            <div class="row-text">
+              <strong>界面字体</strong>
+              <span>灵动岛界面使用的字体</span>
+            </div>
+            <span class="cat-meta">系统默认</span>
+          </div>
+          <div class="row">
+            <div class="row-text">
+              <strong>歌词字体</strong>
+              <span>歌词显示使用的字体</span>
+            </div>
+            <span class="cat-meta">系统默认</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="theme-toggle" type="button" id="themeBtn">切换深色示意</button>
+
+  <script>
+    const panels = {
+      home: document.getElementById('panel-home'),
+      appearance: document.getElementById('panel-appearance'),
+      theme: document.getElementById('panel-theme'),
+      ai: document.getElementById('panel-appearance'),
+      system: document.getElementById('panel-appearance'),
+      media: document.getElementById('panel-appearance'),
+    };
+
+    function show(name) {
+      Object.values(panels).forEach((p) => p.classList.remove('is-active'));
+      const map = { home: 'panel-home', appearance: 'panel-appearance', theme: 'panel-theme' };
+      const id = map[name] || (name === 'home' ? 'panel-home' : 'panel-appearance');
+      document.getElementById(id).classList.add('is-active');
+      document.getElementById(id).parentElement.scrollTop = 0;
+    }
+
+    document.querySelectorAll('[data-go]').forEach((el) => {
+      el.addEventListener('click', () => show(el.getAttribute('data-go')));
+    });
+
+    document.querySelectorAll('.seg button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.parentElement.querySelectorAll('button').forEach((b) => b.classList.remove('is-on'));
+        btn.classList.add('is-on');
+      });
+    });
+
+    document.querySelectorAll('.switch').forEach((sw) => {
+      sw.addEventListener('click', () => sw.classList.toggle('is-on'));
+    });
+
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+    });
+  </script>
+</body>
+</html>
