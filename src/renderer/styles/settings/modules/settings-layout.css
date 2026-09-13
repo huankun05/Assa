@@ -8017,3 +8017,55 @@ button.settings-user-image-translation-image-wrap:hover {
   white-space: nowrap;
   color: rgba(var(--color-danger-rgb), 0.85);
 }
+
+
+/* ===== settings-v2 详情页：与主页同一套白底，覆盖旧灰卡 ===== */
+.settings-v2 .settings-card {
+  background: #fff !important;
+  border-color: #e6eaf2 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 2px rgba(21, 40, 80, 0.03), 0 8px 20px rgba(21, 40, 80, 0.04);
+}
+
+.settings-v2 .settings-card:hover {
+  border-color: #d5dbe8 !important;
+}
+
+.settings-v2 .settings-card-title {
+  color: #151820 !important;
+}
+
+.settings-v2 .settings-card-subtitle {
+  color: #6b7386 !important;
+}
+
+.settings-v2 .settings-field-input,
+.settings-v2 .settings-card-text-input {
+  background: #f4f6fa !important;
+  border-color: #e6eaf2 !important;
+  color: #151820 !important;
+}
+
+.settings-v2 .settings-hide-selected-empty {
+  color: #9aa3b5 !important;
+}
+
+[data-theme='dark'] .settings-v2 .settings-card {
+  background: #171a21 !important;
+  border-color: #2a2f3a !important;
+}
+
+[data-theme='dark'] .settings-v2 .settings-card-title {
+  color: #f2f4f8 !important;
+}
+
+[data-theme='dark'] .settings-v2 .settings-card-subtitle {
+  color: #9aa3b5 !important;
+}
+
+[data-theme='dark'] .settings-v2 .settings-field-input,
+[data-theme='dark'] .settings-v2 .settings-card-text-input {
+  background: #12151b !important;
+  border-color: #2a2f3a !important;
+  color: #f2f4f8 !important;
+}
