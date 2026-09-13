@@ -54,12 +54,12 @@ function flattenItems(): FlatItem[] {
   return out;
 }
 
-/** 冷启动无数据时的默认常用（稳定顺序） */
+/** 冷启动无数据时的默认常用（与 settingsUsageId 格式一致：tab:app:music:network） */
 const DEFAULT_HOT_IDS = [
-  'app:theme::::',
-  'app:ai-security::::',
-  'app:behavior::::',
-  'music::::::',
+  'app:theme::',
+  'app:ai-security::',
+  'app:behavior::',
+  'music:::',
 ];
 
 export function SettingsHomeSection({
@@ -134,11 +134,15 @@ export function SettingsHomeSection({
       const hit = byId.get(id);
       if (hit) picked.push(hit);
     }
-    if (picked.length >= 4) return picked;
     for (const id of DEFAULT_HOT_IDS) {
       if (picked.length >= 4) break;
       const hit = byId.get(id);
       if (hit && !picked.some((p) => p.id === hit.id)) picked.push(hit);
+    }
+    // 仍不足时用全量前 4，保证常用区不空白
+    for (const item of allItems) {
+      if (picked.length >= 4) break;
+      if (!picked.some((p) => p.id === item.id)) picked.push(item);
     }
     return picked.slice(0, 4);
   }, [allItems, usageVersion]);
