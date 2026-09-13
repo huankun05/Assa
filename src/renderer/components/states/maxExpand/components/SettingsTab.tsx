@@ -139,6 +139,14 @@ import { WallpaperMarketSection } from './setting/components/pluginMarket/Wallpa
 import { WallpaperContributionSection } from './setting/components/pluginMarket/WallpaperContributionSection';
 import { WallpaperEditSection } from './setting/components/pluginMarket/WallpaperEditSection';
 import { SettingsPageNavigation, SettingsPageNavigationToggle } from './setting/components/SettingsPageNavigation';
+import { SettingsHomeSection } from './setting/components/home/SettingsHomeSection';
+import { SettingsCategoryHub } from './setting/components/home/SettingsCategoryHub';
+import {
+  SETTINGS_CATEGORIES,
+  getSettingsCategory,
+  type SettingsCategoryId,
+  type SettingsCategoryDest,
+} from './setting/config/settingsCategories';
 
 import { resolveDistrictLocationByKeyword } from '../../../../api/weather/adcodeApi';
 import { request as requestUserAccountApi } from '../../../../api/user/userAccountApi.client';
@@ -194,11 +202,29 @@ export function SettingsTab(): ReactElement {
   const [activeTab, setActiveTab] = useSettingsSidebarTabState();
   const { sessionToken } = useUserSessionState();
   const [appSettingsPage, setAppSettingsPage] = useState<AppSettingsPageKey>('layout-preview');
-  /** 软件设置单栏钻取：true=列表总览，false=已进入子页 */
+  /** 设置导航：home 主页 / category 分类列表 / detail 详情 */
+  const [navMode, setNavMode] = useState<'home' | 'category' | 'detail'>('home');
+  const [activeCategory, setActiveCategory] = useState<SettingsCategoryId>('appearance');
+  /** 兼容旧 appHub 逻辑：进详情时 false */
   const [appHubOpen, setAppHubOpen] = useState(true);
   const openAppPage = (page: AppSettingsPageKey): void => {
     setAppHubOpen(false);
     setAppSettingsPage(page);
+  };
+  const openCategory = (id: SettingsCategoryId): void => {
+    setActiveCategory(id);
+    setNavMode('category');
+  };
+  const openDest = (dest: SettingsCategoryDest): void => {
+    setNavMode('detail');
+    setActiveTab(dest.tab);
+    if (dest.appPage) openAppPage(dest.appPage);
+    if (dest.musicPage) setMusicSettingsPage(dest.musicPage);
+    if (dest.networkPage) setNetworkSettingsPage(dest.networkPage);
+  };
+  const backFromDetail = (): void => {
+    setNavMode('category');
+    setAppHubOpen(true);
   };
   const [weatherSettingsPage, setWeatherSettingsPage] = useState<WeatherSettingsPageKey>('location');
   const [mailSettingsPage, setMailSettingsPage] = useState<MailSettingsPageKey>('account');
@@ -2161,103 +2187,58 @@ export function SettingsTab(): ReactElement {
     setMusicSmtcConfigMessage({ type: 'success', text: t('settings.music.smtc.savedAutoUnsubscribe', { defaultValue: '已保存：{{ms}} ms 自动取消订阅', ms: Math.round(valueMs) }) });
   };
 
+  const activeCategoryMeta = getSettingsCategory(activeCategory);
+
   return (
-    <div className="max-expand-settings" ref={settingsRef}>
+    <div className="max-expand-settings settings-shell" ref={settingsRef}>
       <div className="max-expand-settings-layout">
-        <div className="max-expand-settings-sidebar">
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'index' ? 'active' : ''}`}
-            onClick={() => setActiveTab('index')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.index} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('index')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'app' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('app'); setAppHubOpen(true); }}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.app} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('app')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'network' ? 'active' : ''}`}
-            onClick={() => setActiveTab('network')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.network} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('network')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'mail' ? 'active' : ''}`}
-            onClick={() => setActiveTab('mail')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.mail} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('mail')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'weather' ? 'active' : ''}`}
-            onClick={() => setActiveTab('weather')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.weather} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('weather')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'music' ? 'active' : ''}`}
-            onClick={() => setActiveTab('music')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.music} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('music')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'shortcut' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shortcut')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.shortcut} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('shortcut')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'update' ? 'active' : ''}`}
-            onClick={() => setActiveTab('update')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.update} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('update')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'pluginMarket' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pluginMarket')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.pluginMarket} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('pluginMarket')}
-          </button>
-          <button
-            className={`max-expand-settings-sidebar-item ${activeTab === 'about' ? 'active' : ''}`}
-            onClick={() => setActiveTab('about')}
-            type="button"
-          >
-            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.about} alt="" />
-            <span className="sidebar-dot" />
-            {getSettingsLabel('about')}
-          </button>
+        <div className="max-expand-settings-sidebar settings-shell-sidebar">
+          {navMode === 'detail' && (
+            <button
+              type="button"
+              className="settings-shell-back"
+              onClick={backFromDetail}
+              aria-label={t('settings.nav.backToCategory', { defaultValue: '返回分类' })}
+            >
+              ← {t('settings.nav.backToCategory', { defaultValue: '返回' })}
+            </button>
+          )}
+          {SETTINGS_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              className={`max-expand-settings-sidebar-item ${navMode !== 'detail' && activeCategory === cat.id ? 'active' : ''}`}
+              onClick={() => {
+                if (cat.id === 'home') {
+                  setNavMode('home');
+                  setActiveCategory('home');
+                } else {
+                  openCategory(cat.id);
+                }
+              }}
+              type="button"
+            >
+              <img className="sidebar-tab-icon" src={cat.icon} alt="" />
+              <span className="sidebar-dot" />
+              {cat.label}
+            </button>
+          ))}
         </div>
 
-        <div className="max-expand-settings-panel settings-scrollbar-thin">
+        <div className="max-expand-settings-panel settings-scrollbar-thin settings-shell-panel">
+          {navMode === 'home' && (
+            <SettingsHomeSection
+              onOpenCategory={openCategory}
+              onOpenDest={openDest}
+            />
+          )}
+          {navMode === 'category' && activeCategoryMeta && (
+            <SettingsCategoryHub
+              category={activeCategoryMeta}
+              onOpenItem={openDest}
+            />
+          )}
+          {navMode === 'detail' && (
+            <>
           {activeTab === 'index' && (
             <IndexSettingsSection
               visibleCards={visibleCards}
@@ -2713,6 +2694,8 @@ export function SettingsTab(): ReactElement {
           )}
 
           {activeTab === 'about' && <AboutSettingsSection aboutVersion={aboutVersion} initialPage={aboutInitialPage} />}
+            </>
+          )}
 
         </div>
       </div>

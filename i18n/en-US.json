@@ -3947,7 +3947,8 @@
       "music-smtc": {
         "label": "SMTC",
         "desc": "System Media Transport Controls settings."
-      }
+      },
+      "backToCategory": "返回"
     },
     "aiSecurity": {
       "trustTitle": "AI Trust Level",
@@ -3975,6 +3976,11 @@
       "title": "Browser automation",
       "hint": "Off by default. When on, the model may propose browser.* tools still subject to trust level and confirmation policy.",
       "toggle": "Allow browser tools (restart chat/sidecar session to fully apply)"
+    },
+    "home": {
+      "title": "设置",
+      "desc": "搜索配置项，或按分类进入。",
+      "searchPlaceholder": "搜索设置…"
     }
   },
   "idle": {

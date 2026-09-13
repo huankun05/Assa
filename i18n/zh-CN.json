@@ -3949,7 +3949,8 @@
       "music-smtc": {
         "label": "SMTC",
         "desc": "系统媒体传输控制相关配置。"
-      }
+      },
+      "backToCategory": "返回"
     },
     "aiSecurity": {
       "trustTitle": "AI 信任等级",
@@ -3977,6 +3978,11 @@
       "title": "浏览器自动化",
       "hint": "默认关闭。开启后模型可提议 browser.* 工具，仍需信任等级与确认策略约束。",
       "toggle": "允许浏览器工具（需重启对话/侧车会话后完全生效）"
+    },
+    "home": {
+      "title": "设置",
+      "desc": "搜索配置项，或按分类进入。",
+      "searchPlaceholder": "搜索设置…"
     }
   },
   "idle": {
