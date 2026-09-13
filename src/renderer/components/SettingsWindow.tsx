@@ -28,6 +28,7 @@
 
 import { useEffect } from 'react';
 import type { ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SettingsTab } from './states/maxExpand/components/SettingsTab';
 import windowIcon from '../../../resources/icon/xiyue.svg';
 
@@ -36,6 +37,7 @@ import windowIcon from '../../../resources/icon/xiyue.svg';
  * @returns 设置窗口 React 节点
  */
 export function SettingsWindow(): ReactElement {
+  const { t } = useTranslation();
 
   // 按 Escape 关闭设置窗口（与业务独立窗口交互一致）
   useEffect(() => {
