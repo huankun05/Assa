@@ -131,8 +131,45 @@ export function restartApp(): void {
     safeLogError('[App] restart cleanup error:', err);
   }
 
-  // 静默退出（不弹通知窗/Toast）
-  setTimeout(() => app.exit(0), RESTART_SILENT_EXIT_MS);
+  // 进程内退出：部分环境 app.exit 会被卡住，必须再加一发 process.exit
+  setTimeout(() => {
+    safeLog('[App] exit now');
+    try {
+      app.exit(0);
+    } catch {
+      // ignore
+    }
+    try {
+      process.exit(0);
+    } catch {
+      // ignore
+    }
+  }, RESTART_SILENT_EXIT_MS);
+
+  // 进程外兜底：主循环若卡死导致 setTimeout 不跑，用独立进程强杀本 PID
+  scheduleExternalForceKill(process.pid, RESTART_SILENT_EXIT_MS + 400);
+}
+
+/**
+ * 外部强杀兜底
+ * @description 写 flag 后主进程可能卡在同步清理/原生回调里，事件循环 setTimeout 不触发。
+ *   另起 detached cmd，延时后 taskkill /f，不依赖本进程 JS 是否还能调度。
+ */
+function scheduleExternalForceKill(pid: number, delayMs: number): void {
+  try {
+    const waitSec = Math.max(1, Math.ceil(delayMs / 1000));
+    // ping 延时比 timeout 更稳（不依赖控制台/exitcode）
+    const script = `ping -n ${waitSec + 1} 127.0.0.1 >nul & taskkill /f /pid ${pid}`;
+    const child = spawn('cmd.exe', ['/c', script], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.unref();
+    safeLog('[App] external force-kill scheduled', { pid, waitSec });
+  } catch (err) {
+    safeLogError('[App] external force-kill schedule failed:', err);
+  }
 }
 
 /**
