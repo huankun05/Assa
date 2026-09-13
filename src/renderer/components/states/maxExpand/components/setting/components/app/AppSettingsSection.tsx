@@ -387,23 +387,7 @@ export function AppSettingsSection({
   }
 
   return (
-    <div className="max-expand-settings-section">
-      <div className="max-expand-settings-title settings-app-title-line">
-        {onBackToHub && (
-          <button
-            className="settings-app-back-hub"
-            type="button"
-            onClick={onBackToHub}
-            aria-label={t('settings.app.backToHub', { defaultValue: '返回软件设置列表' })}
-            title={t('settings.app.backToHub', { defaultValue: '返回软件设置列表' })}
-          >
-            ←
-          </button>
-        )}
-        <span>{t('settings.labels.app', { defaultValue: '软件设置' })}</span>
-        <span className="settings-app-title-sub">- {currentAppSettingsPageLabel}</span>
-      </div>
-
+    <div className="max-expand-settings-section settings-app-detail">
       <div className="settings-app-pages-layout settings-app-pages-layout--single">
         <div className="settings-app-page-main">{renderCurrentPage()}</div>
       </div>

@@ -107,8 +107,12 @@
 }
 
 /* 设置壳：desk-pet 式全宽单列 + 冷玻璃 */
-.max-expand-settings-layout--single {
+.max-expand-settings-layout.max-expand-settings-layout--single {
   display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  gap: 0;
 }
 
 .settings-shell-panel--full {
@@ -336,16 +340,16 @@
   text-align: left;
   appearance: none;
   border: 2px solid rgba(var(--color-text-rgb), 0.08);
-  border-radius: 14px;
-  padding: 16px 18px;
-  min-height: 72px;
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 76px;
   cursor: pointer;
   color: rgba(var(--color-text-rgb), 0.92);
   background: rgba(var(--color-text-rgb), 0.035);
   backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: none;
   animation: settings-menu-in 0.28s ease both;
-  transition: border-color 0.25s ease, background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+  transition: all 0.4s ease-in-out;
 }
 
 @keyframes settings-menu-in {
@@ -388,10 +392,10 @@
 }
 
 .settings-menu-item:hover {
-  border-color: color-mix(in srgb, var(--color-island-accent) 32%, transparent);
-  background: color-mix(in srgb, var(--color-island-accent) 6%, rgba(var(--color-text-rgb), 0.035));
-  transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(var(--color-shadow-rgb), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-color: color-mix(in srgb, var(--color-island-accent) 30%, transparent);
+  background: color-mix(in srgb, var(--color-island-accent) 5%, rgba(var(--color-text-rgb), 0.035));
+  transform: none;
+  filter: drop-shadow(0 4px 4px rgba(var(--color-shadow-rgb), 0.35));
 }
 
 .settings-menu-item:hover::before {
@@ -435,22 +439,23 @@
 
 .settings-menu-item-icon {
   position: absolute;
-  right: -6px;
-  bottom: -14px;
-  width: 88px;
-  height: 88px;
+  right: 4px;
+  bottom: 50%;
+  transform: translateY(50%);
+  width: 72px;
+  height: 72px;
   object-fit: contain;
-  opacity: 0.22;
+  opacity: 0.35;
   filter: brightness(0) invert(var(--icon-invert));
-  transition: opacity 0.3s ease, transform 0.35s ease;
+  transition: all 0.4s ease-in-out;
   pointer-events: none;
   z-index: 0;
 }
 
 .settings-menu-item:hover .settings-menu-item-icon {
-  opacity: 0.55;
-  transform: translateY(-6px) scale(1.08);
-  filter: brightness(0) invert(var(--icon-invert)) sepia(1) saturate(4) hue-rotate(190deg);
+  opacity: 0.85;
+  transform: translateY(46%) scale(1.2);
+  filter: brightness(0) invert(var(--icon-invert)) sepia(1) saturate(5) hue-rotate(190deg);
 }
 
 .settings-menu-item:hover .settings-menu-item-title {
