@@ -26,11 +26,13 @@
  * @author 鸡哥
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsTab } from './states/maxExpand/components/SettingsTab';
 import windowIcon from '../../../resources/icon/xiyue.svg';
+
+const MAC_CONTROLS_KEY = 'standalone-window-mac-controls';
 
 /**
  * 设置独立窗口根组件
@@ -38,8 +40,8 @@ import windowIcon from '../../../resources/icon/xiyue.svg';
  */
 export function SettingsWindow(): ReactElement {
   const { t } = useTranslation();
+  const [macControls, setMacControls] = useState(false);
 
-  // 按 Escape 关闭设置窗口（与业务独立窗口交互一致）
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
@@ -48,7 +50,16 @@ export function SettingsWindow(): ReactElement {
       }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    void window.api.storeRead(MAC_CONTROLS_KEY).then((v) => {
+      if (typeof v === 'boolean') setMacControls(v);
+    }).catch(() => {});
+    const unsub = window.api.onSettingsChanged?.((channel: string, value: unknown) => {
+      if (channel === `store:${MAC_CONTROLS_KEY}` && typeof value === 'boolean') setMacControls(value);
+    });
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      unsub?.();
+    };
   }, []);
 
   return (
@@ -56,13 +67,29 @@ export function SettingsWindow(): ReactElement {
       <div className="cw-chrome">
         <img className="cw-window-icon" src={windowIcon} alt="" aria-hidden="true" />
         <div className="cw-chrome__drag" />
-        <div className="cw-chrome__controls">
-          <button className="cw-ctrl" type="button" title={t('standalone.controls.minimize')} onClick={() => window.api.windowMinimize()}>
-            <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor" /></svg>
-          </button>
-          <button className="cw-ctrl cw-ctrl--close" type="button" title={t('standalone.controls.close')} onClick={() => window.api.windowClose()}>
-            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-          </button>
+        <div className={`cw-chrome__controls${macControls ? ' cw-chrome__controls--mac' : ''}`}>
+          {macControls ? (
+            <>
+              <button className="cw-ctrl cw-ctrl--mac cw-ctrl--mac-minimize" type="button" title={t('standalone.controls.minimize')} onClick={() => window.api.windowMinimize()}>
+                <span className="cw-ctrl-dot" />
+              </button>
+              <button className="cw-ctrl cw-ctrl--mac cw-ctrl--mac-maximize" type="button" title={t('standalone.controls.maximize')} onClick={() => window.api.windowMaximize()}>
+                <span className="cw-ctrl-dot" />
+              </button>
+              <button className="cw-ctrl cw-ctrl--mac cw-ctrl--mac-close" type="button" title={t('standalone.controls.close')} onClick={() => window.api.windowClose()}>
+                <span className="cw-ctrl-dot" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="cw-ctrl" type="button" title={t('standalone.controls.minimize')} onClick={() => window.api.windowMinimize()}>
+                <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor" /></svg>
+              </button>
+              <button className="cw-ctrl cw-ctrl--close" type="button" title={t('standalone.controls.close')} onClick={() => window.api.windowClose()}>
+                <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
+              </button>
+            </>
+          )}
         </div>
       </div>
 

@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import type { IIslandStore } from '../../store/types';
+import useIslandStore from '../../store/slices';
 import { useDynamicIslandShell } from './useDynamicIslandShell';
 import { useIslandDominantColor } from './useIslandDominantColor';
 import { useIslandTimeStrings } from './useIslandTimeStrings';
@@ -46,7 +46,6 @@ import { useIslandAutoDim } from './useIslandAutoDim';
 import { useClaudeCliSessionStatus } from './useClaudeCliSessionStatus';
 
 interface UseDynamicIslandCoordinatorOptions {
-  store: IIslandStore;
   t: (key: string, options?: Record<string, unknown>) => string;
   language: string | undefined;
 }
@@ -76,9 +75,27 @@ interface DynamicIslandCoordinatorState {
  * @returns 灵动岛渲染所需的聚合状态。
  */
 export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinatorOptions): DynamicIslandCoordinatorState {
-  const { store, t, language } = options;
+  const { t, language } = options;
+  /**
+   * 响应式字段用 selector 订阅。
+   * 动作本身在 zustand 中是稳定的，可从 getState() 一次取出。
+   * 注意：currentPositionMs 等高频字段不在此订阅——
+   * 歌词 UI 组件自行用 selector 订阅，桥接逻辑用 getState() 读当前值。
+   */
+  const state = useIslandStore((s) => s.state);
+  const timerData = useIslandStore((s) => s.timerData);
+  const isMusicPlaying = useIslandStore((s) => s.isMusicPlaying);
+  const isPlaying = useIslandStore((s) => s.isPlaying);
+  const coverImage = useIslandStore((s) => s.coverImage);
+  const dominantColor = useIslandStore((s) => s.dominantColor);
+  const springAnimation = useIslandStore((s) => s.springAnimation);
+  const animationSpeed = useIslandStore((s) => s.animationSpeed);
+  const shapeMode = useIslandStore((s) => s.shapeMode);
+  const syncedLyrics = useIslandStore((s) => s.syncedLyrics);
+  const lyricsLoading = useIslandStore((s) => s.lyricsLoading);
+  const translationLyrics = useIslandStore((s) => s.translationLyrics);
+
   const {
-    state,
     setHover,
     setIdle,
     setExpanded,
@@ -88,27 +105,15 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
     setHoverTab,
     setAnnouncement,
     setAgentVoiceInput,
-    timerData,
     setTimerData,
     setNotification,
     handleNowPlayingUpdate,
     updateProgress,
-    coverImage,
-    isMusicPlaying,
-    isPlaying,
-    dominantColor,
     setDominantColor,
     setSyncedLyrics,
     setTranslationLyrics,
     setLyricsLoading,
-    syncedLyrics,
-    lyricsLoading,
-    translationLyrics,
-    currentPositionMs,
-    springAnimation,
-    animationSpeed,
-    shapeMode,
-  } = store;
+  } = useIslandStore.getState();
 
   const {
     initRef,
@@ -132,6 +137,32 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
   });
 
   const { hasActiveSessionRef: hasActiveCliSessionRef } = useClaudeCliSessionStatus();
+  const tempHideEnabledRef = useRef<boolean | null>(null);
+  const tempHideDurationMsRef = useRef<number>(3000);
+
+  useEffect(() => {
+    let cancelled = false;
+    void window.api.storeRead('temp-hide-enabled').then((v) => {
+      if (cancelled) return;
+      tempHideEnabledRef.current = v !== false;
+    }).catch(() => {});
+    void window.api.storeRead('temp-hide-duration-sec').then((v) => {
+      if (cancelled) return;
+      const n = Number(v);
+      tempHideDurationMsRef.current = Number.isFinite(n) && n >= 1 ? Math.min(30, Math.floor(n)) * 1000 : 3000;
+    }).catch(() => {});
+    const unsub = window.api.onSettingsChanged?.((channel: string, value: unknown) => {
+      if (channel === 'store:temp-hide-enabled') tempHideEnabledRef.current = value !== false;
+      if (channel === 'store:temp-hide-duration-sec') {
+        const n = Number(value);
+        tempHideDurationMsRef.current = Number.isFinite(n) && n >= 1 ? Math.min(30, Math.floor(n)) * 1000 : 3000;
+      }
+    });
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
+  }, []);
 
   const {
     bgOpacityRef,
@@ -246,7 +277,6 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
     syncedLyrics,
     lyricsLoading,
     translationLyrics,
-    currentPositionMs,
     setLyrics,
     setLyricsTranslation,
     setAgentVoiceInput,
@@ -304,14 +334,16 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
     requireLeaveAfterTempHideRef,
   });
 
-  /** 右键让路：隐藏约 3 秒，方便点击背后窗口/标签 */
+  /** 右键让路：临时隐藏，默认 3 秒，可在设置中开关与时长 */
   const handleIslandContextMenu = (event: React.MouseEvent): void => {
     event.preventDefault();
     event.stopPropagation();
+    const enabled = tempHideEnabledRef.current;
+    if (enabled === false) return;
+    const durationMs = tempHideDurationMsRef.current || 3000;
     isHoveringRef.current = false;
     setIdle(true);
     window.api?.enableMousePassthrough();
-    const durationMs = 3000;
     tempHideUntilRef.current = Date.now() + durationMs;
     requireLeaveAfterTempHideRef.current = true;
     window.api?.hideWindowTemporarily?.(durationMs);

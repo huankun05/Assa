@@ -65,6 +65,8 @@ export function BehaviorSettingsPage({
   const [pomodoroWorkMin, setPomodoroWorkMin] = useState(25);
   const [pomodoroBreakMin, setPomodoroBreakMin] = useState(5);
   const [pomodoroLoop, setPomodoroLoop] = useState(true);
+  const [tempHideEnabled, setTempHideEnabled] = useState(true);
+  const [tempHideDurationSec, setTempHideDurationSec] = useState(3);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +106,15 @@ export function BehaviorSettingsPage({
     window.api.storeRead('pomodoro-loop').then((v) => {
       if (cancelled || v == null) return;
       setPomodoroLoop(Boolean(v));
+    }).catch(() => {});
+    window.api.storeRead('temp-hide-enabled').then((v) => {
+      if (cancelled || v == null) return;
+      setTempHideEnabled(v !== false);
+    }).catch(() => {});
+    window.api.storeRead('temp-hide-duration-sec').then((v) => {
+      if (cancelled || v == null) return;
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 1) setTempHideDurationSec(Math.min(30, Math.floor(n)));
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -252,6 +263,42 @@ export function BehaviorSettingsPage({
                 }}
               />
               {t('settings.app.behavior.idleClickExpandToggle', { defaultValue: '空闲状态下点击展开（禁用悬停自动展开）' })}
+            </label>
+          </div>
+        </div>
+
+        <div className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-title">{t('settings.app.behavior.tempHideTitle', { defaultValue: '右键让路' })}</div>
+            <div className="settings-card-subtitle">{t('settings.app.behavior.tempHideHint', { defaultValue: '岛上右键可临时隐藏，方便点击背后窗口。默认开启，隐藏约 3 秒后自动恢复。' })}</div>
+          </div>
+          <div className="settings-card-inline-row">
+            <label className="settings-card-check">
+              <input
+                type="checkbox"
+                checked={tempHideEnabled}
+                onChange={(e) => {
+                  setTempHideEnabled(e.target.checked);
+                  window.api.storeWrite('temp-hide-enabled', e.target.checked).catch(() => {});
+                }}
+              />
+              {t('settings.app.behavior.tempHideEnable', { defaultValue: '启用了右键让路（临时隐藏）' })}
+            </label>
+            <label className="settings-field">
+              <span className="settings-field-label">{t('settings.app.behavior.tempHideDuration', { defaultValue: '隐藏时长（秒）' })}</span>
+              <input
+                className="settings-field-input"
+                type="number"
+                min={1}
+                max={30}
+                value={tempHideDurationSec}
+                disabled={!tempHideEnabled}
+                onChange={(e) => {
+                  const v = Math.max(1, Math.min(30, Number(e.target.value) || 3));
+                  setTempHideDurationSec(v);
+                  window.api.storeWrite('temp-hide-duration-sec', v).catch(() => {});
+                }}
+              />
             </label>
           </div>
         </div>

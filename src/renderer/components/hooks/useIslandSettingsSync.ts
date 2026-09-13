@@ -26,6 +26,7 @@
 
 import { useEffect } from 'react';
 import useIslandStore from '../../store/isLandStore';
+import { applyUIFontFromStore, applyLyricsFontFromStore } from '../../utils/font';
 import type { NotificationData } from '../../store/types';
 import { getIslandMorphDuration } from '../../store/constants/islandTransition';
 import { ISLAND_WIDTH } from '../../../shared/islandDimensions';
@@ -187,6 +188,12 @@ export function useIslandSettingsSync(options: UseIslandSettingsSyncOptions): vo
         if (channel === 'island:opacity') {
           const v = typeof value === 'number' ? Math.max(10, Math.min(100, Math.round(value))) : 100;
           document.documentElement.style.setProperty('--island-opacity', String(v));
+        }
+        if (channel === 'store:ui-font-family') {
+          void applyUIFontFromStore();
+        }
+        if (channel === 'store:lyrics-font-family') {
+          void applyLyricsFontFromStore();
         }
         if (channel === 'island:expand-mouseleave-idle') {
           expandLeaveIdleRef.current = Boolean(value);

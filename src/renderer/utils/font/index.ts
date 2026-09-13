@@ -86,65 +86,69 @@ export function injectFontFace(familyName: string, base64Data: string, ext: stri
   return `'${familyName}', sans-serif`;
 }
 
-/**
- * 启动时初始化字体（在 React 挂载前执行，避免首次渲染闪烁）
- * 读取持久化的字体设置，注入 @font-face 并应用 CSS 变量
- */
-export async function initFonts(): Promise<void> {
+/** 加载自定义字体列表，返回 path → css 映射 */
+async function loadCustomFonts(fonts: CustomFont[], prefix: string): Promise<Map<string, string>> {
+  const entries = await Promise.all(
+    fonts.map(async (font) => {
+      try {
+        const result = await window.api.readFontFile(font.path);
+        if (result) {
+          return [font.path, injectFontFace(`${prefix}-${font.name}`, result.data, result.ext)] as const;
+        }
+      } catch {
+        /* skip */
+      }
+      return null;
+    })
+  );
+  return new Map(entries.filter((e): e is NonNullable<typeof e> => e !== null));
+}
+
+/** 应用 UI 字体到当前文档（岛/设置窗通用） */
+export async function applyUIFontFromStore(): Promise<void> {
   try {
-    const [uiVal, lyricsVal, uiCustom, lyricsCustom] = await Promise.all([
+    const [uiVal, uiCustom] = await Promise.all([
       window.api.storeRead('ui-font-family'),
-      window.api.storeRead('lyrics-font-family'),
       window.api.storeRead('ui-custom-fonts'),
-      window.api.storeRead('lyrics-custom-fonts'),
     ]);
-
     const uiCustomArr = Array.isArray(uiCustom) ? uiCustom as CustomFont[] : [];
-    const lyricsCustomArr = Array.isArray(lyricsCustom) ? lyricsCustom as CustomFont[] : [];
-
-    /** 加载自定义字体列表，返回 path → css 映射 */
-    async function loadCustom(fonts: CustomFont[], prefix: string): Promise<Map<string, string>> {
-      const entries = await Promise.all(
-        fonts.map(async (font) => {
-          try {
-            const result = await window.api.readFontFile(font.path);
-            if (result) {
-              return [font.path, injectFontFace(`${prefix}-${font.name}`, result.data, result.ext)] as const;
-            }
-          } catch {
-            /* 字体文件不可用时跳过 */
-          }
-          return null;
-        })
-      );
-      return new Map(entries.filter((e): e is NonNullable<typeof e> => e !== null));
-    }
-
-    const [uiCssMap, lyricsCssMap] = await Promise.all([
-      loadCustom(uiCustomArr, 'eIsland-UI'),
-      loadCustom(lyricsCustomArr, 'eIsland-Lyrics'),
-    ]);
-
-    /** 应用 UI 字体 */
     if (typeof uiVal === 'string' && uiVal.startsWith('custom:')) {
-      const path = uiVal.slice(7);
-      const css = uiCssMap.get(path);
+      const map = await loadCustomFonts(uiCustomArr, 'eIsland-UI');
+      const css = map.get(uiVal.slice(7));
       if (css) document.documentElement.style.setProperty('--island-ui-font', css);
     } else if (typeof uiVal === 'string') {
       const css = PRESET_FONTS[uiVal];
       if (css) document.documentElement.style.setProperty('--island-ui-font', css);
     }
+  } catch {
+    /* ignore */
+  }
+}
 
-    /** 应用歌词字体 */
+/** 应用歌词字体到当前文档 */
+export async function applyLyricsFontFromStore(): Promise<void> {
+  try {
+    const [lyricsVal, lyricsCustom] = await Promise.all([
+      window.api.storeRead('lyrics-font-family'),
+      window.api.storeRead('lyrics-custom-fonts'),
+    ]);
+    const lyricsCustomArr = Array.isArray(lyricsCustom) ? lyricsCustom as CustomFont[] : [];
     if (typeof lyricsVal === 'string' && lyricsVal.startsWith('custom:')) {
-      const path = lyricsVal.slice(7);
-      const css = lyricsCssMap.get(path);
+      const map = await loadCustomFonts(lyricsCustomArr, 'eIsland-Lyrics');
+      const css = map.get(lyricsVal.slice(7));
       if (css) document.documentElement.style.setProperty('--island-lyrics-font', css);
     } else if (typeof lyricsVal === 'string') {
       const css = PRESET_FONTS[lyricsVal];
       if (css) document.documentElement.style.setProperty('--island-lyrics-font', css);
     }
   } catch {
-    /* 启动字体初始化失败时使用 CSS 默认值 */
+    /* ignore */
   }
+}
+
+/**
+ * 启动时初始化字体（在 React 挂载前执行，避免首次渲染闪烁）
+ */
+export async function initFonts(): Promise<void> {
+  await Promise.all([applyUIFontFromStore(), applyLyricsFontFromStore()]);
 }

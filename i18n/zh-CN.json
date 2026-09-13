@@ -2574,7 +2574,11 @@
         "shapeModeTitle": "岛屿形态",
         "shapeModeHint": "切换灵动岛的外观形态，刘海屏贴于屏幕顶部，灵动岛为胶囊形状",
         "shapeModeNotch": "刘海屏",
-        "shapeModePill": "灵动岛"
+        "shapeModePill": "灵动岛",
+        "tempHideTitle": "右键让路",
+        "tempHideHint": "岛上右键可临时隐藏，方便点击背后窗口。默认开启，隐藏约 3 秒后自动恢复。",
+        "tempHideEnable": "启用了右键让路（临时隐藏）",
+        "tempHideDuration": "隐藏时长（秒）"
       },
       "animation": {
         "springTitle": "灵动岛弹性动画",
@@ -4035,4 +4039,4 @@
       "loginCancelled": "登录已取消或超时"
     }
   }
-}
+}\n

@@ -2572,7 +2572,11 @@
         "shapeModeTitle": "Island Shape",
         "shapeModeHint": "Switch the island's appearance: Notch pins to the top of the screen, Pill is an oval floating shape",
         "shapeModeNotch": "Notch",
-        "shapeModePill": "Pill"
+        "shapeModePill": "Pill",
+        "tempHideTitle": "Right-click yield",
+        "tempHideHint": "Right-click the island to temporarily hide it. Default on; restores after a few seconds.",
+        "tempHideEnable": "Enable right-click yield (temporary hide)",
+        "tempHideDuration": "Hide duration (seconds)"
       },
       "animation": {
         "springTitle": "Spring Animation",
@@ -4033,4 +4037,4 @@
       "loginCancelled": "Login cancelled or timed out"
     }
   }
-}
+}\n

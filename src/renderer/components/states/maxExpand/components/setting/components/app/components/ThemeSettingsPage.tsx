@@ -536,24 +536,27 @@ export function ThemeSettingsPage({
             <div className="settings-card-subtitle">{t('settings.app.theme.bgCardSubtitle', { defaultValue: '选择内置壁纸，或从本地导入图片 / 视频作为灵动岛背景' })}</div>
           </div>
 
-          <div className="settings-card-subgroup">
-            <div className="settings-card-subgroup-title">{t('settings.app.theme.builtinWallpaper', { defaultValue: '内置壁纸' })}</div>
-            <div className="settings-music-hint">{t('settings.app.theme.builtinWallpaperHint', { defaultValue: '选择一张内置壁纸作为灵动岛背景' })}</div>
-            <div className="settings-bg-gallery">
-              {BUILTIN_WALLPAPERS.map((wp) => (
-                <button
-                  key={wp.id}
-                  className={`settings-bg-gallery-item ${bgMediaType === 'image' && bgMediaPreviewUrl === wp.src ? 'active' : ''}`}
-                  type="button"
-                  onClick={() => handleSelectBuiltinBgImage(wp.src, wp.defaultOpacity)}
-                  title={`${wp.name}${t('settings.app.theme.defaultOpacitySuffix', { defaultValue: '（默认透明度 {{opacity}}%）', opacity: wp.defaultOpacity })}`}
-                >
-                  <img src={wp.src} alt={wp.name} className="settings-bg-gallery-img" />
-                  <span className="settings-bg-gallery-name">{wp.name}</span>
-                </button>
-              ))}
+          {/* 内置壁纸：暂下架，待素材与分状态预览就绪后再上（见 EXECUTION_ISSUES） */}
+          {false && (
+            <div className="settings-card-subgroup">
+              <div className="settings-card-subgroup-title">{t('settings.app.theme.builtinWallpaper', { defaultValue: '内置壁纸' })}</div>
+              <div className="settings-music-hint">{t('settings.app.theme.builtinWallpaperHint', { defaultValue: '选择一张内置壁纸作为灵动岛背景' })}</div>
+              <div className="settings-bg-gallery">
+                {BUILTIN_WALLPAPERS.map((wp) => (
+                  <button
+                    key={wp.id}
+                    className={`settings-bg-gallery-item ${bgMediaType === 'image' && bgMediaPreviewUrl === wp.src ? 'active' : ''}`}
+                    type="button"
+                    onClick={() => handleSelectBuiltinBgImage(wp.src, wp.defaultOpacity)}
+                    title={`${wp.name}${t('settings.app.theme.defaultOpacitySuffix', { defaultValue: '（默认透明度 {{opacity}}%）', opacity: wp.defaultOpacity })}`}
+                  >
+                    <img src={wp.src} alt={wp.name} className="settings-bg-gallery-img" />
+                    <span className="settings-bg-gallery-name">{wp.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="settings-card-subgroup">
             <div className="settings-card-subgroup-title">{t('settings.app.theme.customImage', { defaultValue: '自定义图片' })}</div>
