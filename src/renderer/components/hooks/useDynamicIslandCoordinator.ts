@@ -24,6 +24,7 @@
  * @author 鸡哥
  */
 
+import { useEffect, useRef } from 'react';
 import useIslandStore from '../../store/slices';
 import { useDynamicIslandShell } from './useDynamicIslandShell';
 import { useIslandDominantColor } from './useIslandDominantColor';
