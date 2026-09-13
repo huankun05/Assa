@@ -1,5 +1,5 @@
 /**
- * 设置主页：玻璃卡片分类入口 + 全局搜索（复用 SEARCHABLE_SETTINGS）
+ * 设置主页：desk-pet 式全宽入口卡 + 页头搜索
  */
 import { useMemo, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +35,9 @@ export function SettingsHomeSection({
       const label = item.labelKey ? t(item.labelKey, { defaultValue: item.label }) : item.label;
       const desc = item.descKey ? t(item.descKey, { defaultValue: item.desc }) : item.desc;
       return { ...item, label, desc };
-    }).filter((item) => item.label.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q)).slice(0, 24);
+    })
+      .filter((item) => item.label.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q))
+      .slice(0, 20);
   }, [query, i18n.language, t]);
 
   const openSearchHit = (hit: {
@@ -54,67 +56,81 @@ export function SettingsHomeSection({
   };
 
   return (
-    <div className="settings-home">
-      <div className="max-expand-settings-title settings-home-title">
-        {t('settings.home.title', { defaultValue: '设置' })}
-      </div>
-      <p className="settings-home-desc">
-        {t('settings.home.desc', { defaultValue: '搜索配置项，或按分类进入。' })}
-      </p>
-
-      <div className="settings-home-search">
-        <svg className="settings-home-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          className="settings-home-search-input"
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('settings.home.searchPlaceholder', { defaultValue: '搜索设置…' })}
-        />
-        {query && (
-          <button type="button" className="settings-home-search-clear" onClick={() => setQuery('')} aria-label="清除">
-            ×
-          </button>
-        )}
-        {searchResults && (
-          <div className="settings-home-search-results">
-            {searchResults.length === 0 ? (
-              <div className="settings-home-search-empty">没有匹配的设置</div>
-            ) : (
-              searchResults.map((hit, idx) => (
-                <button
-                  key={`${hit.label}-${idx}`}
-                  type="button"
-                  className="settings-home-search-item"
-                  onClick={() => openSearchHit(hit)}
-                >
-                  <span className="settings-home-search-item-title">{hit.label}</span>
-                  <span className="settings-home-search-item-desc">{hit.desc}</span>
-                </button>
-              ))
+    <div className="settings-page">
+      <header className="settings-page-header">
+        <div className="settings-page-header-title-block">
+          <span className="settings-page-header-kicker">Settings</span>
+          <h1 className="settings-page-header-title">
+            {t('settings.home.title', { defaultValue: '设置' })}
+          </h1>
+        </div>
+        <div className="settings-page-header-actions">
+          <div className="settings-search">
+            <svg className="settings-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              className="settings-search-input"
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('settings.home.searchPlaceholder', { defaultValue: '搜索设置…' })}
+            />
+            {query && (
+              <button
+                type="button"
+                className="settings-search-clear"
+                onClick={() => setQuery('')}
+                aria-label="清除"
+              >
+                ×
+              </button>
+            )}
+            {searchResults && (
+              <div className="settings-search-results">
+                {searchResults.length === 0 ? (
+                  <div className="settings-search-empty">没有匹配的设置</div>
+                ) : (
+                  searchResults.map((hit, idx) => (
+                    <button
+                      key={`${hit.label}-${idx}`}
+                      type="button"
+                      className="settings-search-hit"
+                      onClick={() => openSearchHit(hit)}
+                    >
+                      <span className="settings-search-hit-title">{hit.label}</span>
+                      <span className="settings-search-hit-desc">{hit.desc}</span>
+                    </button>
+                  ))
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      </header>
 
-      <div className="settings-home-grid">
-        {SETTINGS_CATEGORIES.filter((c) => c.id !== 'home').map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            className="settings-home-cat-card"
-            onClick={() => onOpenCategory(cat.id)}
-          >
-            <span className="settings-home-cat-icon-wrap">
-              <img className="settings-home-cat-icon" src={cat.icon} alt="" />
-            </span>
-            <span className="settings-home-cat-label">{cat.label}</span>
-            <span className="settings-home-cat-desc">{cat.desc}</span>
-          </button>
-        ))}
+      <div className="settings-page-body settings-page-body--scroll">
+        <p className="settings-page-lead">
+          {t('settings.home.desc', { defaultValue: '搜索配置项，或按分类进入。' })}
+        </p>
+        <div className="settings-menu-list">
+          {SETTINGS_CATEGORIES.filter((c) => c.id !== 'home').map((cat, index) => (
+            <button
+              key={cat.id}
+              type="button"
+              className="settings-menu-item"
+              style={{ animationDelay: `${index * 40}ms` }}
+              onClick={() => onOpenCategory(cat.id)}
+            >
+              <span className="settings-menu-item-content">
+                <span className="settings-menu-item-title">{cat.label}</span>
+                <span className="settings-menu-item-desc">{cat.desc}</span>
+              </span>
+              <img className="settings-menu-item-icon" src={cat.icon} alt="" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

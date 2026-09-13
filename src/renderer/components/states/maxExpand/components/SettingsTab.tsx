@@ -142,7 +142,6 @@ import { SettingsPageNavigation, SettingsPageNavigationToggle } from './setting/
 import { SettingsHomeSection } from './setting/components/home/SettingsHomeSection';
 import { SettingsCategoryHub } from './setting/components/home/SettingsCategoryHub';
 import {
-  SETTINGS_CATEGORIES,
   getSettingsCategory,
   type SettingsCategoryId,
   type SettingsCategoryDest,
@@ -2188,43 +2187,15 @@ export function SettingsTab(): ReactElement {
   };
 
   const activeCategoryMeta = getSettingsCategory(activeCategory);
+  const detailTitle = navMode === 'detail' ? currentAppSettingsPageLabel : '';
+  const detailKicker = navMode === 'detail' && activeCategoryMeta && activeCategory !== 'home'
+    ? activeCategoryMeta.label
+    : t('settings.home.title', { defaultValue: '设置' });
 
   return (
     <div className="max-expand-settings settings-shell" ref={settingsRef}>
-      <div className="max-expand-settings-layout">
-        <div className="max-expand-settings-sidebar settings-shell-sidebar">
-          {navMode === 'detail' && (
-            <button
-              type="button"
-              className="settings-shell-back"
-              onClick={backFromDetail}
-              aria-label={t('settings.nav.backToCategory', { defaultValue: '返回分类' })}
-            >
-              ← {t('settings.nav.backToCategory', { defaultValue: '返回' })}
-            </button>
-          )}
-          {SETTINGS_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              className={`max-expand-settings-sidebar-item ${navMode !== 'detail' && activeCategory === cat.id ? 'active' : ''}`}
-              onClick={() => {
-                if (cat.id === 'home') {
-                  setNavMode('home');
-                  setActiveCategory('home');
-                } else {
-                  openCategory(cat.id);
-                }
-              }}
-              type="button"
-            >
-              <img className="sidebar-tab-icon" src={cat.icon} alt="" />
-              <span className="sidebar-dot" />
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="max-expand-settings-panel settings-scrollbar-thin settings-shell-panel">
+      <div className="max-expand-settings-layout max-expand-settings-layout--single">
+        <div className="max-expand-settings-panel settings-scrollbar-thin settings-shell-panel settings-shell-panel--full">
           {navMode === 'home' && (
             <SettingsHomeSection
               onOpenCategory={openCategory}
@@ -2235,9 +2206,26 @@ export function SettingsTab(): ReactElement {
             <SettingsCategoryHub
               category={activeCategoryMeta}
               onOpenItem={openDest}
+              onBack={() => setNavMode('home')}
             />
           )}
           {navMode === 'detail' && (
+            <div className="settings-page settings-page--detail">
+              <header className="settings-page-header">
+                <button
+                  type="button"
+                  className="settings-page-back"
+                  onClick={backFromDetail}
+                  aria-label={t('settings.nav.backToCategory', { defaultValue: '返回' })}
+                >
+                  ‹
+                </button>
+                <div className="settings-page-header-title-block">
+                  <span className="settings-page-header-kicker">{detailKicker}</span>
+                  <h1 className="settings-page-header-title">{detailTitle}</h1>
+                </div>
+              </header>
+              <div className="settings-page-body settings-page-body--scroll">
             <>
           {activeTab === 'index' && (
             <IndexSettingsSection
@@ -2695,6 +2683,8 @@ export function SettingsTab(): ReactElement {
 
           {activeTab === 'about' && <AboutSettingsSection aboutVersion={aboutVersion} initialPage={aboutInitialPage} />}
             </>
+              </div>
+            </div>
           )}
 
         </div>
