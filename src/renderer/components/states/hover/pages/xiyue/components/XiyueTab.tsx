@@ -90,7 +90,10 @@ export function XiyueTab(): ReactElement {
     <div className="xiyue-tab">
       {/* 左：头像 + 两行文案 */}
       <div className="xiyue-identity">
-        <XiyueAvatar mood={mood} />
+        <XiyueAvatar
+          mood={mood}
+          onClick={() => openStandaloneChatWindow()}
+        />
         <div className="xiyue-text-block">
           <span className="xiyue-name">
             {visibleName}

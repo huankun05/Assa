@@ -27,7 +27,7 @@
  * @author 鸡哥
  */
 
-import type { ReactElement } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { AVATAR_IMAGE_MAP, type AgentMood } from '../config/xiyueMoodConfig';
 
 /**
@@ -99,18 +99,35 @@ const FACE: Record<AgentMood, ReactElement> = {
  * @param mood - 当前状态，决定表情和微动动画
  * @returns 头像元素（图片 或 内联 SVG）
  */
-export function XiyueAvatar({ mood }: { mood: AgentMood }): ReactElement {
+export function XiyueAvatar({ mood, onClick }: { mood: AgentMood; onClick?: () => void }): ReactElement {
   const imgSrc = AVATAR_IMAGE_MAP[mood];
   const moodClass = `mood-${mood}`;
+  const interactive = typeof onClick === 'function';
+  const a11y = interactive
+    ? {
+      role: 'button' as const,
+      tabIndex: 0,
+      title: '打开汐月对话',
+      'aria-label': '打开汐月对话',
+      onClick,
+      onKeyDown: (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      },
+    }
+    : {};
 
   // 图片模式：配置了路径就用图片（正式美术资源，7 种状态全部已配置）
   if (imgSrc) {
     return (
       <img
-        className={`xiyue-avatar ${moodClass}`}
+        className={`xiyue-avatar ${moodClass}${interactive ? ' xiyue-avatar--clickable' : ''}`}
         src={imgSrc}
         alt=""
         draggable={false}
+        {...a11y}
         onError={(e) => {
           const el = e.currentTarget;
           if (el.dataset.fallback === '1') return;
@@ -124,15 +141,16 @@ export function XiyueAvatar({ mood }: { mood: AgentMood }): ReactElement {
   // SVG 模式：单色 currentColor + filter invert 主题适配（兜底，图片加载失败时用）
   return (
     <svg
-      className={`xiyue-avatar ${moodClass}`}
+      className={`xiyue-avatar ${moodClass}${interactive ? ' xiyue-avatar--clickable' : ''}`}
       viewBox="0 0 32 32"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.7"
       strokeLinecap="round"
       strokeLinejoin="round"
-      aria-hidden="true"
+      aria-hidden={!interactive}
       focusable="false"
+      {...a11y}
     >
       {/* 头像圆框：标识这是一个「角色 / 人物」 */}
       <circle cx="15.4" cy="16.2" r="10.6" />

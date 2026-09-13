@@ -95,6 +95,25 @@ img.xiyue-avatar {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
+/* 头像可点击：进入文字聊天窗（与右侧 💬 一致） */
+.xiyue-avatar--clickable {
+  cursor: pointer;
+}
+
+.xiyue-avatar--clickable:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 2px rgba(var(--color-island-accent-rgb, 120, 180, 255), 0.35);
+}
+
+img.xiyue-avatar--clickable:hover {
+  filter: brightness(1.06);
+}
+
+.xiyue-avatar--clickable:focus-visible {
+  outline: 2px solid var(--color-island-accent);
+  outline-offset: 2px;
+}
+
 @keyframes xiyue-breathe {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.015); }
@@ -190,7 +209,7 @@ img.xiyue-avatar {
 .xiyue-name {
   display: inline-flex;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: 0.1px;
@@ -287,11 +306,11 @@ img.xiyue-avatar {
 
 /* 副行：问候语 / 状态描述；过长时省略号截断，窄岛也不撑破 */
 .xiyue-sub {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   line-height: 1.25;
   letter-spacing: 0.1px;
-  color: rgba(var(--color-text-rgb), 0.55);
+  color: rgba(var(--color-text-rgb), 0.62);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
