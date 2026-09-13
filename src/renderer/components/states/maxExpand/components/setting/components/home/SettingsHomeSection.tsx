@@ -1,5 +1,5 @@
 /**
- * 设置主页：对齐 settings-ui-preview（快速入口 + 分类行列表 + 顶栏搜索）
+ * 设置主页：常用设置（按使用频率）+ 全部分类 + 顶栏搜索
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,20 +12,60 @@ import {
 } from '../../utils/settingsConfig';
 import {
   SETTINGS_CATEGORIES,
-  type SettingsCategoryId,
   type SettingsCategoryDest,
+  type SettingsCategoryId,
 } from '../../config/settingsCategories';
+import {
+  getTopSettingsUsageIds,
+  settingsUsageId,
+} from '../../config/settingsUsage';
 
 export interface SettingsHomeSectionProps {
   onOpenCategory: (id: SettingsCategoryId) => void;
   onOpenDest: (dest: SettingsCategoryDest) => void;
+  /** 依赖：打开详情后父级刷新常用列表 */
+  usageTick?: number;
 }
 
-const QUICK_IDS: SettingsCategoryId[] = ['appearance', 'aiPrivacy', 'system', 'media'];
+interface FlatItem {
+  id: string;
+  label: string;
+  desc: string;
+  icon?: string;
+  dest: SettingsCategoryDest;
+  categoryId: SettingsCategoryId;
+}
+
+function flattenItems(): FlatItem[] {
+  const out: FlatItem[] = [];
+  for (const cat of SETTINGS_CATEGORIES) {
+    if (!cat.items) continue;
+    for (const item of cat.items) {
+      out.push({
+        id: settingsUsageId(item.dest),
+        label: item.label,
+        desc: item.desc,
+        icon: item.icon,
+        dest: item.dest,
+        categoryId: cat.id,
+      });
+    }
+  }
+  return out;
+}
+
+/** 冷启动无数据时的默认常用（稳定顺序） */
+const DEFAULT_HOT_IDS = [
+  'app:theme::::',
+  'app:ai-security::::',
+  'app:behavior::::',
+  'music::::::',
+];
 
 export function SettingsHomeSection({
   onOpenCategory,
   onOpenDest,
+  usageTick = 0,
 }: SettingsHomeSectionProps): ReactElement {
   const { t, i18n } = useTranslation();
   const boxRef = useRef<HTMLDivElement>(null);
@@ -33,6 +73,11 @@ export function SettingsHomeSection({
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [usageVersion, setUsageVersion] = useState(0);
+
+  useEffect(() => {
+    setUsageVersion((v) => v + 1);
+  }, [usageTick]);
 
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -78,9 +123,25 @@ export function SettingsHomeSection({
   };
 
   const categories = SETTINGS_CATEGORIES.filter((c) => c.id !== 'home');
-  const quickCats = QUICK_IDS
-    .map((id) => categories.find((c) => c.id === id))
-    .filter(Boolean) as typeof categories;
+  const allItems = useMemo(() => flattenItems(), []);
+
+  const hotItems = useMemo(() => {
+    void usageVersion;
+    const topIds = getTopSettingsUsageIds(4);
+    const byId = new Map(allItems.map((x) => [x.id, x]));
+    const picked: FlatItem[] = [];
+    for (const id of topIds) {
+      const hit = byId.get(id);
+      if (hit) picked.push(hit);
+    }
+    if (picked.length >= 4) return picked;
+    for (const id of DEFAULT_HOT_IDS) {
+      if (picked.length >= 4) break;
+      const hit = byId.get(id);
+      if (hit && !picked.some((p) => p.id === hit.id)) picked.push(hit);
+    }
+    return picked.slice(0, 4);
+  }, [allItems, usageVersion]);
 
   const mono = (icon: string): CSSProperties =>
     ({ '--icon-url': `url(${icon})` }) as CSSProperties;
@@ -94,7 +155,7 @@ export function SettingsHomeSection({
               {t('settings.home.title', { defaultValue: '设置' })}
             </h1>
             <p className="settings-v2-sub">
-              {t('settings.home.desc', { defaultValue: '搜索配置，或从分类进入' })}
+              {t('settings.home.desc', { defaultValue: '搜索配置，或按分类进入' })}
             </p>
           </div>
           <div className="settings-search-box" ref={boxRef}>
@@ -174,22 +235,24 @@ export function SettingsHomeSection({
 
         <div className="settings-v2-body settings-scroll scrollbar-none">
           <div className="settings-v2-label">
-            {t('settings.home.quick', { defaultValue: '快速入口' })}
+            {t('settings.home.hot', { defaultValue: '常用设置' })}
           </div>
           <div className="settings-quick-grid">
-            {quickCats.map((cat) => (
+            {hotItems.map((item) => (
               <button
-                key={cat.id}
+                key={item.id}
                 type="button"
                 className="settings-quick-item"
-                onClick={() => onOpenCategory(cat.id)}
+                onClick={() => onOpenDest(item.dest)}
               >
                 <span className="settings-quick-icon" aria-hidden="true">
-                  <span className="icon-mono" style={mono(cat.icon)} />
+                  {item.icon ? (
+                    <span className="icon-mono" style={mono(item.icon)} />
+                  ) : null}
                 </span>
                 <span className="settings-quick-text">
-                  <strong>{cat.label}</strong>
-                  <span>{cat.desc.split('、')[0]}</span>
+                  <strong>{item.label}</strong>
+                  <span>{item.desc}</span>
                 </span>
               </button>
             ))}

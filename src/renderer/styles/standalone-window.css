@@ -105,15 +105,15 @@
 }
 
 .cw-window-icon {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   margin-left: 12px;
-  margin-right: 6px;
-  opacity: 0.9;
+  margin-right: 10px;
+  opacity: 1;
   flex-shrink: 0;
   object-fit: contain;
   align-self: center;
-  transform: translateY(3px);
+  transform: none;
   -webkit-app-region: no-drag;
 }
 

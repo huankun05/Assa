@@ -27,7 +27,8 @@
 import { app, BrowserWindow, globalShortcut, protocol, net, ipcMain } from 'electron';
 import { join, resolve as resolvePath, sep } from 'path';
 import { pathToFileURL } from 'url';
-import { mkdirSync, existsSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { mkdirSync, existsSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'fs';
+import { spawn } from 'child_process';
 import { electronApp, optimizer } from '@electron-toolkit/utils';
 import { autoUpdater } from 'electron-updater';
 import { createTray, destroyTray, toggleTray } from './tray';
@@ -201,6 +202,52 @@ let mainWindow: BrowserWindow | null = null;
 let agentVoiceInputWindow: BrowserWindow | null = null;
 let cliGlowWindow: BrowserWindow | null = null;
 let cachedFullscreenDetector: { isAnyFullscreenWindow: () => boolean } | null | undefined;
+
+/**
+ * 注册 Windows 开始菜单快捷方式（汐月图标）
+ * @description dev 下任务栏常显示 Electron：宿主是 electron.exe。
+ *   创建带汐月 ICO 的 .lnk，固定到任务栏/开始菜单后图标会正确。
+ *   打包安装后的 toast/任务栏品牌由 installer + appId 负责。幂等，失败忽略。
+ */
+function registerWindowsTaskbarShortcut(): void {
+  if (process.platform !== 'win32') return;
+  if (app.isPackaged) return;
+  try {
+    const appsDir = join(
+      process.env.APPDATA ?? '',
+      'Microsoft',
+      'Windows',
+      'Start Menu',
+      'Programs',
+      '汐月',
+    );
+    if (!existsSync(appsDir)) mkdirSync(appsDir, { recursive: true });
+    const exe = process.execPath;
+    const projectRoot = app.getAppPath();
+    const iconPath = join(projectRoot, 'resources', 'icon', 'xiyue_256x256.ico');
+    const lnkPath = join(appsDir, '汐月.lnk');
+    const vbs = [
+      'Set WshShell = CreateObject("WScript.Shell")',
+      `Set lnk = WshShell.CreateShortcut("${lnkPath.replace(/\\/g, '\\\\')}")`,
+      `lnk.TargetPath = "${exe.replace(/\\/g, '\\\\')}"`,
+      `lnk.Arguments = "."`,
+      `lnk.WorkingDirectory = "${projectRoot.replace(/\\/g, '\\\\')}"`,
+      `lnk.IconLocation = "${iconPath.replace(/\\/g, '\\\\')}"`,
+      'lnk.Description = "汐月灵动岛"',
+      'lnk.Save',
+    ].join('\r\n');
+    const vbsPath = join(appsDir, 'register-xiyue-shortcut.vbs');
+    writeFileSync(vbsPath, vbs, 'ascii');
+    const child = spawn('wscript.exe', [vbsPath], {
+      windowsHide: true,
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+  } catch {
+    // ignore
+  }
+}
 
 function detectAnyFullscreenWindow(): boolean {
   if (process.platform !== 'win32') return false;
@@ -939,6 +986,11 @@ app.whenReady().then(() => {
   // AUMID 已在模块加载时注册；这里再设一次，兼容 @electron-toolkit/utils 路径
   app.setName('汐月');
   electronApp.setAppUserModelId('com.xiyue.app');
+  try {
+    registerWindowsTaskbarShortcut();
+  } catch {
+    // ignore
+  }
 
   /**
    * 启动时清掉「过期」的 soft-restart 残留：

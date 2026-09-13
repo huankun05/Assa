@@ -140,6 +140,7 @@ import { WallpaperContributionSection } from './setting/components/pluginMarket/
 import { WallpaperEditSection } from './setting/components/pluginMarket/WallpaperEditSection';
 import { SettingsPageNavigation, SettingsPageNavigationToggle } from './setting/components/SettingsPageNavigation';
 import { SettingsHomeSection } from './setting/components/home/SettingsHomeSection';
+import { trackSettingsOpen } from './setting/config/settingsUsage';
 import { SettingsCategoryHub } from './setting/components/home/SettingsCategoryHub';
 import {
   getSettingsCategory,
@@ -206,6 +207,7 @@ export function SettingsTab(): ReactElement {
   const [activeCategory, setActiveCategory] = useState<SettingsCategoryId>('appearance');
   /** 兼容旧 appHub 逻辑：进详情时 false */
   const [appHubOpen, setAppHubOpen] = useState(true);
+  const [usageTick, setUsageTick] = useState(0);
   const openAppPage = (page: AppSettingsPageKey): void => {
     setAppHubOpen(false);
     setAppSettingsPage(page);
@@ -215,6 +217,8 @@ export function SettingsTab(): ReactElement {
     setNavMode('category');
   };
   const openDest = (dest: SettingsCategoryDest): void => {
+    trackSettingsOpen(dest);
+    setUsageTick((v) => v + 1);
     setNavMode('detail');
     setActiveTab(dest.tab);
     if (dest.appPage) openAppPage(dest.appPage);
@@ -2200,6 +2204,7 @@ export function SettingsTab(): ReactElement {
             <SettingsHomeSection
               onOpenCategory={openCategory}
               onOpenDest={openDest}
+              usageTick={usageTick}
             />
           )}
           {navMode === 'category' && activeCategoryMeta && (

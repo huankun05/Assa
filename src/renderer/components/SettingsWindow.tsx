@@ -28,7 +28,6 @@
 
 import { useEffect } from 'react';
 import type { ReactElement } from 'react';
-import { useTranslation } from 'react-i18next';
 import { SettingsTab } from './states/maxExpand/components/SettingsTab';
 import windowIcon from '../../../resources/icon/xiyue.svg';
 
@@ -37,7 +36,6 @@ import windowIcon from '../../../resources/icon/xiyue.svg';
  * @returns 设置窗口 React 节点
  */
 export function SettingsWindow(): ReactElement {
-  const { t } = useTranslation();
 
   // 按 Escape 关闭设置窗口（与业务独立窗口交互一致）
   useEffect(() => {
@@ -54,8 +52,7 @@ export function SettingsWindow(): ReactElement {
   return (
     <div className="cw-root settings-window">
       <div className="cw-chrome">
-        <img className="cw-window-icon" src={windowIcon} alt="汐月" />
-        <span className="cw-chrome__title">{t('settings.sidebar.title')}</span>
+        <img className="cw-window-icon" src={windowIcon} alt="" aria-hidden="true" />
         <div className="cw-chrome__drag" />
         <div className="cw-chrome__controls">
           <button className="cw-ctrl" type="button" title={t('standalone.controls.minimize')} onClick={() => window.api.windowMinimize()}>
