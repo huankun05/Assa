@@ -151,7 +151,7 @@
   gap: 8px;
   padding: 7px 9px;
   min-height: 28px;
-  color: rgba(var(--color-text-rgb), 0.38);
+  color: rgba(var(--color-text-rgb), 0.62);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -160,8 +160,8 @@
 }
 
 .max-expand-settings-sidebar-item:hover {
-  color: rgba(var(--color-text-rgb), 0.7);
-  background: rgba(var(--color-text-rgb), 0.05);
+  color: rgba(var(--color-text-rgb), 0.92);
+  background: rgba(var(--color-text-rgb), 0.06);
 }
 
 /* 活动项：玻璃药丸 + accent 强调，呼应灵动岛导航圆点的发光交互 */
@@ -172,10 +172,10 @@
 }
 
 .sidebar-tab-icon {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
-  opacity: 0.65;
+  opacity: 0.78;
   object-fit: contain;
   filter: brightness(0) invert(var(--icon-invert));
   transition: opacity 0.2s ease;
@@ -1338,6 +1338,86 @@
   color: rgba(var(--color-text-rgb), 0.96);
   font-weight: 500;
   background: rgba(var(--color-text-rgb), 0.12);
+}
+
+/* ---------- 软件设置：单栏钻取总览（替代右侧双栏） ---------- */
+
+.settings-app-pages-layout--single {
+  display: block;
+}
+
+.settings-app-back-hub {
+  appearance: none;
+  border: none;
+  background: rgba(var(--color-text-rgb), 0.08);
+  color: rgba(var(--color-text-rgb), 0.85);
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  margin-right: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.settings-app-back-hub:hover {
+  background: rgba(var(--color-text-rgb), 0.14);
+  color: rgba(var(--color-text-rgb), 1);
+}
+
+.settings-app-hub-desc {
+  font-size: 12px;
+  color: rgba(var(--color-text-rgb), 0.55);
+  margin: -4px 0 12px;
+}
+
+.settings-app-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.settings-app-hub-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--color-text-rgb), 0.1);
+  background: rgba(var(--color-text-rgb), 0.04);
+  color: rgba(var(--color-text-rgb), 0.9);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.settings-app-hub-card:hover {
+  border-color: color-mix(in srgb, var(--color-island-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--color-island-accent) 8%, transparent);
+  transform: translateY(-1px);
+}
+
+.settings-app-hub-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: brightness(0) invert(var(--icon-invert));
+  opacity: 0.85;
+}
+
+.settings-app-hub-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(var(--color-text-rgb), 0.95);
+}
+
+.settings-app-hub-card-desc {
+  font-size: 11px;
+  color: rgba(var(--color-text-rgb), 0.5);
+  line-height: 1.35;
 }
 
 .settings-page-navigation-menu::-webkit-scrollbar {

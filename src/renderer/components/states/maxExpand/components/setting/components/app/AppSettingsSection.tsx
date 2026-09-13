@@ -24,8 +24,9 @@
  * @author 鸡哥
  */
 
-import { useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SETTINGS_TAB_ICONS } from '../../utils/settingsConfig';
 import { LayoutPreviewSettingsPage } from './components/LayoutPreviewSettingsPage';
 import { ExpandLayoutSettingsPage } from './components/ExpandLayoutSettingsPage';
 import { MaxExpandLayoutSettingsPage } from './components/MaxExpandLayoutSettingsPage';
@@ -48,8 +49,6 @@ import { PerformanceSettingsPage } from './components/PerformanceSettingsPage';
 import { PerformanceMonitorSettingsPage } from './components/PerformanceMonitorSettingsPage';
 import { ScreenshotSettingsPage } from './components/ScreenshotSettingsPage';
 import { ControlCenterSettingsPage } from './components/ControlCenterSettingsPage';
-import { AppSettingsPageDots } from './components/AppSettingsPageDots';
-import { SettingsPageNavigationToggle } from '../SettingsPageNavigation';
 import type { AppSettingsSectionProps } from './components/types';
 
 /**
@@ -174,9 +173,10 @@ export function AppSettingsSection({
   appSettingsPages,
   settingsTabLabels,
   setAppSettingsPage,
+  hubOpen = false,
+  onBackToHub,
 }: AppSettingsSectionProps): ReactElement {
   const { t } = useTranslation();
-  const [pageNavigationExpanded, setPageNavigationExpanded] = useState(false);
 
   const renderCurrentPage = (): ReactElement | null => {
     switch (appSettingsPage) {
@@ -354,27 +354,58 @@ export function AppSettingsSection({
     }
   };
 
+  if (hubOpen) {
+    return (
+      <div className="max-expand-settings-section">
+        <div className="max-expand-settings-title">
+          {t('settings.labels.app', { defaultValue: '软件设置' })}
+        </div>
+        <div className="settings-app-hub-desc">
+          {t('settings.app.hubHint', { defaultValue: '选择一项进入详细设置，左上可返回总览。' })}
+        </div>
+        <div className="settings-app-hub-grid">
+          {appSettingsPages.map((page) => {
+            const label = t(`settings.labels.${page}`, { defaultValue: settingsTabLabels[page] ?? page });
+            const desc = t(`settings.app.hubDesc.${page}`, { defaultValue: '' });
+            const icon = SETTINGS_TAB_ICONS[page];
+            return (
+              <button
+                key={page}
+                type="button"
+                className="settings-app-hub-card"
+                onClick={() => setAppSettingsPage(page)}
+              >
+                {icon ? <img className="settings-app-hub-icon" src={icon} alt="" /> : null}
+                <span className="settings-app-hub-label">{label}</span>
+                {desc ? <span className="settings-app-hub-card-desc">{desc}</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-expand-settings-section">
       <div className="max-expand-settings-title settings-app-title-line">
+        {onBackToHub && (
+          <button
+            className="settings-app-back-hub"
+            type="button"
+            onClick={onBackToHub}
+            aria-label={t('settings.app.backToHub', { defaultValue: '返回软件设置列表' })}
+            title={t('settings.app.backToHub', { defaultValue: '返回软件设置列表' })}
+          >
+            ←
+          </button>
+        )}
         <span>{t('settings.labels.app', { defaultValue: '软件设置' })}</span>
         <span className="settings-app-title-sub">- {currentAppSettingsPageLabel}</span>
-        <SettingsPageNavigationToggle
-          expanded={pageNavigationExpanded}
-          label={t(pageNavigationExpanded ? 'settings.navigation.collapse' : 'settings.navigation.expand')}
-          onToggle={() => setPageNavigationExpanded((current) => !current)}
-        />
       </div>
 
-      <div className="settings-app-pages-layout">
+      <div className="settings-app-pages-layout settings-app-pages-layout--single">
         <div className="settings-app-page-main">{renderCurrentPage()}</div>
-        <AppSettingsPageDots
-          appSettingsPage={appSettingsPage}
-          expanded={pageNavigationExpanded}
-          appSettingsPages={appSettingsPages}
-          settingsTabLabels={settingsTabLabels}
-          setAppSettingsPage={setAppSettingsPage}
-        />
       </div>
     </div>
   );

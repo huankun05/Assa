@@ -193,6 +193,12 @@ export function SettingsTab(): ReactElement {
   const [activeTab, setActiveTab] = useSettingsSidebarTabState();
   const { sessionToken } = useUserSessionState();
   const [appSettingsPage, setAppSettingsPage] = useState<AppSettingsPageKey>('layout-preview');
+  /** 软件设置单栏钻取：true=列表总览，false=已进入子页 */
+  const [appHubOpen, setAppHubOpen] = useState(true);
+  const openAppPage = (page: AppSettingsPageKey): void => {
+    setAppHubOpen(false);
+    setAppSettingsPage(page);
+  };
   const [weatherSettingsPage, setWeatherSettingsPage] = useState<WeatherSettingsPageKey>('location');
   const [mailSettingsPage, setMailSettingsPage] = useState<MailSettingsPageKey>('account');
   const [musicSettingsPage, setMusicSettingsPage] = useState<MusicSettingsPageKey>('whitelist');
@@ -873,11 +879,11 @@ export function SettingsTab(): ReactElement {
       }
       if (value === 'performance-monitor') {
         setActiveTab('app');
-        setAppSettingsPage('performance-monitor');
+        openAppPage('performance-monitor');
       }
       if (value === 'expand-layout') {
         setActiveTab('app');
-        setAppSettingsPage('expand-layout');
+        openAppPage('expand-layout');
       }
       if (value) {
         window.api.storeWrite(SETTINGS_OPEN_TAB_STORE_KEY, null).catch(() => {});
@@ -1238,12 +1244,12 @@ export function SettingsTab(): ReactElement {
       }
       if (intent === 'performance-monitor') {
         setActiveTab('app');
-        setAppSettingsPage('performance-monitor');
+        openAppPage('performance-monitor');
         window.api.storeWrite(SETTINGS_OPEN_TAB_STORE_KEY, null).catch(() => {});
       }
       if (intent === 'expand-layout') {
         setActiveTab('app');
-        setAppSettingsPage('expand-layout');
+        openAppPage('expand-layout');
         window.api.storeWrite(SETTINGS_OPEN_TAB_STORE_KEY, null).catch(() => {});
       }
     }).catch(() => {});
@@ -2163,14 +2169,16 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('index')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.index} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('index')}
           </button>
           <button
             className={`max-expand-settings-sidebar-item ${activeTab === 'app' ? 'active' : ''}`}
-            onClick={() => setActiveTab('app')}
+            onClick={() => { setActiveTab('app'); setAppHubOpen(true); }}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.app} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('app')}
           </button>
@@ -2179,6 +2187,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('network')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.network} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('network')}
           </button>
@@ -2187,6 +2196,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('mail')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.mail} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('mail')}
           </button>
@@ -2195,6 +2205,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('weather')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.weather} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('weather')}
           </button>
@@ -2203,6 +2214,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('music')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.music} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('music')}
           </button>
@@ -2211,6 +2223,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('shortcut')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.shortcut} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('shortcut')}
           </button>
@@ -2219,6 +2232,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('update')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.update} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('update')}
           </button>
@@ -2227,6 +2241,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('pluginMarket')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.pluginMarket} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('pluginMarket')}
           </button>
@@ -2235,6 +2250,7 @@ export function SettingsTab(): ReactElement {
             onClick={() => setActiveTab('about')}
             type="button"
           >
+            <img className="sidebar-tab-icon" src={SETTINGS_TAB_ICONS.about} alt="" />
             <span className="sidebar-dot" />
             {getSettingsLabel('about')}
           </button>
@@ -2256,7 +2272,7 @@ export function SettingsTab(): ReactElement {
               setNavEditMode={setNavEditMode}
               resetNavConfig={resetNavConfig}
               persistNavConfig={persistNavConfig}
-              setAppSettingsPage={setAppSettingsPage}
+              setAppSettingsPage={openAppPage}
               setMusicSettingsPage={setMusicSettingsPage}
               setNetworkSettingsPage={setNetworkSettingsPage}
               setActiveTab={setActiveTab}
@@ -2267,6 +2283,8 @@ export function SettingsTab(): ReactElement {
             <AppSettingsSection
               currentAppSettingsPageLabel={currentAppSettingsPageLabel}
               appSettingsPage={appSettingsPage}
+              hubOpen={appHubOpen}
+              onBackToHub={() => setAppHubOpen(true)}
               layoutConfig={layoutConfig}
               OverviewPreviewComponent={OverviewPreview}
               overviewWidgetOptions={translatedOverviewWidgetOptions}
@@ -2374,7 +2392,9 @@ export function SettingsTab(): ReactElement {
               handleSelectBuiltinBgImage={handleSelectBuiltinBgImage}
               appSettingsPages={APP_SETTINGS_PAGES}
               settingsTabLabels={translatedSettingsTabLabels}
-              setAppSettingsPage={setAppSettingsPage}
+              setAppSettingsPage={openAppPage}
+              hubOpen={appHubOpen}
+              onBackToHub={() => setAppHubOpen(true)}
             />
           )}
 

@@ -145,6 +145,8 @@ export const SETTINGS_TAB_DESCRIPTIONS: Record<Exclude<SettingsTabLabelKey, 'ind
 };
 
 export const SETTINGS_TAB_ICONS: Partial<Record<SettingsTabLabelKey, string>> = {
+  index: SvgIcon.LAYOUT,
+  app: SvgIcon.SETTING,
   'layout-preview': SvgIcon.LAYOUT,
   'expand-layout': SvgIcon.LAYOUT,
   'maxexpand-layout': SvgIcon.LAYOUT,

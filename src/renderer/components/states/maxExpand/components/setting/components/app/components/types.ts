@@ -183,4 +183,8 @@ export interface AppSettingsSectionProps {
   appSettingsPages: AppSettingsPageKey[];
   settingsTabLabels: Record<string, string>;
   setAppSettingsPage: (page: AppSettingsPageKey) => void;
+  /** 软件设置总览列表是否打开（单栏钻取，替代右侧双栏） */
+  hubOpen?: boolean;
+  /** 从子页返回总览列表 */
+  onBackToHub?: () => void;
 }
