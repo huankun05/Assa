@@ -139,8 +139,8 @@ export function BgStatePreview({
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = clampPct(((e.clientX - rect.left) / Math.max(1, rect.width)) * 100);
-    const yRaw = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 100;
-    const y = clampPct(100 - yRaw);
+    // 与 object-position 一致：下=Y 增大（显示更靠下的画面），上=Y 减小
+    const y = clampPct(((e.clientY - rect.top) / Math.max(1, rect.height)) * 100);
     draftRef.current = { x, y };
     // 只改 DOM，不 setState，避免拖拽中重渲染/回读
     applyObjectPosition(mediaRef.current, x, y);
