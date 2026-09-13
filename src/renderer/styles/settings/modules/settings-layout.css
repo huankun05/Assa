@@ -108,35 +108,41 @@
 
 /* ===== 设置壳：desk-pet 结构 + 汐月 accent ===== */
 .max-expand-settings-layout.max-expand-settings-layout--single {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 0;
+  overflow: hidden;
   gap: 0;
 }
 
-/* 透明壳：必须压过 .max-expand-settings-panel 的 flex/padding */
+/* 透明壳：压过旧面板 padding；必须 clip，否则内容被视口裁掉却滚不动 */
 .settings-shell-panel.settings-shell-panel--full,
 .max-expand-settings-panel.settings-shell-panel--full {
   width: 100% !important;
-  height: 100%;
-  min-height: 0;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
   padding: 0 !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   background: transparent !important;
   backdrop-filter: none !important;
-  overflow: visible !important;
-  display: block !important;
-  flex-direction: unset !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
 }
 
 .settings-root {
   height: 100%;
   width: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: transparent;
 }
 
@@ -148,6 +154,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* ===== settings-v2：对齐 settings-ui-preview ===== */
@@ -233,12 +240,40 @@
 }
 
 .settings-v2-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 24px 24px;
   background: transparent;
   box-sizing: border-box;
+}
+
+/* 详情页：内容自然撑高，由 settings-v2-body 滚动，不再内部 height:100% 双滚 */
+.settings-v2 .max-expand-settings-section {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.settings-v2 .settings-app-pages-layout,
+.settings-v2 .settings-app-pages-layout--single {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  flex: none !important;
+}
+
+.settings-v2 .settings-app-page-main {
+  flex: none !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding-right: 0 !important;
 }
 
 .settings-v2-label {
