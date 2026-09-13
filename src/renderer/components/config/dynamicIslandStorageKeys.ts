@@ -35,6 +35,19 @@ export const ISLAND_BG_VIDEO_VOLUME_STORE_KEY = 'island-bg-video-volume';
 export const ISLAND_BG_VIDEO_RATE_STORE_KEY = 'island-bg-video-rate';
 export const ISLAND_BG_VIDEO_HW_DECODE_STORE_KEY = 'island-bg-video-hw-decode';
 export const LOCAL_ISLAND_BG_SYNC_EVENT = 'island-bg-local-sync';
+export const ISLAND_BG_POSITION_X_STORE_KEY = 'island-bg-position-x';
+export const ISLAND_BG_POSITION_Y_STORE_KEY = 'island-bg-position-y';
+
+/** 壁纸位置按岛状态拆分：idle / hover / expand / maxExpand */
+export type IslandBgPosState = 'idle' | 'hover' | 'expand' | 'maxExpand';
+
+export function getIslandBgPositionKeys(state: IslandBgPosState): { x: string; y: string } {
+  return {
+    x: `island-bg-position-${state}-x`,
+    y: `island-bg-position-${state}-y`,
+  };
+}
+
 export const UPDATE_SOURCE_STORE_KEY = 'update-source';
 export const UPDATE_AUTO_PROMPT_STORE_KEY = 'update-auto-prompt-enabled';
 export const WEATHER_ALERT_ENABLED_STORE_KEY = 'weather-alert-enabled';

@@ -40,10 +40,11 @@ import {
   ISLAND_BG_VIDEO_RATE_STORE_KEY,
   ISLAND_BG_VIDEO_HW_DECODE_STORE_KEY,
   LOCAL_ISLAND_BG_SYNC_EVENT,
+  getIslandBgPositionKeys,
+  type IslandBgPosState,
   normalizeBgMediaConfig,
   resolveBgMediaPreviewUrl,
 } from '../config/dynamicIslandConfig';
-import { getIslandBgPositionKeys, type IslandBgPosState } from '../config/settingsTabConfig';
 import { ISLAND_POSITION_LOCKED_STORE_KEY } from '../../../shared/storeKeys';
 import { ISLAND_AUTO_DIM_ENABLED_STORE_KEY, ISLAND_AUTO_DIM_DELAY_STORE_KEY, DEFAULT_AUTO_DIM_DELAY_SEC } from './useIslandAutoDim';
 import type { IslandBgMediaConfig, UpdateSourceKey } from '../config/dynamicIslandConfig';
