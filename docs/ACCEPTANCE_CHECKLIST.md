@@ -68,11 +68,12 @@
 
 ## I. 托盘重启（dev soft-restart）
 
-- [ ] I1 托盘「重启灵动岛」→ 右下角系统通知标题为 **汐月正在重新启动**（非 Electron/xiyue）
+- [ ] I1 托盘「重启灵动岛」→ 右下角系统通知标题为 **汐月正在重新启动**（dev 头像仍可能是 Electron，属预期）
 - [ ] I2 岛短暂消失后约 1–2s 自动回来（同一 vite 会话，端口不整段重开）
 - [ ] I3 重启过程 **无** 命令行/终端闪窗
 - [ ] I4 重启后 `data/soft-restart.flag` **不存在**（已被 electron-vite 消费删除）
 - [ ] I5 设置里点「重启灵动岛」按钮行为与托盘一致
+- [ ] I6 **打包安装后**（`npm run package`）系统通知头为 **汐月 + 应用图标**（AUMID=`com.xiyue.app` 与 appId 对齐；dev 下仍显示 Electron 属正常）
 
 ---
 

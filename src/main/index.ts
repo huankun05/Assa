@@ -149,6 +149,18 @@ try {
   // ignore
 }
 
+/**
+ * Windows 通知/任务栏品牌：AUMID 必须与 electron-builder `appId` 一致，
+ * 安装后系统通知才会显示「汐月」图标与名称（dev 下 electron.exe 仍是 Electron）。
+ * 尽早注册，避免首条 toast 落到默认 Electron AUMID。
+ */
+try {
+  app.setName('汐月');
+  app.setAppUserModelId('com.xiyue.app');
+} catch {
+  // ignore
+}
+
 /** 防止 Electron 创建多个实例 */
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -868,6 +880,7 @@ registerAppLifecycleHandlers({
  * 应用就绪入口，初始化窗口、注册 IPC 处理器并响应 macOS dock 点击重建窗口
  */
 app.whenReady().then(() => {
+  // AUMID 已在模块加载时注册；这里再设一次，兼容 @electron-toolkit/utils 路径
   app.setName('汐月');
   electronApp.setAppUserModelId('com.xiyue.app');
 

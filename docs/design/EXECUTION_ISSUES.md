@@ -68,3 +68,4 @@
 | 提示 | 恢复右下角系统通知；标题写死「汐月正在重新启动」；`app.setName('汐月')` |
 | 补丁 | `scripts/patch-electron-vite-hide-console.js`（postinstall 幂等）；chunk 名 `lib-q6ns0vZr.js` 随 electron-vite 升级可能变 |
 | 验收 | 见 `docs/ACCEPTANCE_CHECKLIST.md` §I |
+| 系统通知品牌 | Windows toast 头跟 **AUMID + 安装快捷方式** 走，不跟 title。dev=`Electron` 难改；打包用 `appId=com.xiyue.app` + `productName=汐月` + `win.icon=xiyue_256x256.ico`，与主进程 `setAppUserModelId('com.xiyue.app')` 对齐后应显示汐月图标/名称 |

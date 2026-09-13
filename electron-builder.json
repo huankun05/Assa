@@ -1,6 +1,7 @@
 {
   "appId": "com.xiyue.app",
   "productName": "汐月",
+  "copyright": "© 2026 汐月",
   "directories": {
     "buildResources": "resources",
     "output": "dist"
