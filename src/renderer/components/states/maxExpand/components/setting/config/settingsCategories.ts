@@ -91,7 +91,7 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     id: 'aiPrivacy',
     label: 'AI 与隐私',
     desc: '信任等级、窗口隐藏与数据边界',
-    icon: SvgIcon.VERIFIED,
+    icon: SvgIcon.AI,
     items: [
       item('ai-security', 'AI 信任与审计', 'L0–L3 信任档与工具调用记录', { tab: 'app', appPage: 'ai-security' }, SETTINGS_TAB_ICONS['ai-security']),
       item('hide-process-list', '隐藏窗口', '全屏自动隐藏与进程黑名单', { tab: 'app', appPage: 'hide-process-list' }, SETTINGS_TAB_ICONS['hide-process-list']),

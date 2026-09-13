@@ -214,21 +214,28 @@
   left: 0;
   top: 0;
   transform: translateY(-80%);
-  font-size: 13px;
-  font-weight: 400;
-  color: rgba(var(--color-text-rgb), 0.38);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #8b93a7;
   white-space: nowrap;
   pointer-events: none;
 }
 
 .page-header-title {
   font-size: 30px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.15;
-  color: rgba(var(--color-text-rgb), 0.92);
+  color: #1c1e26;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+[data-theme='dark'] .page-header-title {
+  color: rgba(255, 255, 255, 0.94);
 }
 
 .page-header-actions {
@@ -250,16 +257,28 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(var(--color-text-rgb), 0.12);
-  background: rgba(var(--color-text-rgb), 0.04);
-  padding: 8px 12px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid #e4e8f0;
+  background: #fff;
+  padding: 10px 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 1px 2px rgba(40, 60, 100, 0.04);
 }
 
 .settings-search-field:focus-within {
-  border-color: color-mix(in srgb, var(--color-island-accent) 40%, transparent);
-  background: rgba(var(--color-text-rgb), 0.02);
+  border-color: color-mix(in srgb, var(--color-island-accent) 55%, #e4e8f0);
+  background: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-island-accent) 14%, transparent);
+}
+
+[data-theme='dark'] .settings-search-field {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+[data-theme='dark'] .settings-search-field:focus-within {
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .settings-search-icon {
@@ -395,7 +414,7 @@
   }
 }
 
-/* menu-icon-item — 1:1 对齐 desk-pet settings.css，色改汐月 accent */
+/* ===== 设置入口卡：冷色清晰底 + accent 统一图标（icon-mono） ===== */
 .menu-icon-item {
   position: relative;
   overflow: hidden;
@@ -403,52 +422,62 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  background: rgba(var(--color-text-rgb), 0.04);
-  border: 2px solid rgba(var(--color-text-rgb), 0.07);
+  background: #fff;
+  border: 1px solid #e8ebf2;
   border-radius: 12px;
   padding: 20px;
   text-align: left;
   cursor: pointer;
-  filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+  filter: none;
   transition: all 0.4s ease-in-out;
-  color: rgba(var(--color-text-rgb), 0.9);
+  color: #1c1e26;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+[data-theme='dark'] .menu-icon-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
 }
 
 .menu-icon-item:hover {
-  border-color: color-mix(in srgb, var(--color-island-accent) 30%, transparent);
-  filter: drop-shadow(0 4px 4px rgba(var(--color-shadow-rgb), 0.28));
+  border-color: color-mix(in srgb, var(--color-island-accent) 45%, #e8ebf2);
+  background: color-mix(in srgb, var(--color-island-accent) 5%, #fff);
+  filter: drop-shadow(0 4px 12px rgba(80, 120, 200, 0.12));
 }
 
+[data-theme='dark'] .menu-icon-item:hover {
+  background: color-mix(in srgb, var(--color-island-accent) 10%, rgba(255, 255, 255, 0.04));
+  border-color: color-mix(in srgb, var(--color-island-accent) 35%, transparent);
+  filter: none;
+}
+
+/* 左侧淡扫：accent 从左侵入 */
 .menu-icon-item::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: 0 auto 0 0;
   z-index: 0;
-  width: 25%;
+  width: 0;
   height: 100%;
   background: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--color-island-accent) 0%, transparent),
+    90deg,
+    color-mix(in srgb, var(--color-island-accent) 16%, transparent),
+    color-mix(in srgb, var(--color-island-accent) 4%, transparent) 55%,
     transparent
   );
-  mask-image: linear-gradient(120deg, white 30%, transparent 50%);
-  -webkit-mask-image: linear-gradient(120deg, white 30%, transparent 50%);
   opacity: 0;
-  transition: all 0.4s ease-in-out;
+  transition: width 0.4s ease-in-out, opacity 0.4s ease-in-out;
   pointer-events: none;
 }
 
 .menu-icon-item:hover::before {
-  background: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--color-island-accent) 20%, transparent),
-    color-mix(in srgb, var(--color-island-accent) 10%, transparent) 40%,
-    transparent
-  );
-  width: 85%;
+  width: 100%;
   opacity: 1;
 }
 
+/* 极淡点阵：浅色几乎不可见，避免灰噗噗 */
 .menu-icon-item::after {
   content: '';
   position: absolute;
@@ -456,16 +485,18 @@
   z-index: 0;
   width: 100%;
   height: 100%;
-  background-image: radial-gradient(circle, rgba(var(--color-text-rgb), 0.14) 1px, transparent 1px);
-  background-size: 10px 10px;
-  mask-image: linear-gradient(165deg, white 30%, transparent 50%);
-  -webkit-mask-image: linear-gradient(165deg, white 30%, transparent 50%);
-  transition: all 0.4s ease-in-out;
+  background-image: radial-gradient(circle, rgba(100, 130, 200, 0.12) 1px, transparent 1px);
+  background-size: 12px 12px;
+  mask-image: linear-gradient(165deg, white 20%, transparent 55%);
+  -webkit-mask-image: linear-gradient(165deg, white 20%, transparent 55%);
+  opacity: 0.55;
+  transition: opacity 0.4s ease-in-out;
   pointer-events: none;
 }
 
 .menu-icon-item:hover::after {
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-island-accent) 40%, transparent) 1px, transparent 1px);
+  opacity: 0.9;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-island-accent) 35%, transparent) 1px, transparent 1px);
 }
 
 .menu-icon-item-content {
@@ -476,23 +507,31 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding-right: 88px;
+  padding-right: 96px;
 }
 
 .menu-icon-item-title {
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.25;
-  color: rgba(var(--color-text-rgb), 0.9);
+  color: #1c1e26;
   transition: color 0.4s ease-in-out;
 }
 
 .menu-icon-item-description {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 1.4;
-  color: rgba(var(--color-text-rgb), 0.48);
+  line-height: 1.45;
+  color: #6b7385;
   transition: color 0.4s ease-in-out, opacity 0.4s ease-in-out;
+}
+
+[data-theme='dark'] .menu-icon-item-title {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+[data-theme='dark'] .menu-icon-item-description {
+  color: rgba(255, 255, 255, 0.48);
 }
 
 .menu-icon-item:hover .menu-icon-item-title {
@@ -500,28 +539,28 @@
 }
 
 .menu-icon-item:hover .menu-icon-item-description {
-  color: var(--color-island-accent);
-  opacity: 0.8;
+  color: color-mix(in srgb, var(--color-island-accent) 75%, #6b7385);
+  opacity: 1;
 }
 
+/* 图标：统一 icon-mono mask，同一色、同一尺寸 */
 .menu-icon-item-icon {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-  opacity: 0.5;
-  filter: brightness(0) invert(var(--icon-invert));
+  right: 8px;
+  bottom: 50%;
+  transform: translateY(50%);
+  width: 80px;
+  height: 80px;
+  color: rgba(var(--color-island-accent-rgb), 0.28);
   transition: all 0.4s ease-in-out;
   pointer-events: none;
   z-index: 0;
+  flex-shrink: 0;
 }
 
 .menu-icon-item:hover .menu-icon-item-icon {
-  opacity: 1;
-  transform: translateY(16px) scale(1.2);
-  filter: brightness(0) invert(var(--icon-invert)) sepia(1) saturate(6) hue-rotate(190deg);
+  color: rgba(var(--color-island-accent-rgb), 0.85);
+  transform: translateY(calc(50% - 4px)) scale(1.15);
 }
 
 .max-expand-settings-layout {

@@ -1,7 +1,7 @@
 /**
  * 分类子项列表：与主页同一套 page-header + menu-icon-item
  */
-import { useEffect, useRef, type ReactElement } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   SettingsCategory,
@@ -67,7 +67,11 @@ export function SettingsCategoryHub({
                   </div>
                 </div>
                 {item.icon ? (
-                  <img className="menu-icon-item-icon" src={item.icon} alt="" aria-hidden="true" />
+                  <span
+                    className="menu-icon-item-icon icon-mono"
+                    style={{ '--icon-url': `url(${item.icon})` } as CSSProperties}
+                    aria-hidden="true"
+                  />
                 ) : null}
               </button>
             ))}

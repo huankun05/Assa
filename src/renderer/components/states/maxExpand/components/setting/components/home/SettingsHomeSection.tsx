@@ -1,7 +1,7 @@
 /**
  * 设置主页：对齐 desk-pet SettingsLayout + PageHeader + IconItem 手感
  */
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   SEARCHABLE_SETTINGS,
@@ -186,7 +186,11 @@ export function SettingsHomeSection({
                     <span>{cat.desc}</span>
                   </div>
                 </div>
-                <img className="menu-icon-item-icon" src={cat.icon} alt="" aria-hidden="true" />
+                <span
+                  className="menu-icon-item-icon icon-mono"
+                  style={{ '--icon-url': `url(${cat.icon})` } as CSSProperties}
+                  aria-hidden="true"
+                />
               </button>
             ))}
           </div>

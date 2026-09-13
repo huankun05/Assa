@@ -30,7 +30,7 @@ import { useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsTab } from './states/maxExpand/components/SettingsTab';
-import windowIcon from '../../../resources/icon/eisland.svg';
+import windowIcon from '../../../resources/icon/xiyue.svg';
 
 /**
  * 设置独立窗口根组件
@@ -54,7 +54,7 @@ export function SettingsWindow(): ReactElement {
   return (
     <div className="cw-root settings-window">
       <div className="cw-chrome">
-        <img className="cw-window-icon" src={windowIcon} alt="eIsland" />
+        <img className="cw-window-icon" src={windowIcon} alt="汐月" />
         <span className="cw-chrome__title">{t('settings.sidebar.title')}</span>
         <div className="cw-chrome__drag" />
         <div className="cw-chrome__controls">
