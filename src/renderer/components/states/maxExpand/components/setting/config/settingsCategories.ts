@@ -73,6 +73,7 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
       item('expand-layout', '展开布局', '展开态页面顺序与可见性', { tab: 'app', appPage: 'expand-layout' }, SETTINGS_TAB_ICONS['expand-layout']),
       item('maxexpand-layout', '全展开布局', '最大展开态页面顺序与可见性', { tab: 'app', appPage: 'maxexpand-layout' }, SETTINGS_TAB_ICONS['maxexpand-layout']),
       item('control-center', '控制中心按钮', 'Hover 时间页按钮排序', { tab: 'app', appPage: 'control-center' }, SETTINGS_TAB_ICONS['control-center']),
+      item('pluginMarket', '壁纸市场', '浏览与贡献壁纸', { tab: 'pluginMarket' }, SETTINGS_TAB_ICONS.pluginMarket),
     ],
   },
   {
@@ -97,7 +98,6 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
       item('hide-process-list', '隐藏窗口', '全屏自动隐藏与进程黑名单', { tab: 'app', appPage: 'hide-process-list' }, SETTINGS_TAB_ICONS['hide-process-list']),
       item('url-parser', '剪贴板 URL 黑名单', '链接识别与域名排除', { tab: 'app', appPage: 'url-parser' }, SETTINGS_TAB_ICONS['url-parser']),
       item('clipboard-history', '剪贴板历史', '条数上限与清空', { tab: 'app', appPage: 'clipboard-history' }, SETTINGS_TAB_ICONS['clipboard-history']),
-      item('screenshot-settings', '截图', '截图与翻译语言', { tab: 'app', appPage: 'screenshot-settings' }, SETTINGS_TAB_ICONS['screenshot-settings']),
     ],
   },
   {
@@ -123,17 +123,17 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
       item('network', '网络配置', '超时与静态资源节点', { tab: 'network' }, SETTINGS_TAB_ICONS.network),
       item('autostart', '实用工具', '自启、重启与日志', { tab: 'app', appPage: 'autostart' }, SETTINGS_TAB_ICONS.autostart),
       item('language', '语言', '界面显示语言', { tab: 'app', appPage: 'language' }, SETTINGS_TAB_ICONS.language),
+      item('screenshot-settings', '截图', '截图与翻译语言', { tab: 'app', appPage: 'screenshot-settings' }, SETTINGS_TAB_ICONS['screenshot-settings']),
     ],
   },
   {
     id: 'account',
     label: '账号与更新',
-    desc: '邮箱、更新、市场与关于',
+    desc: '邮箱、更新与关于',
     icon: SvgIcon.ABOUT,
     items: [
       item('mail', '邮箱配置', 'IMAP 与收信参数', { tab: 'mail' }, SETTINGS_TAB_ICONS.mail),
       item('update', '更新设置', '检查更新与下载源', { tab: 'update' }, SETTINGS_TAB_ICONS.update),
-      item('pluginMarket', '壁纸市场', '浏览与贡献壁纸', { tab: 'pluginMarket' }, SETTINGS_TAB_ICONS.pluginMarket),
       item('about', '关于软件', '版本、反馈与致谢', { tab: 'about' }, SETTINGS_TAB_ICONS.about),
     ],
   },
