@@ -76,8 +76,8 @@ export function registerRestartCleanup(fn: () => void): void {
   restartCleanup = fn;
 }
 
-/** 静默重启：不弹系统通知，避免「闪一下窗口」再出现岛 */
-const RESTART_SILENT_EXIT_MS = 400;
+/** 重启前提示延时：先让右下角系统通知露出，再退出 */
+const RESTART_SILENT_EXIT_MS = 900;
 
 /** 软重启标志：放在项目 data/ 下，主进程与 electron-vite 同一真实路径 */
 function softRestartFlagPath(): string {
@@ -91,10 +91,9 @@ function softRestartFlagPath(): string {
 
 /**
  * 重启应用
- * @description 先弹 Windows 系统通知告知用户，随后执行清理并退出。
- *   打包模式：app.relaunch() 后退出；dev 模式：派生等待脚本重拉 dev 会话。
- *   退出统一使用 app.exit(0)——设置窗口与独立窗口的 close 事件会
- *   preventDefault（关闭即隐藏以实现秒开），会阻断常规 app.quit() 流程。
+ * @description 先弹 Windows 系统通知告知用户，再写 flag / relaunch，最后退出。
+ *   打包模式：app.relaunch() 后退出；dev 模式：soft-restart flag 让 electron-vite 原地再拉。
+ *   退出：app.exit(0) + process.exit(0)，设置窗口 close 会 preventDefault 阻断 app.quit()。
  */
 export function restartApp(): void {
   if (restarting) return;
@@ -104,6 +103,7 @@ export function restartApp(): void {
     hasRendererUrl: Boolean(process.env.ELECTRON_RENDERER_URL),
     appPath: app.getAppPath(),
   });
+  showRestartToast();
 
   try {
     if (!app.isPackaged) {
@@ -178,16 +178,17 @@ function scheduleExternalForceKill(pid: number, delayMs: number): void {
 }
 
 /**
- * 系统通知（默认不用）
- * @description 重启改为静默；若将来需要提示，再打开此函数并接到 restartApp
+ * 系统通知
+ * @description 重启前在右下角提示；需在 app.exit 前留出 RESTART_SILENT_EXIT_MS 展示时间
  */
 function showRestartToast(): void {
   try {
     if (!Notification.isSupported()) return;
-    new Notification({
+    const toast = new Notification({
       title: `${app.getName()} 正在重新启动`,
       body: '应用将关闭以完成重启，结束后会自动重新打开。'
-    }).show();
+    });
+    toast.show();
   } catch (err) {
     safeLogError('[App] restart toast error:', err);
   }
