@@ -60,7 +60,6 @@ export function BehaviorSettingsPage({
   const [standaloneWindowMode, setStandaloneWindowMode] = useState<'integrated' | 'standalone'>('integrated');
   const [hoverScreenshotMode, setHoverScreenshotMode] = useState<HoverScreenshotMode>('region');
   const [idleClickExpand, setIdleClickExpand] = useState<boolean>(false);
-  const [shapeMode, setShapeMode] = useState<IslandShapeMode>('notch');
   const [pomodoroWorkMin, setPomodoroWorkMin] = useState(25);
   const [pomodoroBreakMin, setPomodoroBreakMin] = useState(5);
   const [pomodoroLoop, setPomodoroLoop] = useState(true);
@@ -116,25 +115,6 @@ export function BehaviorSettingsPage({
       if (Number.isFinite(n) && n >= 1) setTempHideDurationSec(Math.min(30, Math.floor(n)));
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    window.api.shapeModeGet().then((v) => {
-      if (cancelled) return;
-      setShapeMode(v === 'notch' || v === 'pill' ? v : 'notch');
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
-  /** 监听形态模式外部变更（guide / 快捷键等） */
-  useEffect(() => {
-    const unsub = window.api.onSettingsChanged((channel, value) => {
-      if (channel === 'island:shape-mode') {
-        setShapeMode(value === 'notch' || value === 'pill' ? value : 'notch');
-      }
-    });
-    return unsub;
   }, []);
 
   useEffect(() => {
