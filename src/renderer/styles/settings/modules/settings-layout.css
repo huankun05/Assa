@@ -549,17 +549,24 @@
   color: #9aa3b5;
 }
 
-/* detail 顶栏：滚动时钉在内容区顶部 */
+/* detail 顶栏：固定在滚动内容上方，不随内容滚走 */
+.settings-page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .page-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 99;
   width: 100%;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 20px 24px 14px;
+  padding: 16px 24px 12px;
   background: #fff;
   border-bottom: 1px solid #e6eaf2;
   box-shadow: 0 4px 12px rgba(10, 16, 32, 0.04);
@@ -8410,4 +8417,82 @@ button.settings-user-image-translation-image-wrap:hover {
   border-radius: 10px !important;
   background: #fff !important;
   border-color: #e6eaf2 !important;
+}
+
+
+/* 显示器自定义下拉（替代原生 select，系统弹层无法圆角） */
+.settings-display-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settings-display-select-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-display-select-caret {
+  color: rgba(var(--color-text-rgb), 0.45);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.settings-display-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 120;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(10, 16, 32, 0.14);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.settings-display-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #151820;
+  cursor: pointer;
+}
+
+.settings-display-menu-item:hover,
+.settings-display-menu-item.active {
+  background: #eaf3ff;
+  color: #1a73e8;
+}
+
+[data-theme='dark'] .settings-display-menu {
+  background: #171a21;
+  border-color: #2a2f3a;
+}
+
+[data-theme='dark'] .settings-display-menu-item {
+  color: #f2f4f8;
+}
+
+[data-theme='dark'] .settings-display-menu-item:hover,
+[data-theme='dark'] .settings-display-menu-item.active {
+  background: #1a2a3f;
+  color: #8ec2ff;
 }
