@@ -26,6 +26,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SettingsSelect } from '../common/SettingsSelect';
 import {
   applyUserWallpaper,
   getUserWallpaperDetail,
@@ -378,15 +379,15 @@ export function WallpaperMarketSection({ onApplyBackground, searchExpanded, onSe
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder={t('settings.pluginMarket.wallpaper.searchPlaceholder', { defaultValue: '搜索标题/作者/描述/标签' })}
               />
-              <select
-                className="settings-field-input"
+              <SettingsSelect
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'newest' | 'rating' | 'apply')}
-              >
-                <option value="newest">{t('settings.pluginMarket.wallpaper.sort.newest', { defaultValue: '最新' })}</option>
-                <option value="rating">{t('settings.pluginMarket.wallpaper.sort.rating', { defaultValue: '评分最高' })}</option>
-                <option value="apply">{t('settings.pluginMarket.wallpaper.sort.apply', { defaultValue: '应用最多' })}</option>
-              </select>
+                options={[
+                  { value: 'newest', label: t('settings.pluginMarket.wallpaper.sort.newest', { defaultValue: '最新' }) },
+                  { value: 'rating', label: t('settings.pluginMarket.wallpaper.sort.rating', { defaultValue: '评分最高' }) },
+                  { value: 'apply', label: t('settings.pluginMarket.wallpaper.sort.apply', { defaultValue: '应用最多' }) },
+                ]}
+                onChange={(v) => setSortBy(v as 'newest' | 'rating' | 'apply')}
+              />
               <button className="settings-hotkey-btn" type="button" onClick={handleSearch}>
                 {t('settings.pluginMarket.wallpaper.actions.search', { defaultValue: '搜索' })}
               </button>
@@ -567,21 +568,21 @@ export function WallpaperMarketSection({ onApplyBackground, searchExpanded, onSe
                       </label>
                       <label className="settings-plugin-market-detail-video-slider">
                         <span>{t('settings.pluginMarket.wallpaper.videoControls.rate', { defaultValue: '速度' })}</span>
-                        <select
-                          className="settings-field-input"
-                          value={detailVideoPlaybackRate}
-                          onChange={(event) => {
-                            const value = parseFloat(event.target.value);
+                        <SettingsSelect
+                          value={String(detailVideoPlaybackRate)}
+                          options={[
+                            { value: '0.5', label: '0.5x' },
+                            { value: '0.75', label: '0.75x' },
+                            { value: '1', label: '1.0x' },
+                            { value: '1.25', label: '1.25x' },
+                            { value: '1.5', label: '1.5x' },
+                            { value: '2', label: '2.0x' },
+                          ]}
+                          onChange={(v) => {
+                            const value = parseFloat(v);
                             if (Number.isFinite(value) && value > 0) setDetailVideoPlaybackRate(value);
                           }}
-                        >
-                          <option value={0.5}>0.5x</option>
-                          <option value={0.75}>0.75x</option>
-                          <option value={1}>1.0x</option>
-                          <option value={1.25}>1.25x</option>
-                          <option value={1.5}>1.5x</option>
-                          <option value={2}>2.0x</option>
-                        </select>
+                        />
                       </label>
                     </div>
                   </>
@@ -720,15 +721,15 @@ export function WallpaperMarketSection({ onApplyBackground, searchExpanded, onSe
                   </button>
                   {reportExpanded && (
                     <div className="settings-plugin-market-report-row">
-                      <select
-                        className="settings-field-input"
+                      <SettingsSelect
                         value={reportReasonType}
-                        onChange={(e) => setReportReasonType(e.target.value)}
-                      >
-                        <option value="copyright">{t('settings.pluginMarket.wallpaper.report.copyright', { defaultValue: '版权问题' })}</option>
-                        <option value="illegal">{t('settings.pluginMarket.wallpaper.report.illegal', { defaultValue: '违规内容' })}</option>
-                        <option value="other">{t('settings.pluginMarket.wallpaper.report.other', { defaultValue: '其他' })}</option>
-                      </select>
+                        options={[
+                          { value: 'copyright', label: t('settings.pluginMarket.wallpaper.report.copyright', { defaultValue: '版权问题' }) },
+                          { value: 'illegal', label: t('settings.pluginMarket.wallpaper.report.illegal', { defaultValue: '违规内容' }) },
+                          { value: 'other', label: t('settings.pluginMarket.wallpaper.report.other', { defaultValue: '其他' }) },
+                        ]}
+                        onChange={setReportReasonType}
+                      />
                       <input
                         className="settings-field-input"
                         value={reportReasonDetail}

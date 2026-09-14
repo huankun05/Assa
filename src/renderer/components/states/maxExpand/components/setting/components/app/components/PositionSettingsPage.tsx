@@ -24,9 +24,9 @@
  * @author 鸡哥
  */
 
-import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SettingsSelect } from '../../common/SettingsSelect';
 import type { AppSettingsSectionProps } from './types';
 
 type PositionSettingsPageProps = Pick<
@@ -71,26 +71,6 @@ export function PositionSettingsPage({
   setIslandDisplaySelection,
 }: PositionSettingsPageProps): ReactElement {
   const { t } = useTranslation();
-  const [displayOpen, setDisplayOpen] = useState(false);
-  const displayRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!displayOpen) return;
-    const onDown = (e: MouseEvent): void => {
-      if (displayRef.current && !displayRef.current.contains(e.target as Node)) setDisplayOpen(false);
-    };
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setDisplayOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [displayOpen]);
-
-  const currentDisplay = islandDisplayOptions.find((o) => o.id === islandDisplaySelection);
 
   return (
     <div className="max-expand-settings-section">
@@ -101,34 +81,13 @@ export function PositionSettingsPage({
             <div className="settings-card-subtitle">{t('settings.app.position.displayHint', { defaultValue: '多显示器环境可指定灵动岛显示器。' })}</div>
           </div>
           <div className="settings-hotkey-row">
-            <div className="settings-field" style={{ flex: 1, position: 'relative' }} ref={displayRef}>
-              <span className="settings-field-label">{t('settings.app.position.displayLabel', { defaultValue: '目标显示器' })}</span>
-              <button
-                type="button"
-                className="settings-field-input settings-display-select-btn"
-                onClick={() => setDisplayOpen((v) => !v)}
-              >
-                <span className="settings-display-select-label">{currentDisplay?.label ?? islandDisplaySelection}</span>
-                <span className="settings-display-select-caret" aria-hidden="true">▾</span>
-              </button>
-              {displayOpen && (
-                <ul className="settings-display-menu">
-                  {islandDisplayOptions.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        className={`settings-display-menu-item${item.id === islandDisplaySelection ? ' active' : ''}`}
-                        onClick={() => {
-                          setIslandDisplaySelection(item.id);
-                          setDisplayOpen(false);
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div style={{ flex: 1 }}>
+              <SettingsSelect
+                label={t('settings.app.position.displayLabel', { defaultValue: '目标显示器' })}
+                value={islandDisplaySelection}
+                options={islandDisplayOptions.map((item) => ({ value: item.id, label: item.label }))}
+                onChange={setIslandDisplaySelection}
+              />
             </div>
           </div>
         </div>

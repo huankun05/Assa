@@ -27,6 +27,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SettingsSelect } from '../common/SettingsSelect';
 import avatarImg from '../../../../../../../assets/avatar/T.jpg';
 import publicSecurityRecordIcon from '../../../../../../../../../resources/icon/gabatb.png';
 import {
@@ -554,19 +555,14 @@ export function AboutSettingsSection({ aboutVersion, initialPage = 'development'
         ) : (
           <>
             <div className="settings-field-group settings-about-feedback-form-grid">
-              <label className="settings-field">
-                <span className="settings-field-label">{t('settings.about.feedback.fields.type', { defaultValue: '反馈类型' })}</span>
-                <select
-                  className="settings-field-input"
+              <div style={{ flex: 1 }}>
+                <SettingsSelect
+                  label={t('settings.about.feedback.fields.type', { defaultValue: '反馈类型' })}
                   value={feedbackType}
-                  onChange={(e) => setFeedbackType(e.target.value)}
-                  disabled={submittingFeedback}
-                >
-                  {feedbackTypeOptions.map((item) => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
-                  ))}
-                </select>
-              </label>
+                  options={feedbackTypeOptions.map((item) => ({ value: item.value, label: item.label }))}
+                  onChange={(v) => !submittingFeedback && setFeedbackType(v)}
+                />
+              </div>
               <label className="settings-field">
                 <span className="settings-field-label">{t('settings.about.feedback.fields.contact', { defaultValue: '联系方式（选填）' })}</span>
                 <div className="settings-about-feedback-contact-row">
@@ -861,17 +857,18 @@ export function AboutSettingsSection({ aboutVersion, initialPage = 'development'
             {t('settings.about.feedback.history.title', { defaultValue: '我的反馈记录' })}
           </div>
           <div className="settings-about-feedback-history-controls">
-            <select
-              className="settings-field-input settings-about-feedback-filter"
+            <SettingsSelect
               value={feedbackStatusFilter}
-              onChange={(e) => setFeedbackStatusFilter(e.target.value)}
-              disabled={!token || loadingHistory}
-            >
-              <option value="">{t('settings.about.feedback.history.filters.all', { defaultValue: '全部状态' })}</option>
-              <option value="pending">{t('settings.about.feedback.history.filters.pending', { defaultValue: '待处理' })}</option>
-              <option value="resolved">{t('settings.about.feedback.history.filters.resolved', { defaultValue: '已处理' })}</option>
-              <option value="rejected">{t('settings.about.feedback.history.filters.rejected', { defaultValue: '已拒绝' })}</option>
-            </select>
+              options={[
+                { value: '', label: t('settings.about.feedback.history.filters.all', { defaultValue: '全部状态' }) },
+                { value: 'pending', label: t('settings.about.feedback.history.filters.pending', { defaultValue: '待处理' }) },
+                { value: 'resolved', label: t('settings.about.feedback.history.filters.resolved', { defaultValue: '已处理' }) },
+                { value: 'rejected', label: t('settings.about.feedback.history.filters.rejected', { defaultValue: '已拒绝' }) },
+              ]}
+              onChange={(v) => {
+                if (token && !loadingHistory) setFeedbackStatusFilter(v);
+              }}
+            />
             <button
               type="button"
               className="settings-user-secondary-btn"
