@@ -181,6 +181,7 @@
   z-index: 20 !important;
   box-sizing: border-box !important;
   width: 100% !important;
+  box-shadow: 0 4px 12px rgba(10, 16, 32, 0.04);
 }
 
 [data-theme='dark'] .settings-v2-topbar {
@@ -548,18 +549,20 @@
   color: #9aa3b5;
 }
 
-/* detail 顶栏也走 v2 顶栏视觉 */
+/* detail 顶栏：滚动时钉在内容区顶部 */
 .page-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 99;
   width: 100%;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 28px 32px 20px;
+  padding: 20px 24px 14px;
   background: #fff;
   border-bottom: 1px solid #e6eaf2;
+  box-shadow: 0 4px 12px rgba(10, 16, 32, 0.04);
 }
 
 [data-theme='dark'] .page-header {
@@ -3778,10 +3781,10 @@
   min-width: 100%;
   max-width: min(560px, calc(100vw - 48px));
   padding: 4px;
-  border: 1px solid rgba(var(--color-text-rgb), 0.12);
-  border-radius: 10px;
-  background: #1f1f22;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(10, 16, 32, 0.12);
 }
 
 .settings-performance-monitor-hardware-dropdown-scroll {
@@ -4501,10 +4504,10 @@
   z-index: 100;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid rgba(var(--color-text-rgb), 0.12);
-  border-radius: 8px;
-  background: #2a2a2d;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(10, 16, 32, 0.12);
   padding: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--color-text-rgb), 0.15) transparent;
