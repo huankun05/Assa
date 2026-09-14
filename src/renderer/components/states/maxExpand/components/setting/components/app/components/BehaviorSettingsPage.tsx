@@ -30,7 +30,6 @@ import { useTranslation } from 'react-i18next';
 import useIslandStore from '../../../../../../../../store/slices';
 import { SvgIcon } from '../../../../../../../../utils/SvgIcon';
 import type { AppSettingsSectionProps } from './types';
-import type { IslandShapeMode } from '../../../../../../../../store/types';
 
 type HoverScreenshotMode = 'region' | 'display';
 
@@ -177,45 +176,9 @@ export function BehaviorSettingsPage({
     window.api.storeWrite(HOVER_SCREENSHOT_MODE_STORE_KEY, mode).catch(() => {});
   };
 
-  const handleShapeModeChange = (mode: IslandShapeMode): void => {
-    setShapeMode(mode);
-    window.api.shapeModeSet(mode).catch(() => {});
-  };
-
   return (
     <div className="max-expand-settings-section">
       <div className="settings-cards">
-        <div className="settings-card">
-          <div className="settings-card-header">
-            <div className="settings-card-title">{t('settings.app.behavior.shapeModeTitle', { defaultValue: '岛屿形态' })}</div>
-            <div className="settings-card-subtitle">{t('settings.app.behavior.shapeModeHint', { defaultValue: '切换灵动岛的外观形态，刘海屏贴于屏幕顶部，灵动岛为胶囊形状' })}</div>
-          </div>
-          <div className="settings-card-inline-row">
-            <label className="settings-card-check">
-              <input
-                type="radio"
-                name="island-shape-mode"
-                checked={shapeMode === 'notch'}
-                onChange={() => {
-                  handleShapeModeChange('notch');
-                }}
-              />
-              {t('settings.app.behavior.shapeModeNotch', { defaultValue: '刘海屏' })}
-            </label>
-            <label className="settings-card-check">
-              <input
-                type="radio"
-                name="island-shape-mode"
-                checked={shapeMode === 'pill'}
-                onChange={() => {
-                  handleShapeModeChange('pill');
-                }}
-              />
-              {t('settings.app.behavior.shapeModePill', { defaultValue: '灵动岛' })}
-            </label>
-          </div>
-        </div>
-
         <div className="settings-card">
           <div className="settings-card-header">
             <div className="settings-card-title">{t('settings.app.behavior.mouseLeaveTitle', { defaultValue: '鼠标移开自动收回' })}</div>

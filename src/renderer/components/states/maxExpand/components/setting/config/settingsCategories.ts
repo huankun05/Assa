@@ -62,7 +62,7 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   {
     id: 'appearance',
     label: '外观',
-    desc: '主题、布局、位置与动效',
+    desc: '形态、主题、布局与动效',
     icon: SvgIcon.THEME,
     items: [
       item('theme', '主题外观', '深色 / 浅色 / 跟随系统，壁纸与透明度', { tab: 'app', appPage: 'theme' }, SETTINGS_TAB_ICONS.theme),
@@ -82,7 +82,7 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     desc: '行为、提醒与快捷键',
     icon: SvgIcon.INTERACTION,
     items: [
-      item('behavior', '交互行为', '形态、鼠标移开、番茄钟时长', { tab: 'app', appPage: 'behavior' }, SETTINGS_TAB_ICONS.behavior),
+      item('behavior', '交互行为', '鼠标移开、番茄钟与右键让路', { tab: 'app', appPage: 'behavior' }, SETTINGS_TAB_ICONS.behavior),
       item('break-reminder', '休息提醒', '定时休息与喝水提醒', { tab: 'app', appPage: 'break-reminder' }, SETTINGS_TAB_ICONS['break-reminder']),
       item('alarm', '闹钟配置', '提示音、贪睡与系统通知', { tab: 'app', appPage: 'alarm' }, SETTINGS_TAB_ICONS.alarm),
       item('shortcut', '快捷键', '隐藏、关闭、截图等全局键', { tab: 'shortcut' }, SETTINGS_TAB_ICONS.shortcut),

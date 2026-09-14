@@ -31,6 +31,7 @@ import { BUILTIN_WALLPAPERS } from '../../../../../../../../assets/wallpaper/bui
 import useIslandStore from '../../../../../../../../store/slices';
 import { SvgIcon } from '../../../../../../../../utils/SvgIcon';
 import { injectFontFace } from '../../../../../../../../utils/font';
+import type { IslandShapeMode } from '../../../../../../../../store/types';
 import { BgStatePreview } from './BgStatePreview';
 import type { AppSettingsSectionProps } from './types';
 
@@ -186,6 +187,7 @@ export function ThemeSettingsPage({
   const { t } = useTranslation();
   const setNotification = useIslandStore((s) => s.setNotification);
   const [musicOuterGlowEffectEnabled, setMusicOuterGlowEffectEnabled] = useState<boolean>(true);
+  const [shapeMode, setShapeMode] = useState<IslandShapeMode>('notch');
   const [uiFont, setUIFont] = useState<string>('default');
   const [lyricsFont, setLyricsFont] = useState<string>('default');
   const [uiCustomFonts, setUiCustomFonts] = useState<CustomFont[]>([]);
@@ -207,6 +209,23 @@ export function ThemeSettingsPage({
       }
     }).catch(() => {});
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void window.api.shapeModeGet?.().then((v) => {
+      if (cancelled) return;
+      setShapeMode(v === 'notch' || v === 'pill' ? v : 'notch');
+    }).catch(() => {});
+    const unsub = window.api.onSettingsChanged?.((channel, value) => {
+      if (channel === 'island:shape-mode') {
+        setShapeMode(value === 'notch' || value === 'pill' ? value : 'notch');
+      }
+    });
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
   }, []);
 
   /** 同步字体设置到 UI 状态（CSS 变量已在启动时由 initFonts 应用） */
@@ -288,6 +307,39 @@ export function ThemeSettingsPage({
   return (
     <div className="max-expand-settings-section">
       <div className="settings-cards">
+        <div className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-title">{t('settings.app.behavior.shapeModeTitle', { defaultValue: '岛屿形态' })}</div>
+            <div className="settings-card-subtitle">{t('settings.app.behavior.shapeModeHint', { defaultValue: '切换灵动岛的外观形态，刘海屏贴于屏幕顶部，灵动岛为胶囊形状' })}</div>
+          </div>
+          <div className="settings-card-inline-row">
+            <label className="settings-card-check">
+              <input
+                type="radio"
+                name="island-shape-mode"
+                checked={shapeMode === 'notch'}
+                onChange={() => {
+                  setShapeMode('notch');
+                  window.api.shapeModeSet('notch').catch(() => {});
+                }}
+              />
+              {t('settings.app.behavior.shapeModeNotch', { defaultValue: '刘海屏' })}
+            </label>
+            <label className="settings-card-check">
+              <input
+                type="radio"
+                name="island-shape-mode"
+                checked={shapeMode === 'pill'}
+                onChange={() => {
+                  setShapeMode('pill');
+                  window.api.shapeModeSet('pill').catch(() => {});
+                }}
+              />
+              {t('settings.app.behavior.shapeModePill', { defaultValue: '灵动岛' })}
+            </label>
+          </div>
+        </div>
+
         <div className="settings-card">
           <div className="settings-card-header">
             <div className="settings-card-title">{t('settings.app.theme.title', { defaultValue: '主题模式' })}</div>
