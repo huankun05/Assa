@@ -54,7 +54,7 @@ export function SettingsSelect({
         aria-expanded={open}
       >
         <span className="settings-display-select-label">
-          {current?.label ?? value || t('settings.select.placeholder', { defaultValue: '请选择' })}
+          {current?.label ?? (value || t('settings.select.placeholder', { defaultValue: '请选择' }))}
         </span>
         <span className="settings-display-select-caret" aria-hidden="true">▾</span>
       </button>
