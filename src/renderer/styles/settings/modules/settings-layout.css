@@ -8401,3 +8401,13 @@ button.settings-user-image-translation-image-wrap:hover {
   flex: 1;
   accent-color: #4d9fff;
 }
+
+
+/* settings-v2 下拉/select 圆角 */
+.settings-v2 select.settings-field-input,
+.settings-v2 .settings-field-input[type="select"],
+.settings-v2 select {
+  border-radius: 10px !important;
+  background: #fff !important;
+  border-color: #e6eaf2 !important;
+}
