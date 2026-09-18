@@ -29,6 +29,9 @@ Thumbs.db
 *.sw?
 *.tsbuildinfo
 
+# Tesseract.js 运行时自动下载到工作目录的语言数据（可重新生成，勿提交）
+*.traineddata
+
 # 汐月 Python 侧车
 .venv/
 data/
