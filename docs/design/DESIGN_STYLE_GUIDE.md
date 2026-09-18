@@ -310,17 +310,22 @@ CSS（`agent.css`）：
 - 在按钮内通过 `filter: brightness(0) invert(1)` 适配主题
 - 按钮尺寸：`14×14`，`object-fit: contain`
 
-### 4.2 AI 角色图（`src/renderer/public/image/AGENT_*.png`）
+### 4.2 AI 角色图（`src/renderer/public/image/agent/assa_*.png`）
 
 | 状态 | 文件 | 视觉 |
 |---|---|---|
-| connecting | `AGENT_DEFAULT.png` | 像素小恐龙站立 |
-| thinking | `AGENT_THINKING.png` | 手托下巴 + 思考气泡 |
-| toolCalling | `AGENT_TOOL_CALLING.png` | 用笔电 |
-| answering/done | `AGENT_FINAL_ANSWER.png` | 举手 + 灯泡 |
-| error | `AGENT_CONFUSE.png` | 挠头 + 乱线团 + 流汗 |
+| connecting | `assa_calm.png` | 静立等待 |
+| thinking | `assa_thinking.png` | 手托下巴 + 思考气泡 |
+| toolCalling | `assa_tool.png` | 用笔电 |
+| answering | `assa_speaking.png` | 举手 + 灯泡 |
+| done | `assa_happy.png` | 开心 |
+| error | `assa_confuse.png` | 挠头 + 乱线团 + 流汗 |
 
-**绘制风格铁律**
+同一套图也用作灵动岛内的情绪头像，映射见 `assaMoodConfig.ts`（calm / happy / thinking / tool / listening / confuse / speaking；另有全身图 `assa_happy_full.png`）。状态→图片的兜底见 `agentContentConfig.ts`（`PHASE_IMAGE_FALLBACK = assa_happy.png`）。
+
+> eIsland 时代的像素小恐龙图标（`AGENT_*.png`）已归档至 `src/renderer/public/image/legacy/eisland-dino/`，仅 `docs/design/archive/` 下的历史预览稿引用。
+
+**绘制风格铁律**（适用于归档的像素小恐龙 `AGENT_*.png`）
 
 - 8-bit pixel art：每个色块有明显「方块感」，不要抗锯齿柔化
 - 主色：橙黄 `#F8B66E`（身体）+ 深橙 `#E89540`（描边/阴影）+ 黑眼 `#1a1a1a` + 粉腮 `#F8C8B0`
