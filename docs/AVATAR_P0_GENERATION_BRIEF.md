@@ -189,8 +189,8 @@ different outfit, covered shoulders, turtleneck, no hands visible
 - [ ] 文件名完全一致，透明底 PNG  
 - [ ] 七张脸位/发色/服装一致  
 - [ ] 缩到 32px 仍能区分 calm / happy / thinking / tool / listening / confuse  
-- [ ] 已放入 `src/renderer/public/image/agent/`  
-- [ ] 缺任一张时应用会回落 `assa_happy.png`（代码已接）  
+- [x] 已放入 `src/renderer/public/image/agent/`（2026-09-18 核实：七态 + `assa_happy_full.png`）  
+- [x] 缺任一张时应用会回落 `assa_happy.png`（`agentContentConfig.ts` 的 `PHASE_IMAGE_FALLBACK` 已接）  
 
 ---
 

@@ -235,16 +235,19 @@
 ### 5.1 定位
 
 - **主形象**：二次元可爱少女（设计 brief 见整合报告 §2.2）。
-- **像素恐龙**：eIsland 遗产；**归档，不进正式应用**（`public/image/legacy/eisland-dino/` 或删除）；不得出现在默认路径与品牌叙事。
+- **像素恐龙**：eIsland 遗产；**已归档，不进正式应用**（`public/image/legacy/eisland-dino/`，保留作历史素材，不删）；不得出现在默认路径与品牌叙事。
 - **过渡期（已定）**：代码只认 `assa_{mood}.png`；差分未齐的 mood **临时共用已有少女图或状态点**，**禁止回落恐龙**。
 
-### 5.2 现状分裂
+### 5.2 现状（2026-09-18 已统一）
 
-| 位置 | 现用 | 目标 |
+| 位置 | 现用 | 状态 |
 |---|---|---|
-| 岛内 Agent 条（74px） | `AGENT_*.png` 恐龙五态 | **少女五态+** 差分 |
-| Hover 汐月页 | `assa_happy.png`（仅 happy）；其它 mood → 冷色 SVG | 全 mood 图片模式 |
-| 应用/托盘图标 | eisland | 汐月品牌图标 |
+| 岛内 Agent 条（74px） | `assa_{mood}.png` 少女图 | ✅ 已接线（`agentContentConfig.ts` 的 `PHASE_IMAGE`，缺图回落 `assa_happy.png`） |
+| Hover Assa 页 | `assa_{mood}.png` 全 mood | ✅ 已接线（`assaMoodConfig.ts` 的 `AVATAR_IMAGE_MAP`） |
+| 应用 / 托盘图标 | `resources/icon/assa_512.png` + `assa_256x256.ico` / `assa_16x16.ico` | ✅ 已接线（`electron-builder.json` / tray） |
+| 遗留像素恐龙 | `public/image/legacy/eisland-dino/AGENT_*.png` | 已归档，仅 `docs/design/archive/` 历史预览稿引用 |
+
+`resources/icon/` 下的 `eisland*.{svg,ico}` 作为 eIsland 来源备份保留，不再被任何配置引用。
 
 ### 5.3 状态差分清单（比「五态」更丰富）
 
@@ -289,7 +292,7 @@ src/renderer/public/image/agent/
   assa_happy_full.png   # 大尺寸
 ```
 
-根目录 `F:/Work/Create/Assa/assa_*.png` 为**工作草稿**，验收后拷入上述路径；未入库不得在组件引用。
+仓库外 `F:/Work/Create/Assa/temp-archive/*.png` 为**优化前的高分辨率源图**（未入库），成品已拷入上述路径；未入库资源不得在组件里引用。
 
 ### 5.5 接线映射（目标）
 
@@ -321,7 +324,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 ### 5.7 遗留恐龙处置
 
 1. 代码：`PHASE_IMAGE` 全部改指 `assa_{mood}.png`。  
-2. 资源：`AGENT_*.png` 移入 `public/image/legacy/eisland-dino/` 或删除（团队定）。  
+2. 资源：`AGENT_*.png` **已移入** `public/image/legacy/eisland-dino/`（保留，不删）。  
 3. 文档：所有「像素小恐龙」表述改为「汐月少女」。  
 4. persona `agent/persona/assa.md` 同步删「无形象」过时描述。
 
@@ -540,7 +543,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 | 素材 | P0 七态入库 `public/image/agent/` | **已完成** |
 | 接线 | PHASE_IMAGE / AVATAR / 阶段文案 | **已完成** |
 | 归档 | 恐龙移 legacy | **已完成** |
-| 图标 | 托盘 16 + 应用 256 替换 | **待素材**（见 CHARACTER_ASSET_CHECKLIST §6B） |
+| 图标 | 托盘 16 + 应用 256 替换 | **已完成**（`assa_16x16.ico` / `assa_256x256.ico`，见 CHARACTER_ASSET_CHECKLIST §二） |
 
 **验收**：产品路径无恐龙；hover 与岛为同一少女；托盘为汐月。
 

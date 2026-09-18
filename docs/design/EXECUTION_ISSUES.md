@@ -43,11 +43,11 @@
 | 设置大类重划 + 隐私安全分区 | 产品 IA 大改，需设置导航/搜索/i18n 全量回归；建议独立里程碑 |
 | settings-hotkey-btn 全量并轨 | 使用面 20+ 文件，需分批；本轮只补幽灵类，未删 hotkey-btn |
 | Lucide 整批替换 | 按决策为增量；本轮未换存量文件 |
-| 少女差分图 7 态 | 素材未齐；缺图 mood 应回落 happy（代码侧 PHASE_IMAGE 待 M3 完整表） |
-| 托盘/应用 ico 设计 | 无视觉源文件；未改 electron-builder/tray 引用 |
+| ~~少女差分图 7 态~~ | **已完成**：七态已入库 `public/image/agent/assa_*.png`；`PHASE_IMAGE` 全表接线，缺图回落 `assa_happy.png` |
+| ~~托盘/应用 ico 设计~~ | **已完成**：`assa_512.png` + `assa_256x256.ico` / `assa_16x16.ico` 已产出，`electron-builder.json` 与 tray 引用均已切 assa |
 | prefers-reduced-motion | 按决策改走 App 弹性开关；本轮未扩覆盖 |
 | 番茄时长设置页 | hover 已固定 25/5；设置项未新建（避免未注册 SEARCHABLE_SETTINGS） |
-| 恐龙文件物理移动 | 仅改配置意图；`AGENT_*.png` 仍在 public/image，待素材表落地后移 legacy |
+| ~~恐龙文件物理移动~~ | **已完成（2026-09-18）**：`AGENT_*.png`（5 个）已归档至 `public/image/legacy/eisland-dino/`；产品路径仅余 `image/agent/assa_*.png` |
 
 ## 风险备注
 

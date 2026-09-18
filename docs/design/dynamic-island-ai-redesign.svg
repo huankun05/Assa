@@ -153,7 +153,7 @@
 
   <!-- 顶部标题 -->
   <text x="60" y="60" font-size="24" font-weight="700" fill="#1d1d1f">灵动岛 · AI 对话样式重设计</text>
-  <text x="60" y="88" font-size="14" fill="#86868b">参考 Xiyue 设计风格文档（DESIGN_STYLE_GUIDE.md） ·  玻璃面板 + 主题蓝 + 像素小恐龙</text>
+  <text x="60" y="88" font-size="14" fill="#86868b">参考 Assa 设计风格文档（DESIGN_STYLE_GUIDE.md） ·  玻璃面板 + 主题蓝 + 像素小恐龙</text>
 
   <!-- 分割线 -->
   <line x1="60" y1="120" x2="1740" y2="120" stroke="rgba(0,0,0,.08)" stroke-width="1"/>
@@ -229,13 +229,13 @@
     <text y="380" font-size="11" fill="#86868b">原浅色卡片版已重做：玻璃 + 主蓝 + 像素角色；问题：原版"AI 对话"文字被浅蓝图标压住几乎不可读</text>
   </g>
 
-  <!-- ============== 中间：深色玻璃版本（Xiyue 原生） ============== -->
+  <!-- ============== 中间：深色玻璃版本（Assa 原生） ============== -->
   <g transform="translate(60, 580)">
-    <text font-size="16" font-weight="600" fill="#1d1d1f">② 深色玻璃版本（Xiyue 原生深色）</text>
+    <text font-size="16" font-weight="600" fill="#1d1d1f">② 深色玻璃版本（Assa 原生深色）</text>
   </g>
   <!-- 把深色版本单独放在右边大片区域 -->
   <g transform="translate(940, 170)">
-    <text font-size="16" font-weight="600" fill="#1d1d1f">③ 深色玻璃版本（Xiyue 原生）</text>
+    <text font-size="16" font-weight="600" fill="#1d1d1f">③ 深色玻璃版本（Assa 原生）</text>
     <text y="22" font-size="12" fill="#86868b">深色面板 + 主题蓝发光 + 像素小恐龙，文字对比度高</text>
 
     <!-- 深色玻璃岛主体 -->
@@ -302,7 +302,7 @@
       <rect width="200" height="6" rx="3" ry="3" fill="rgba(0,0,0,.25)"/>
     </g>
 
-    <text y="380" font-size="11" fill="#86868b">Xiyue 原生深色玻璃版：emoji-free，所有元素对比度 ≥ 4.5:1，文字清晰</text>
+    <text y="380" font-size="11" fill="#86868b">Assa 原生深色玻璃版：emoji-free，所有元素对比度 ≥ 4.5:1，文字清晰</text>
   </g>
 
   <!-- 底部：设计要点 -->
@@ -317,7 +317,7 @@
       <text y="110">• 关闭按钮：右上角胶囊 32×32，hover rgba 增亮</text>
       <text y="132">• 底部提示：14px 居中「点击进入对话，或语音交谈」</text>
       <text y="154">• home indicator：底部居中 200×6 圆角条，黑色 25%</text>
-      <text y="176">• 入场动画：cubic-bezier(0.22, 1, 0.36, 1) 0.4s（Xiyue 通用）</text>
+      <text y="176">• 入场动画：cubic-bezier(0.22, 1, 0.36, 1) 0.4s（Assa 通用）</text>
     </g>
   </g>
 

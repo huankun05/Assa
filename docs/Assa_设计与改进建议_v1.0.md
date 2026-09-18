@@ -113,9 +113,9 @@
 
 | 资产 | 路径约定 | 说明 |
 |---|---|---|
-| 应用图标源文件 | `resources/icon/assa.png`（及后续 ico） | 替换/并列现有 `eisland_*.ico`；打包配置 `electron-builder.json` 同步 |
-| Agent 头像（hover 页） | `src/renderer/public/image/agent/assa_{happy,thinking,confuse,listening}.png` | 填入 `assaMoodConfig.ts` 的 `AVATAR_IMAGE_MAP` |
-| Agent 状态图（岛内紧凑条） | 可映射到同一套或子集 | `agentContentConfig.ts` 的 `PHASE_IMAGE` 可逐步切到 assa 命名 |
+| 应用图标源文件 | `resources/icon/assa_512.png`（多尺寸 `assa_256x256.ico` / `assa_16x16.ico`） | ✅ 已产出，与 `eisland_*.ico` 并列（后者作来源备份）；打包配置 `electron-builder.json` 已同步 |
+| Agent 头像（hover 页） | `src/renderer/public/image/agent/assa_{calm,happy,thinking,tool,listening,speaking,confuse}.png` | ✅ 已填充 `assaMoodConfig.ts` 的 `AVATAR_IMAGE_MAP` |
+| Agent 状态图（岛内紧凑条） | 与头像共用同一套图片 | ✅ `agentContentConfig.ts` 的 `PHASE_IMAGE` 已切到 assa 命名，缺图回落 `assa_happy.png` |
 
 风格约束（生成/外包美术时写进 brief）：
 - 主体：二次元可爱少女头肩胸像，暖色发色 + 清透表情
@@ -207,15 +207,16 @@ volume-analyzer、hardware-info-helper、`AiSettingsSection`、11 个死 IPC—�
 
 ---
 
-## 六、品牌资产落地清单（待产出，2026-09-10）
+## 六、品牌资产落地清单（已全部落地，2026-09-18 更新）
 
-> 形象方向已确认为**二次元可爱少女**。下列资产**尚未生成**，按 §3.2 brief 产出后按下表落位。
+> 形象方向为**二次元可爱少女**。下列资产**已生成并完成接线**，实际文件名以 `docs/design/CHARACTER_ASSET_CHECKLIST.md` 为准。
 
-| 资产 | 目标路径 | 状态 |
+| 资产 | 实际路径 | 状态 |
 |---|---|---|
-| 应用图标（1024 源 + ico） | `resources/icon/assa.png` / `assa.ico` | ⏳ 待产出；产出后改 `electron-builder.json` |
-| 头像四态 | `src/renderer/public/image/agent/assa_{happy,thinking,confuse,listening}.png` | ⏳ 待产出；产出后填 `AVATAR_IMAGE_MAP` |
-| 岛内状态图（可选） | `src/renderer/public/image/`（assa 命名） | ⏳ 可与头像共用或单独精简版 |
+| 应用 / 托盘图标 | `resources/icon/assa_512.png`；应用 `assa_256x256.ico`、托盘 `assa_16x16.ico` | ✅ 已产出并接线（`electron-builder.json` / tray） |
+| 头像七态 | `src/renderer/public/image/agent/assa_{calm,happy,thinking,tool,listening,speaking,confuse}.png`（另 `assa_happy_full.png` 全身） | ✅ 已产出，`AVATAR_IMAGE_MAP` 已填充 |
+| 岛内状态图 | 与头像共用（`agentContentConfig.ts` 的 `PHASE_IMAGE`） | ✅ 已接线，缺图回落 `assa_happy.png` |
+| 遗留像素恐龙 | `src/renderer/public/image/legacy/eisland-dino/AGENT_*.png` | 已归档，不进产品路径 |
 
 启用 hover 页图片头像示例（资源就位后取消注释即可）：
 
