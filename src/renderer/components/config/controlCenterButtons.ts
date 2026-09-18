@@ -27,23 +27,72 @@
  */
 
 import type { ControlCenterButtonConfig, ControlCenterButtonId } from '../../store/types';
+import { SvgIcon } from '../../utils/SvgIcon';
 
-/** 控制中心按钮元数据：仅展示文案与 i18n key（点击行为在 TimeTab 内按 id 映射） */
-export const CONTROL_CENTER_BUTTON_META: Record<ControlCenterButtonId, { labelKey: string; defaultLabel: string }> = {
-  hide: { labelKey: 'hover.actions.hideIsland', defaultLabel: '隐藏灵动岛' },
-  quit: { labelKey: 'hover.actions.quitIsland', defaultLabel: '退出灵动岛' },
-  brightness: { labelKey: 'hover.media.brightness', defaultLabel: '亮度' },
-  volume: { labelKey: 'hover.media.volume', defaultLabel: '音量' },
-  screenshot: { labelKey: 'hover.tools.screenshot', defaultLabel: '截图' },
-  taskManager: { labelKey: 'hover.tools.taskManager', defaultLabel: '任务管理器' },
-  toolbox: { labelKey: 'hover.tools.toolbox', defaultLabel: '工具箱' },
-  calculator: { labelKey: 'hover.tools.calculator', defaultLabel: '计算器' },
-  translate: { labelKey: 'hover.tools.translate', defaultLabel: '翻译' },
-  managePages: { labelKey: 'hover.nav.managePages', defaultLabel: '管理页面' },
-  settings: { labelKey: 'hover.nav.settings', defaultLabel: '设置' },
+/** 控制中心按钮元数据：展示文案 + 图标（点击行为在 TimeTab 内按 id 映射） */
+export const CONTROL_CENTER_BUTTON_META: Record<ControlCenterButtonId, { labelKey: string; defaultLabel: string; icon: string }> = {
+  hide: { labelKey: 'hover.actions.hideIsland', defaultLabel: '隐藏灵动岛', icon: SvgIcon.HIDE },
+  quit: { labelKey: 'hover.actions.quitIsland', defaultLabel: '退出灵动岛', icon: SvgIcon.POWER_OFF },
+  brightness: { labelKey: 'hover.media.brightness', defaultLabel: '亮度', icon: SvgIcon.BRIGHTNESS },
+  volume: { labelKey: 'hover.media.volume', defaultLabel: '音量', icon: SvgIcon.VOLUME },
+  screenshot: { labelKey: 'hover.tools.screenshot', defaultLabel: '截图', icon: SvgIcon.SCREENSHOT },
+  taskManager: { labelKey: 'hover.tools.taskManager', defaultLabel: '任务管理器', icon: SvgIcon.TASK_MANAGER },
+  toolbox: { labelKey: 'hover.tools.toolbox', defaultLabel: '工具箱', icon: SvgIcon.PLUGIN },
+  calculator: { labelKey: 'hover.tools.calculator', defaultLabel: '计算器', icon: SvgIcon.CALCULATOR },
+  translate: { labelKey: 'hover.tools.translate', defaultLabel: '翻译', icon: SvgIcon.LANGUAGE },
+  fileSearch: { labelKey: 'hover.tools.fileSearch', defaultLabel: '文件查找', icon: SvgIcon.SEARCH },
+  managePages: { labelKey: 'hover.nav.managePages', defaultLabel: '管理页面', icon: SvgIcon.MANAGE_PAGES },
+  settings: { labelKey: 'hover.nav.settings', defaultLabel: '设置', icon: SvgIcon.SETTING },
 };
+
+/** 控制中心条最大同时显示数（防溢出） */
+export const CONTROL_CENTER_MAX_VISIBLE = 11;
+
+/** 必须始终显示的入口（不可隐藏）：页面管理、设置 */
+export const CONTROL_CENTER_ALWAYS_VISIBLE: readonly ControlCenterButtonId[] = [
+  'managePages',
+  'settings',
+];
 
 /** 控制中心按钮默认顺序与显隐（开箱全显示，按原计划书默认顺序） */
 export const DEFAULT_CONTROL_CENTER_BUTTONS: ControlCenterButtonConfig[] = (
-  ['hide', 'quit', 'brightness', 'volume', 'screenshot', 'taskManager', 'toolbox', 'calculator', 'translate', 'managePages', 'settings'] as ControlCenterButtonId[]
+  ['hide', 'quit', 'brightness', 'volume', 'screenshot', 'taskManager', 'toolbox', 'calculator', 'translate', 'fileSearch', 'managePages', 'settings'] as ControlCenterButtonId[]
 ).map((id) => ({ id, visible: true }));
+
+/**
+ * 合并已存配置与默认池：老配置缺失的新按钮自动补在末尾（visible=true）。
+ * 常驻入口强制 visible。
+ */
+export function mergeControlCenterButtons(
+  stored?: ControlCenterButtonConfig[] | null,
+): ControlCenterButtonConfig[] {
+  const base = Array.isArray(stored) && stored.length > 0 ? stored : DEFAULT_CONTROL_CENTER_BUTTONS;
+  const seen = new Set(base.map((item) => item.id));
+  const missing = DEFAULT_CONTROL_CENTER_BUTTONS.filter((item) => !seen.has(item.id));
+  return [...base, ...missing].map((item) => (
+    CONTROL_CENTER_ALWAYS_VISIBLE.includes(item.id)
+      ? { ...item, visible: true }
+      : item
+  ));
+}
+
+/**
+ * 取条上实际渲染的可见按钮。
+ * 顺序 = 页面管理列表顺序（存储顺序）；
+ * 超过上限时优先保留常驻项（设置/页面管理），从其余可见项末尾裁剪。
+ */
+export function getVisibleControlCenterButtons(
+  stored?: ControlCenterButtonConfig[] | null,
+): ControlCenterButtonConfig[] {
+  const visible = mergeControlCenterButtons(stored).filter((item) => item.visible);
+  if (visible.length <= CONTROL_CENTER_MAX_VISIBLE) return visible;
+
+  const always = visible.filter((item) => CONTROL_CENTER_ALWAYS_VISIBLE.includes(item.id));
+  const rest = visible.filter((item) => !CONTROL_CENTER_ALWAYS_VISIBLE.includes(item.id));
+  const room = Math.max(0, CONTROL_CENTER_MAX_VISIBLE - always.length);
+  const keep = new Set([
+    ...always.map((item) => item.id),
+    ...rest.slice(0, room).map((item) => item.id),
+  ]);
+  return visible.filter((item) => keep.has(item.id));
+}

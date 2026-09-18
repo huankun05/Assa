@@ -96,6 +96,15 @@ export function useDynamicIslandCoordinator(options: UseDynamicIslandCoordinator
   const lyricsLoading = useIslandStore((s) => s.lyricsLoading);
   const translationLyrics = useIslandStore((s) => s.translationLyrics);
 
+  /**
+   * 进入控制中心（hover）时后台预热设置窗：
+   * 把建窗 + loadURL 成本前移，点击设置可接近秒开；空闲后主进程会自动销毁。
+   */
+  useEffect(() => {
+    if (state !== 'hover') return;
+    void window.api?.preloadSettingsWindow?.().catch(() => {});
+  }, [state]);
+
   const {
     setHover,
     setIdle,

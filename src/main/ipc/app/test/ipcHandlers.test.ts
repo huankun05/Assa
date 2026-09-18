@@ -34,11 +34,13 @@ const { handleMock, onMock } = vi.hoisted(() => ({
 const {
   existsSyncMock,
   readFileSyncMock,
+  statSyncMock,
   writeFileSyncMock,
   broadcastSettingChangeMock,
 } = vi.hoisted(() => ({
   existsSyncMock: vi.fn(),
   readFileSyncMock: vi.fn(),
+  statSyncMock: vi.fn(),
   writeFileSyncMock: vi.fn(),
   broadcastSettingChangeMock: vi.fn(),
 }));
@@ -53,6 +55,7 @@ vi.mock('electron', () => ({
 vi.mock('fs', () => ({
   existsSync: existsSyncMock,
   readFileSync: readFileSyncMock,
+  statSync: statSyncMock,
   writeFileSync: writeFileSyncMock,
 }));
 
@@ -74,6 +77,7 @@ describe('app ipc handlers', () => {
     onMock.mockReset();
     existsSyncMock.mockReset();
     readFileSyncMock.mockReset();
+    statSyncMock.mockReset();
     writeFileSyncMock.mockReset();
     broadcastSettingChangeMock.mockReset();
 
@@ -90,6 +94,8 @@ describe('app ipc handlers', () => {
 
     existsSyncMock.mockReturnValue(true);
     readFileSyncMock.mockReturnValue(JSON.stringify({ a: 1 }));
+    // readStoreCached() 用 statSync 做 mtime+size 缓存，必须 stub 一个有效 stat
+    statSyncMock.mockReturnValue({ mtimeMs: 0, size: 0 });
 
     const read = handleHandlers.get('store:read');
     const write = handleHandlers.get('store:write');

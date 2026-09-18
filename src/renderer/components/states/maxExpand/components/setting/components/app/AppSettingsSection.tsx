@@ -42,7 +42,6 @@ import { ClipboardHistorySettingsSection } from './components/ClipboardHistorySe
 import { AlarmSettingsPage } from './components/AlarmSettingsPage';
 import { BreakReminderSettingsPage } from './components/BreakReminderSettingsPage';
 import { AutostartSettingsPage } from './components/AutostartSettingsPage';
-import { AlbumSettingsPage } from './components/AlbumSettingsPage';
 import { SoundSettingsPage } from './components/SoundSettingsPage';
 import { NotificationSettingsPage } from './components/NotificationSettingsPage';
 import { PerformanceSettingsPage } from './components/PerformanceSettingsPage';
@@ -206,8 +205,6 @@ export function AppSettingsSection({
             updateExpandNavLayout={updateExpandNavLayout}
           />
         );
-      case 'album':
-        return <AlbumSettingsPage />;
       case 'hide-process-list':
         return (
           <HideProcessSettingsPage

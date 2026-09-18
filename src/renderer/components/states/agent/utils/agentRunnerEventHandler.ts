@@ -25,7 +25,7 @@
  */
 
 import type React from 'react';
-import { resolveXiyueLocalToolResult } from '../../../../api/ai/xiyueLocalTool';
+import { resolveassaLocalToolResult } from '../../../../api/ai/assaLocalTool';
 import type { MihtnelisAgentStreamEvent } from '../../../../api/ai/mihtnelisAgentStream';
 import type { AgentPhase } from '../config/agentContentConfig';
 import type { AuthPending } from '../types/AuthPending';
@@ -142,11 +142,11 @@ export function createAgentStreamEventHandler(options: CreateAgentStreamEventHan
         try {
           const executor = window.api?.executeAgentLocalTool;
           if (typeof executor !== 'function') {
-            await resolveXiyueLocalToolResult({ requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
+            await resolveassaLocalToolResult({ requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
             return;
           }
           const execution = await executor({ tool, arguments: argumentsPayload, workspaces });
-          await resolveXiyueLocalToolResult({
+          await resolveassaLocalToolResult({
             requestId,
             success: Boolean(execution?.success),
             result: execution?.result,

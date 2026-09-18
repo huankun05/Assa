@@ -36,27 +36,36 @@ export function SecuritySettingsSection(): ReactElement {
   const [busy, setBusy] = useState(false);
   const [sessionPass, setSessionPass] = useState(false);
   const [browserOn, setBrowserOn] = useState(false);
+  const [visibleName, setVisibleName] = useState('');
+  const [inputName, setInputName] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   const loadMemories = (): void => {
-    window.api?.xiyueMemoryList?.()
+    window.api?.assaMemoryList?.()
       .then((res) => setMemories((res?.items ?? []) as MemoryRow[]))
       .catch(() => setMemories([]));
   };
 
   const loadAudit = (): void => {
-    window.api?.xiyueAuditLogList?.(30)
+    window.api?.assaAuditLogList?.(30)
       .then((rows) => setAuditRows((rows ?? []) as AuditRow[]))
       .catch(() => setAuditRows([]));
   };
 
   useEffect(() => {
-    window.api?.xiyueTrustLevelGet?.()
+    window.api?.assaTrustLevelGet?.()
       .then((level) => setTrustLevel(Math.max(0, Math.min(3, level)) as TrustLevelInternal))
       .catch(() => {});
     loadAudit();
     loadMemories();
-    window.api?.xiyueSessionPassGet?.().then(setSessionPass).catch(() => {});
-    window.api?.xiyueBrowserEnabledGet?.().then(setBrowserOn).catch(() => {});
+    window.api?.assaSessionPassGet?.().then(setSessionPass).catch(() => {});
+    window.api?.assaBrowserEnabledGet?.().then(setBrowserOn).catch(() => {});
+    window.api?.assaVisibleNameGet?.()
+      .then((name) => {
+        setVisibleName(name);
+        setInputName(name);
+      })
+      .catch(() => {});
   }, []);
 
   const currentCard = TRUST_LEVEL_CARDS.find((c) => c.level === trustLevel);
@@ -65,10 +74,22 @@ export function SecuritySettingsSection(): ReactElement {
     if (busy || level === trustLevel) return;
     setBusy(true);
     setTrustLevel(level);
-    window.api?.xiyueTrustLevelSet?.(level)
+    window.api?.assaTrustLevelSet?.(level)
       .then((next) => setTrustLevel(Math.max(0, Math.min(3, next)) as TrustLevelInternal))
       .catch(() => {})
       .finally(() => setBusy(false));
+  };
+
+  const onSaveName = (): void => {
+    if (savingName || inputName.trim() === visibleName) return;
+    setSavingName(true);
+    window.api?.assaVisibleNameSet?.(inputName.trim())
+      .then((name) => {
+        setVisibleName(name);
+        setInputName(name);
+      })
+      .catch(() => {})
+      .finally(() => setSavingName(false));
   };
 
   return (
@@ -76,11 +97,47 @@ export function SecuritySettingsSection(): ReactElement {
       <div className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title">
+            {t('settings.aiName.title', { defaultValue: 'AI 名字' })}
+          </div>
+          <div className="settings-card-subtitle">
+            {t('settings.aiName.hint', {
+              defaultValue: '设置 AI 助手的显示名，修改后即时生效。留空则恢复默认“汐月”。',
+            })}
+          </div>
+        </div>
+        <div className="settings-card-inline-row">
+          <input
+            type="text"
+            className="settings-field-input"
+            value={inputName}
+            placeholder={t('settings.aiName.placeholder', { defaultValue: '例如：汐月' })}
+            onChange={(e) => setInputName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onSaveName();
+            }}
+            disabled={savingName}
+          />
+          <button
+            className="settings-card-action-btn"
+            type="button"
+            disabled={savingName || inputName.trim() === visibleName}
+            onClick={onSaveName}
+          >
+            {savingName
+              ? t('settings.aiName.saving', { defaultValue: '保存中…' })
+              : t('settings.aiName.save', { defaultValue: '保存' })}
+          </button>
+        </div>
+      </div>
+
+      <div className="settings-card">
+        <div className="settings-card-header">
+          <div className="settings-card-title">
             {t('settings.aiSecurity.trustTitle', { defaultValue: 'AI 信任等级' })}
           </div>
           <div className="settings-card-subtitle">
             {t('settings.aiSecurity.trustHint', {
-              defaultValue: '决定汐月自动执行工具与读取数据的范围。改动立即生效，无需重启。',
+              defaultValue: '决定 Assa 自动执行工具与读取数据的范围。改动立即生效，无需重启。',
             })}
           </div>
         </div>
@@ -149,7 +206,7 @@ export function SecuritySettingsSection(): ReactElement {
       <div className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title">
-            {t('settings.memory.title', { defaultValue: '汐月记忆（只读）' })}
+            {t('settings.memory.title', { defaultValue: 'AI 记忆（只读）' })}
           </div>
           <div className="settings-card-subtitle">
             {t('settings.memory.hint', {
@@ -162,7 +219,7 @@ export function SecuritySettingsSection(): ReactElement {
             className="settings-card-action-btn"
             type="button"
             onClick={() => {
-              window.api?.xiyueMemoryClear?.().then(() => loadMemories()).catch(() => {});
+              window.api?.assaMemoryClear?.().then(() => loadMemories()).catch(() => {});
             }}
           >
             {t('settings.memory.clear', { defaultValue: '清空记忆' })}
@@ -184,7 +241,7 @@ export function SecuritySettingsSection(): ReactElement {
                   onClick={() => {
                     const id = Number(m.id);
                     if (Number.isFinite(id)) {
-                      window.api?.xiyueMemoryDelete?.(id).then(() => loadMemories()).catch(() => {});
+                      window.api?.assaMemoryDelete?.(id).then(() => loadMemories()).catch(() => {});
                     }
                   }}
                 >
@@ -214,7 +271,7 @@ export function SecuritySettingsSection(): ReactElement {
               checked={sessionPass}
               onChange={(e) => {
                 setSessionPass(e.target.checked);
-                window.api?.xiyueSessionPassSet?.(e.target.checked).catch(() => {});
+                window.api?.assaSessionPassSet?.(e.target.checked).catch(() => {});
               }}
             />
             {t('settings.sessionPass.toggle', { defaultValue: '启用会话通行证' })}
@@ -240,7 +297,7 @@ export function SecuritySettingsSection(): ReactElement {
               checked={browserOn}
               onChange={(e) => {
                 setBrowserOn(e.target.checked);
-                window.api?.xiyueBrowserEnabledSet?.(e.target.checked).catch(() => {});
+                window.api?.assaBrowserEnabledSet?.(e.target.checked).catch(() => {});
               }}
             />
             {t('settings.browser.toggle', { defaultValue: '允许浏览器工具（需重启对话/侧车会话后完全生效）' })}

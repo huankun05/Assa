@@ -40,15 +40,17 @@ export { AI_CHAT_CLIPBOARD_URL_EVENT, getStateClassName, STATE_CONFIGS } from '.
  */
 function DynamicIsland(): JSX.Element {
   const { t, i18n } = useTranslation();
-  const store = useIslandStore();
-  const {
-    state,
-    weather,
-    timerData,
-    notification,
-    pomodoroRunning,
-    pomodoroRemaining,
-  } = store;
+  /**
+   * 选择器订阅：只订阅渲染所需字段。
+   * 无 selector 的 useIslandStore() 会在 currentPositionMs 等高频字段更新时
+   * 触发整棵岛树 re-render（播放时曾达 ~15Hz）。
+   */
+  const state = useIslandStore((s) => s.state);
+  const weather = useIslandStore((s) => s.weather);
+  const timerData = useIslandStore((s) => s.timerData);
+  const notification = useIslandStore((s) => s.notification);
+  const pomodoroRunning = useIslandStore((s) => s.pomodoroRunning);
+  const pomodoroRemaining = useIslandStore((s) => s.pomodoroRemaining);
 
   const {
     handleIslandClick,
@@ -68,7 +70,6 @@ function DynamicIsland(): JSX.Element {
     handleVideoLoadedMetadata,
     handleVideoCanPlay,
   } = useDynamicIslandCoordinator({
-    store,
     t,
     language: i18n.resolvedLanguage,
   });

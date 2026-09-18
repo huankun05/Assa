@@ -47,11 +47,30 @@
   flex-shrink: 0;
 }
 
+.weather-tab-icon-wrap {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
 .weather-tab-icon {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
   transition: transform 0.2s ease;
+  display: block;
+}
+
+/* 朝霞/晚霞角标：贴主图标右下角，彩色 Meteocons，不参与 monochrome 染色 */
+.weather-tab-solar {
+  position: absolute;
+  right: -10px;
+  bottom: -8px;
+  width: 22px;
+  height: 22px;
+  filter: none;
+  pointer-events: none;
 }
 
 .weather-tab-icon-clickable {
@@ -169,6 +188,8 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  /* Meteocons SVG 自带彩色，不要当 monochrome 染色 */
+  filter: none;
 }
 
 .weather-tab-forecast-row {

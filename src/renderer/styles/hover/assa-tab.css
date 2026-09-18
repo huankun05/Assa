@@ -1,0 +1,375 @@
+/*
+ * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
+ * https://github.com/JNTMTMTM/eIsland
+ *
+ * Copyright (C) 2026 JNTMTMTM
+ * Copyright (C) 2026 pyisland.com
+ *
+ * Original author: JNTMTMTM[](https://github.com/JNTMTMTM)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/**
+ * @file assa-tab.css
+ * @description Hover 汐月 AI 页样式
+ *
+ * 结构（与 LyricsTab「封面 + 歌词」同构）：
+ *   .assa-tab
+ *     └ .assa-identity   左：头像 + 两行文案（主：名字·状态 ｜ 副：问候语）
+ *     └ .assa-divider    1px 竖分隔线
+ *     └ .assa-actions    右：语音 / 文字聊天两个图标入口
+ *
+ * ⚠ 高度硬约束：hover 态灵动岛只有 60px（pill 态 72px），而 .assa-tab 带
+ *   `contain: layout paint`，超出会被直接裁掉（表现为「内容跑到岛外 / 显示不全」）。
+ *   当前最高元素为 44px 头像，60px 岛上下各留 8px，安全。
+ *   任何新增元素都必须重新核算总高，不得超过 60px。
+ *
+ * 主题适配：图标统一走 `filter: brightness(0) invert(var(--icon-invert))`，
+ *   与 Assa 的 action-btn / SvgIcon 体系一致；文字用 --color-island-text。
+ *
+ * 头像微动系统（P0）：
+ *   - 基础呼吸感：所有状态通用，极轻微 scale(1.015)，模拟"活着"的感觉
+ *   - 状态联动微动：每个状态独特动作（calm 浮动 / happy 跳动 / thinking 摇晃 /
+ *     tool 点头 / listening 侧倾 / confuse 抖动 / speaking 节奏跳）
+ *   - 全部控制在 2px / 2° 以内，避免 44px 圆裁溢出
+ *   - 只用 transform + opacity，GPU 加速，不触发重排
+ *   - 尊重 prefers-reduced-motion
+ *
+ * @author 鸡哥
+ */
+
+.assa-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  height: 100%;
+  width: 100%;
+  padding: 0 18px;
+  color: var(--color-island-text);
+  contain: layout paint;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  box-sizing: border-box;
+}
+
+/* ---------- 左：头像 + 两行文案 ---------- */
+
+.assa-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0; /* 允许文字块收缩，配合 ellipsis 防撑破 */
+}
+
+/* 头像：SVG 与 <img> 共用尺寸；图片模式在下方覆盖 filter */
+.assa-avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: block;
+  object-fit: cover;
+  object-position: center 18%;
+  filter: brightness(0) invert(var(--icon-invert));
+  animation: assa-breathe 4s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* 图片模式：彩色头像不应用 SVG 的黑白 invert；脸特写略偏上裁切 */
+img.assa-avatar {
+  filter: none;
+  border-radius: 50%;
+  object-position: center 16%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 头像可点击：进入文字聊天窗（与右侧 💬 一致） */
+.assa-avatar--clickable {
+  cursor: pointer;
+}
+
+.assa-avatar--clickable:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 2px rgba(var(--color-island-accent-rgb, 120, 180, 255), 0.35);
+}
+
+img.assa-avatar--clickable:hover {
+  filter: brightness(1.06);
+}
+
+.assa-avatar--clickable:focus-visible {
+  outline: 2px solid var(--color-island-accent);
+  outline-offset: 2px;
+}
+
+@keyframes assa-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.015); }
+}
+
+/* 情绪切换：切换时先淡出微下移，再淡入（由 JS 加 .switching 类） */
+.assa-avatar.switching {
+  opacity: 0;
+  transform: translateY(2px) scale(0.98);
+}
+
+/* 各状态独特微动 —— 全部控制在 2px / 2° 以内，避免 44px 圆裁溢出 */
+
+/* calm 待机：呼吸 + 极轻微上下浮动（更慵懒） */
+.assa-avatar.mood-calm {
+  animation: assa-calm 6s ease-in-out infinite;
+}
+@keyframes assa-calm {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.012) translateY(1px); }
+}
+
+/* happy 开心：呼吸 + 轻微弹性跳动（更活泼） */
+.assa-avatar.mood-happy {
+  animation: assa-happy 2s ease-in-out infinite;
+}
+@keyframes assa-happy {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.02) translateY(-2px); }
+}
+
+/* thinking 思考：呼吸 + 左右轻晃（像在琢磨） */
+.assa-avatar.mood-thinking {
+  animation: assa-thinking 3s ease-in-out infinite;
+}
+@keyframes assa-thinking {
+  0%, 100% { transform: rotate(-1.2deg) scale(1); }
+  50%      { transform: rotate(1.2deg) scale(1.015); }
+}
+
+/* tool 操作：呼吸 + 极轻微点头（像在专注操作） */
+.assa-avatar.mood-tool {
+  animation: assa-tool 2.5s ease-in-out infinite;
+}
+@keyframes assa-tool {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50%      { transform: rotate(-0.8deg) scale(1.01); }
+}
+
+/* listening 聆听：呼吸 + 头侧倾保持 + 轻微点头（像在"嗯嗯"听） */
+.assa-avatar.mood-listening {
+  animation: assa-listening 2s ease-in-out infinite;
+}
+@keyframes assa-listening {
+  0%, 100% { transform: rotate(3deg) scale(1); }
+  50%      { transform: rotate(2deg) scale(1.012); }
+}
+
+/* confuse 困惑：呼吸 + 快速小幅度歪头抖动（像"啊？"） */
+.assa-avatar.mood-confuse {
+  animation: assa-confuse 1.5s ease-in-out infinite;
+}
+@keyframes assa-confuse {
+  0%, 100% { transform: rotate(-1.5deg) scale(1); }
+  50%      { transform: rotate(1.5deg) scale(1.01); }
+}
+
+/* speaking 说话：柔和轻弹（0.45s 过吵，改为更稳的节奏） */
+.assa-avatar.mood-speaking {
+  animation: assa-speaking 0.9s ease-in-out infinite;
+}
+@keyframes assa-speaking {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.012) translateY(-1px); }
+}
+
+/* 系统开启"减少动画"时，全部禁用微动 */
+@media (prefers-reduced-motion: reduce) {
+  .assa-avatar {
+    animation: none !important;
+  }
+}
+
+.assa-text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* 主行：「汐月·开心 ●」 —— inline-flex 让状态点与文字基线对齐 */
+.assa-name {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.1px;
+  color: var(--color-island-text);
+  white-space: nowrap;
+}
+
+/**
+ * 状态点：颜色 + 呼吸频率随 mood 变化
+ *   calm      灰 #8e8e93 待机（慢呼吸 2.5s）
+ *   happy     绿 #34c759 在线（慢呼吸 1.8s）
+ *   thinking  蓝 #409cff 思考中（快呼吸 1.0s）
+ *   tool      紫 #af52de 操作中（中速 1.2s）
+ *   listening 红 #ff3b30 收音中（急促 0.8s）
+ *   confuse   黄 #ff9500 待澄清（中速 1.4s）
+ *   speaking  青 #5ac8fa 说话中（快节奏 0.6s）
+ * 用独立的 --dot-glow* 变量而非 color-mix()，避免旧版 Chromium 不支持。
+ */
+.assa-status-dot {
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--dot-color);
+  animation: assa-dot-pulse 1.8s ease-in-out infinite;
+}
+
+.assa-status-dot--calm {
+  --dot-color: #8e8e93;
+  --dot-glow: rgba(142, 142, 147, 0.28);
+  --dot-glow-soft: rgba(142, 142, 147, 0.08);
+  animation-duration: 2.5s;
+}
+
+.assa-status-dot--happy {
+  --dot-color: rgba(var(--color-ok-rgb), 1);
+  --dot-glow: rgba(var(--color-ok-rgb), 0.28);
+  --dot-glow-soft: rgba(var(--color-ok-rgb), 0.08);
+  animation-duration: 1.8s;
+}
+
+.assa-status-dot--thinking {
+  --dot-color: rgba(var(--color-info-rgb), 1);
+  --dot-glow: rgba(var(--color-info-rgb), 0.3);
+  --dot-glow-soft: rgba(var(--color-info-rgb), 0.08);
+  animation-duration: 1s;
+}
+
+.assa-status-dot--tool {
+  --dot-color: #af52de;
+  --dot-glow: rgba(175, 82, 222, 0.3);
+  --dot-glow-soft: rgba(175, 82, 222, 0.08);
+  animation-duration: 1.2s;
+}
+
+.assa-status-dot--listening {
+  --dot-color: rgba(var(--color-danger-rgb), 1);
+  --dot-glow: rgba(var(--color-danger-rgb), 0.32);
+  --dot-glow-soft: rgba(var(--color-danger-rgb), 0.08);
+  animation-duration: 0.8s;
+}
+
+.assa-status-dot--confuse {
+  --dot-color: rgba(var(--color-warn-rgb), 1);
+  --dot-glow: rgba(var(--color-warn-rgb), 0.3);
+  --dot-glow-soft: rgba(var(--color-warn-rgb), 0.08);
+  animation-duration: 1.4s;
+}
+
+.assa-status-dot--speaking {
+  --dot-color: #5ac8fa;
+  --dot-glow: rgba(90, 200, 250, 0.32);
+  --dot-glow-soft: rgba(90, 200, 250, 0.08);
+  animation-duration: 0.6s;
+}
+
+@keyframes assa-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--dot-glow); }
+  50%      { box-shadow: 0 0 0 4px var(--dot-glow-soft); }
+}
+
+/* 尊重用户的「减弱动态效果」系统设置 */
+@media (prefers-reduced-motion: reduce) {
+  .assa-status-dot { animation: none; box-shadow: 0 0 0 2px var(--dot-glow); }
+}
+
+/* 主行中间的分隔点，弱化到 40% 避免抢视觉 */
+.assa-name-sep {
+  opacity: 0.4;
+  margin: 0 3px;
+  font-weight: 400;
+}
+
+/* 副行：问候语 / 状态描述；过长时省略号截断，窄岛也不撑破 */
+.assa-sub {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
+  color: rgba(var(--color-text-rgb), 0.62);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+/* ---------- 分隔线 ---------- */
+
+.assa-divider {
+  width: 1px;
+  height: 28px;
+  flex-shrink: 0;
+  background: rgba(var(--color-text-rgb), 0.14);
+}
+
+/* ---------- 右：两个图标入口 ---------- */
+
+.assa-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* 交互手感沿用 Assa action-btn 的弹性曲线 */
+.assa-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  color: var(--color-island-text);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.16s ease;
+}
+
+.assa-action-btn:hover {
+  transform: scale(1.12);
+  background: rgba(var(--color-text-rgb), 0.1);
+}
+
+.assa-action-btn:active {
+  transform: scale(0.94);
+}
+
+.assa-action-btn:focus-visible {
+  outline: 2px solid var(--color-island-accent);
+  outline-offset: 2px;
+}
+
+.assa-action-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+  filter: brightness(0) invert(var(--icon-invert));
+}

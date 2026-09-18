@@ -1,7 +1,7 @@
 # Router 回归句集与用户测试清单（B6）
 
 > **版本**：2026-09-11 · 与当前 Router 实现对齐（规则匹配已用 16 条短语逐条冒烟）  
-> **环境**：Windows · `F:\Work\Create\Assa\Xiyue`  
+> **环境**：Windows · `F:\Work\Create\Assa\Assa`  
 > **入口**：仅 **`/chat/stream`**（大面板 AI 聊天 / 岛内对话）。旧 `/chat` **不走规则**。  
 > **角色模式**：出厂「中立助手」即可测；与权限档无关。
 
@@ -10,11 +10,11 @@
 ## 0. 测试前 2 分钟准备
 
 ```powershell
-cd F:\Work\Create\Assa\Xiyue
+cd F:\Work\Create\Assa\Assa
 npm run dev
 ```
 
-1. 等侧车起来（终端有 `[xiyue-agent]` 或 `/health` 正常）。  
+1. 等侧车起来（终端有 `[assa-agent]` 或 `/health` 正常）。  
 2. 打开灵动岛 → 进入 AI 对话（流式）。  
 3. 准备：可调亮度的显示器；需要时先放一首音乐（测媒体）。
 
@@ -22,7 +22,7 @@ npm run dev
 
 ```powershell
 # 路由日志（data/ 已 gitignore，只在本机）
-Get-Content F:\Work\Create\Assa\Xiyue\data\route_log.jsonl -Tail 30
+Get-Content F:\Work\Create\Assa\Assa\data\route_log.jsonl -Tail 30
 ```
 
 ---
@@ -33,7 +33,7 @@ Get-Content F:\Work\Create\Assa\Xiyue\data\route_log.jsonl -Tail 30
 |---|---|
 | Python `agent.tests.test_router_rules` | **9 passed** |
 | 短语对照（清单 B 全部输入） | 16/16 路由正确 |
-| `xiyueToolSchema` | 14 passed |
+| `assaToolSchema` | 14 passed |
 | 插件改名后全量 `npm test` | 1783 passed |
 
 ---
@@ -83,7 +83,7 @@ Get-Content F:\Work\Create\Assa\Xiyue\data\route_log.jsonl -Tail 30
 
 ### B5 · 主进程审计（可选）
 
-搜索 `xiyue-tools.log`（Electron `userData/logs/`）：
+搜索 `assa-tools.log`（Electron `userData/logs/`）：
 
 | # | 期望 |
 |---|---|

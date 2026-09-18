@@ -184,7 +184,7 @@ _default_embedder: Embedder | None = None
 def get_default_embedder() -> Embedder:
     """获取默认 embedder（懒加载）。
 
-    优先 Ollama bge-m3（XIYUE_EMBED=local_hash 可强制离线哈希）；
+    优先 Ollama bge-m3（ASSA_EMBED=local_hash 可强制离线哈希）；
     Ollama 不可用时自动回退 LocalHashEmbedder。
     """
     global _default_embedder
@@ -193,13 +193,13 @@ def get_default_embedder() -> Embedder:
 
     import os
 
-    pref = (os.environ.get("XIYUE_EMBED") or "ollama").strip().lower()
+    pref = (os.environ.get("ASSA_EMBED") or "ollama").strip().lower()
     if pref != "local_hash":
         try:
             oll = OllamaEmbedder(
-                model=os.environ.get("XIYUE_EMBED_MODEL") or "bge-m3",
-                base_url=os.environ.get("XIYUE_OLLAMA_URL") or "http://127.0.0.1:11434",
-                timeout_s=float(os.environ.get("XIYUE_EMBED_TIMEOUT") or "8"),
+                model=os.environ.get("ASSA_EMBED_MODEL") or "bge-m3",
+                base_url=os.environ.get("ASSA_OLLAMA_URL") or "http://127.0.0.1:11434",
+                timeout_s=float(os.environ.get("ASSA_EMBED_TIMEOUT") or "8"),
             )
             # 探活一次，避免每条记忆都踩超时
             probe = oll.embed("ping")

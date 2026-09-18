@@ -69,6 +69,10 @@ export interface UseLocalFileSearchReturn {
   results: LocalFileSearchItem[];
   iconMap: Record<string, string>;
   countText: string;
+  /** 本机 Everything CLI 是否可用 */
+  everythingAvailable: boolean;
+  /** 最近一次结果使用的引擎 */
+  searchEngine: 'everything' | 'directory' | null;
   handlePickRootDir: () => void;
   handleSearch: () => void;
 }
@@ -76,6 +80,8 @@ export interface UseLocalFileSearchReturn {
 /** LocalFileSearchHeader 组件入参 */
 export interface LocalFileSearchHeaderProps {
   countText: string;
+  everythingAvailable?: boolean;
+  searchEngine?: 'everything' | 'directory' | null;
 }
 
 /** LocalFileSearchRootRow 组件入参 */

@@ -21,9 +21,10 @@
 /**
  * @file settingsWindow.ts
  * @description 设置独立窗口服务模块。
- * 设置作为「元功能」（配置一切），与待办/相册/工具等业务面板分离成独立窗口，
- * 避免与业务功能共用一个窗口造成的语义混淆与相互拖累。
- * 采用按需创建（首次打开才建窗）、关闭即隐藏（保活复用，秒开）的策略，与业务窗口一致。
+ * 策略：
+ * - 启动空闲 / 进控制中心时后台预热：**直接 load 设置应用**（跳过 loading 页双重加载）
+ * - 关闭即隐藏；长时间不可见后自动销毁
+ * - 冷启动打开（无预热）才走 loading 页，避免首开白屏
  * @author 鸡哥
  */
 
@@ -34,12 +35,66 @@ import { is } from '@electron-toolkit/utils';
 import { isApplicationQuitting } from '../services/appRestart';
 
 let settingsWindow: BrowserWindow | null = null;
+/** 设置应用是否已 finished-load（预热完成后为 true） */
+let settingsAppReady = false;
+
+const IDLE_UNLOAD_MS = 10 * 60 * 1000;
+let idleUnloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearIdleUnloadTimer(): void {
+  if (idleUnloadTimer !== null) {
+    clearTimeout(idleUnloadTimer);
+    idleUnloadTimer = null;
+  }
+}
+
+function destroySettingsWindowNow(): void {
+  clearIdleUnloadTimer();
+  const win = settingsWindow;
+  settingsWindow = null;
+  settingsAppReady = false;
+  if (!win || win.isDestroyed()) return;
+  win.removeAllListeners('close');
+  win.destroy();
+}
+
+function scheduleIdleUnload(): void {
+  clearIdleUnloadTimer();
+  idleUnloadTimer = setTimeout(() => {
+    idleUnloadTimer = null;
+    if (isApplicationQuitting()) return;
+    if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isVisible()) return;
+    destroySettingsWindowNow();
+  }, IDLE_UNLOAD_MS);
+}
+
+function getSettingsUrl(): string {
+  return is.dev && process.env['ELECTRON_RENDERER_URL']
+    ? process.env['ELECTRON_RENDERER_URL'] + '/DynamicIslandSettings.html'
+    : join(__dirname, '../renderer/DynamicIslandSettings.html');
+}
+
+function getLoadingHtmlPath(): string {
+  return join(
+    is.dev ? process.cwd() : process.resourcesPath,
+    is.dev ? 'resources/settings-loading.html' : 'settings-loading.html',
+  );
+}
+
+function loadSettingsApp(win: BrowserWindow): void {
+  const settingsUrl = getSettingsUrl();
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    void win.loadURL(settingsUrl);
+  } else {
+    void win.loadFile(settingsUrl);
+  }
+}
 
 /**
- * 创建设置窗口
  * @param autoShow - ready-to-show 时是否自动显示
+ * @param useSplashLoading - 冷打开时是否先载 loading 页（预热路径传 false，避免双重加载）
  */
-function createSettingsWindow(autoShow: boolean): BrowserWindow {
+function createSettingsWindow(autoShow: boolean, useSplashLoading: boolean): BrowserWindow {
   const win = new BrowserWindow({
     width: 1240,
     height: 760,
@@ -51,8 +106,8 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
     backgroundColor: '#f4f6fa',
     resizable: true,
     icon: is.dev
-      ? join(__dirname, '../../resources/icon/xiyue_256x256.ico')
-      : join(process.resourcesPath, 'icon/xiyue_256x256.ico'),
+      ? join(__dirname, '../../resources/icon/assa_256x256.ico')
+      : join(process.resourcesPath, 'icon/assa_256x256.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -62,48 +117,55 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
     },
   });
 
-  // 先加载本机转圈页，再切到设置应用，避免空壳白屏
-  const loadingHtml = join(
-    is.dev
-      ? process.cwd()
-      : process.resourcesPath,
-    is.dev ? 'resources/settings-loading.html' : 'settings-loading.html',
-  );
-  const settingsUrl = is.dev && process.env['ELECTRON_RENDERER_URL']
-    ? process.env['ELECTRON_RENDERER_URL'] + '/DynamicIslandSettings.html'
-    : join(__dirname, '../renderer/DynamicIslandSettings.html');
+  settingsAppReady = false;
 
-  if (existsSync(loadingHtml)) {
-    win.loadFile(loadingHtml);
+  const markReady = (): void => {
+    if (win.isDestroyed()) return;
+    settingsAppReady = true;
+  };
+
+  const loadingHtml = getLoadingHtmlPath();
+  if (useSplashLoading && existsSync(loadingHtml)) {
+    void win.loadFile(loadingHtml);
     win.webContents.once('did-finish-load', () => {
-      if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        win.loadURL(settingsUrl);
-      } else {
-        win.loadFile(settingsUrl);
-      }
+      if (win.isDestroyed()) return;
+      win.webContents.once('did-finish-load', markReady);
+      loadSettingsApp(win);
     });
-  } else if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(settingsUrl);
   } else {
-    win.loadFile(settingsUrl);
+    // 预热：直接 load 设置应用（HTML 内有骨架屏），少一次页面跳转
+    win.webContents.once('did-finish-load', markReady);
+    loadSettingsApp(win);
   }
 
   if (autoShow) {
-    win.on('ready-to-show', () => win.show());
+    win.on('ready-to-show', () => {
+      if (!win.isDestroyed()) win.show();
+    });
   }
 
-  // 关闭即隐藏而非销毁：拦截 'close'（含窗口 X 按钮、Alt+F4、windowClose），
-  // 保留渲染进程常驻，下次打开无需重建与重新 loadURL，实现秒开。
-  // 只在首次打开过后产生常驻内存（关闭不销毁仅隐藏），启动阶段零额外占用。
-  // 强制退出时必须放行 close，否则 app.quit/exit 会被 preventDefault 卡住。
   win.on('close', (event) => {
-    if (isApplicationQuitting()) return;
+    if (isApplicationQuitting()) {
+      clearIdleUnloadTimer();
+      return;
+    }
     event.preventDefault();
     win.hide();
+    scheduleIdleUnload();
+  });
+
+  win.on('show', () => {
+    clearIdleUnloadTimer();
+  });
+
+  win.on('hide', () => {
+    scheduleIdleUnload();
   });
 
   win.on('closed', () => {
-    settingsWindow = null;
+    clearIdleUnloadTimer();
+    settingsAppReady = false;
+    if (settingsWindow === win) settingsWindow = null;
   });
 
   win.webContents.setWindowOpenHandler((details) => {
@@ -111,45 +173,13 @@ function createSettingsWindow(autoShow: boolean): BrowserWindow {
     return { action: 'deny' };
   });
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/DynamicIslandSettings.html');
-  } else {
-    win.loadFile(join(__dirname, '../renderer/DynamicIslandSettings.html'));
-  }
-
   return win;
 }
 
-/**
- * 打开设置窗口（若已打开则直接显示/聚焦，否则创建并自动显示）
- */
-function openSettingsWindow(): void {
-  const show = (win: BrowserWindow): void => {
-    try {
-      if (win.isDestroyed()) return;
-      if (!win.isVisible()) win.show();
-      win.focus();
-    } catch {
-      // ignore
-    }
-  };
-
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    show(settingsWindow);
-    // ready-to-show 可能已错过：再兜一次
-    setTimeout(() => {
-      if (settingsWindow && !settingsWindow.isDestroyed() && !settingsWindow.isVisible()) {
-        show(settingsWindow);
-      }
-    }, 120);
-    return;
-  }
-
-  const win = createSettingsWindow(true);
-  settingsWindow = win;
-  // 立即显示：先看到加载页，而不是空白窗
+function showAndFocus(win: BrowserWindow): void {
   try {
-    win.show();
+    if (win.isDestroyed()) return;
+    if (!win.isVisible()) win.show();
     win.focus();
   } catch {
     // ignore
@@ -157,23 +187,63 @@ function openSettingsWindow(): void {
 }
 
 /**
- * 关闭设置窗口（触发 close → 隐藏，保活复用）
+ * 后台预热设置窗（不显示）。
+ * 直接 load 设置应用，不经过 loading 页。
  */
+function preloadSettingsWindow(): void {
+  if (isApplicationQuitting()) return;
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    clearIdleUnloadTimer();
+    return;
+  }
+  const win = createSettingsWindow(false, false);
+  settingsWindow = win;
+  clearIdleUnloadTimer();
+}
+
+/**
+ * 打开设置窗口。
+ * 已预热且应用已 load 完 → 直接 show（秒开）。
+ * 仍在加载 → 先 show（骨架/加载中），不阻塞点击。
+ */
+function openSettingsWindow(): void {
+  if (isApplicationQuitting()) return;
+
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    clearIdleUnloadTimer();
+    showAndFocus(settingsWindow);
+    setTimeout(() => {
+      if (settingsWindow && !settingsWindow.isDestroyed() && !settingsWindow.isVisible()) {
+        showAndFocus(settingsWindow);
+      }
+    }, 80);
+    return;
+  }
+
+  // 冷打开：loading 页 + 设置应用
+  const win = createSettingsWindow(true, true);
+  settingsWindow = win;
+  showAndFocus(win);
+}
+
 function closeSettingsWindow(): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.close();
   }
 }
 
-/**
- * 获取设置窗口实例
- */
 function getSettingsWindow(): BrowserWindow | null {
   return settingsWindow;
 }
 
+function isSettingsAppReady(): boolean {
+  return settingsAppReady && Boolean(settingsWindow && !settingsWindow.isDestroyed());
+}
+
 export {
   openSettingsWindow,
+  preloadSettingsWindow,
   closeSettingsWindow,
   getSettingsWindow,
+  isSettingsAppReady,
 };

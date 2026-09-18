@@ -17,7 +17,7 @@
  * @file mihtnelisAgentStream.ts
  * @description 仅保留网页访问授权解析（向账号服务提交用户授权结果）。
  *   原云端流式 / 本地工具结果回传 / 提示词拉取等函数已在本地侧车 Agent 接入后废弃，
- *   本地工具走 window.api.xiyueToolResult / executeAgentLocalTool，不再经由此模块。
+ *   本地工具走 window.api.assaToolResult / executeAgentLocalTool，不再经由此模块。
  * @author 鸡哥
  */
 

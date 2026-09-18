@@ -1,9 +1,9 @@
-# Xiyue（汐月）设计系统总纲
+# Assa（汐月）设计系统总纲
 
 > **地位**：本文件是 UI 开发的**单一事实源（SSOT）**。与旧文档冲突时，**以本文件为准**。  
 > **状态**：2026-09-12 分板块讨论**已定稿**（决策见 §9；实施节奏见 §10）。  
 > **上游文档**：`DESIGN_STYLE_GUIDE.md`（历史风格指南，token/组件细节仍可参考，但「恐龙」「岛体玻璃铁律」等表述已废弃）。  
-> **其它来源**：`docs/Xiyue_UI设计与图标形象整合报告_v1.0.md`、`docs/Xiyue_设计与改进建议_v1.0.md`、全板块代码调查。  
+> **其它来源**：`docs/Assa_UI设计与图标形象整合报告_v1.0.md`、`docs/Assa_设计与改进建议_v1.0.md`、全板块代码调查。  
 > **平台**：Windows · Electron · 仅此平台。  
 > **截图边界**：截图**功能/拼接/画质**问题由功能侧继续调试；本设计系统**只约束截图 UI**。
 
@@ -179,7 +179,7 @@
 | 层级 | 策略 | 理由 |
 |---|---|---|
 | **灵动岛壳** idle/hover/agent | **不透明实底**（或近实底） | 对齐 iOS；可读性、性能、避免 backdrop 伤合成 |
-| **桌面浮层** 截图/贴图/OCR/设置面板/公告大块 | **必须** `backdrop-filter: blur(Xpx) saturate(1.4)` + `-webkit-` | Xiyue 玻璃语言 |
+| **桌面浮层** 截图/贴图/OCR/设置面板/公告大块 | **必须** `backdrop-filter: blur(Xpx) saturate(1.4)` + `-webkit-` | Assa 玻璃语言 |
 | 启动屏 | 有意固定黑底 | 品牌闪屏，可接受 |
 
 **旧 Style Guide §2.6「浮层必须 backdrop-filter」仅适用于桌面浮层，不适用于岛壳。**
@@ -219,7 +219,7 @@
 |---|---|
 | **ControlCenterTab**（原 TimeTab） | **控制中心**：亮度/音量/截图等快捷按钮；**不再**承担计时 |
 | **PomodoroTab** | **精简专注**：大时间 + 工作/休息 + 播放/暂停/重置；**无**岛上填表（时长进设置） |
-| Weather / Lyrics / Xiyue | 状态与轻交互 |
+| Weather / Lyrics / Assa | 状态与轻交互 |
 | 大面板总览番茄 | **完整控件**（环形进度/时间轴）；与 hover **共用同一 store 状态** |
 
 **Agent 岛条定位（已定）**：
@@ -272,7 +272,7 @@
 | 40–44px | 岛 hover 头像 | `xiyue_{mood}.png` 脸部特写 |
 | 74–80px | Agent 条 / 大面板 | `xiyue_{mood}.png` 或 `_full` |
 | 256px+ | 关于页/展示 | `xiyue_{mood}_full.png` |
-| 应用图标 | 托盘 16 / 安装 256 | `resources/icon/xiyue_*.ico` |
+| 应用图标 | 托盘 16 / 安装 256 | `resources/icon/assa_*.ico` |
 
 正式路径约定：
 
@@ -289,7 +289,7 @@ src/renderer/public/image/agent/
   xiyue_happy_full.png   # 大尺寸
 ```
 
-根目录 `F:/Work/Create/Assa/xiyue_*.png` 为**工作草稿**，验收后拷入上述路径；未入库不得在组件引用。
+根目录 `F:/Work/Create/Assa/assa_*.png` 为**工作草稿**，验收后拷入上述路径；未入库不得在组件引用。
 
 ### 5.5 接线映射（目标）
 
@@ -323,7 +323,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 1. 代码：`PHASE_IMAGE` 全部改指 `xiyue_{mood}.png`。  
 2. 资源：`AGENT_*.png` 移入 `public/image/legacy/eisland-dino/` 或删除（团队定）。  
 3. 文档：所有「像素小恐龙」表述改为「汐月少女」。  
-4. persona `agent/persona/xiyue.md` 同步删「无形象」过时描述。
+4. persona `agent/persona/assa.md` 同步删「无形象」过时描述。
 
 ---
 
@@ -393,7 +393,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 - [ ] 功能图标用 `.icon-mono`（mask）；品牌/插画用 `.icon-color`  
 - [ ] **禁止**对多色资源使用 `brightness(0) invert`  
 - [ ] 桌面浮层有 blur+saturate；岛壳无强制 blur  
-- [ ] 角色图来自 `public/image/agent/xiyue_*`，无恐龙默认路径  
+- [ ] 角色图来自 `public/image/agent/assa_*`，无恐龙默认路径  
 - [ ] 新 UI 文案有 `t()`，zh-CN / en-US 成对  
 - [ ] 用户可见字符串无裸中文（含 agent phase）  
 - [ ] hover/交互色用 `text-rgb`，浅色下可读  
@@ -411,7 +411,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 | **`docs/design/DESIGN_SYSTEM.md`（本文件）** | **SSOT：原则、token、图标、岛交互、角色、Lucide** |
 | `docs/design/CHARACTER_ASSET_CHECKLIST.md` | 汐月素材制作/验收清单 |
 | `docs/design/DESIGN_STYLE_GUIDE.md` | 历史 token/尺寸/组件速查；**§2.6 玻璃、§4.2 恐龙、§9 总结已过时** |
-| `docs/Xiyue_UI设计与图标形象整合报告_v1.0.md` | 讨论点与决策记录 |
+| `docs/Assa_UI设计与图标形象整合报告_v1.0.md` | 讨论点与决策记录 |
 | `src/renderer/AGENTS.md` | SVG 主题策略 → 改为指向 mask/`icon-mono`（待改） |
 
 ---
@@ -464,7 +464,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 | # | 结论 |
 |---|---|
 | 3.1 | 只保留少女；恐龙归档不进正式应用 |
-| 3.2 | 过渡双轨：只认 xiyue 路径；缺图共用少女/状态点 |
+| 3.2 | 过渡双轨：只认 assa 路径；缺图共用少女/状态点 |
 | 3.3 | 阶段→表情→文案表（§5.5） |
 | 3.4 | 应用/托盘图标 **做** |
 | 3.5 | 阶段文案 i18n |

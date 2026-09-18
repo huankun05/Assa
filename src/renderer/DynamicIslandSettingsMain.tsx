@@ -41,14 +41,14 @@ if (!root) {
 const rootEl = root;
 
 async function bootstrap(): Promise<void> {
-  await initTheme();
-  await bootstrapAuthSession();
-
+  // 先挂 React，主题/会话并行初始化，缩短首屏等待
   createRoot(rootEl).render(
     <StrictMode>
       <SettingsWindow />
     </StrictMode>
   );
+  void initTheme();
+  void bootstrapAuthSession();
 }
 
 void bootstrap();

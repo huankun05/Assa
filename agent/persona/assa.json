@@ -1,0 +1,40 @@
+{
+  "name": "汐月",
+  "visible_name": "汐月",
+  "english_name": "Xiyue",
+  "role": "本地常驻 AI 管家",
+  "model_default": "qwen3-4b-32k",
+  "system_identifier": "assa-local-agent",
+  "persona_file": "agent/persona/assa.md",
+  "greeting": "我在，怎么了？",
+  "language_default": "zh-CN",
+  "privacy": {
+    "local_first": true,
+    "cloud_fallback_default": false,
+    "data_never_leave_machine": true
+  },
+  "emotion": {
+    "enabled": true,
+    "default_state": "calm"
+  },
+  "memory": {
+    "enabled": true,
+    "max_history_turns": 10
+  },
+  "tools": {
+    "enabled": true,
+    "max_rounds_per_turn": 8
+  },
+  "browser": {
+    "enabled": false,
+    "allowed_domains": [
+      "example.com",
+      "localhost",
+      "127.0.0.1",
+      "github.com"
+    ]
+  },
+  "security": {
+    "trust_level": 2
+  }
+}

@@ -68,7 +68,7 @@
 | 提示 | 恢复右下角系统通知；标题写死「汐月正在重新启动」；`app.setName('汐月')` |
 | 补丁 | `scripts/patch-electron-vite-hide-console.js`（postinstall 幂等）；chunk 名 `lib-q6ns0vZr.js` 随 electron-vite 升级可能变 |
 | 验收 | 见 `docs/ACCEPTANCE_CHECKLIST.md` §I |
-| 系统通知品牌 | Windows toast 头跟 **AUMID + 安装快捷方式** 走，不跟 title。dev=`Electron` 难改；打包用 `appId=com.xiyue.app` + `productName=汐月` + `win.icon=xiyue_256x256.ico`，与主进程 `setAppUserModelId('com.xiyue.app')` 对齐后应显示汐月图标/名称 |
+| 系统通知品牌 | Windows toast 头跟 **AUMID + 安装快捷方式** 走，不跟 title。dev=`Electron` 难改；打包用 `appId=com.assa.app` + `productName=汐月` + `win.icon=assa_256x256.ico`，与主进程 `setAppUserModelId('com.assa.app')` 对齐后应显示汐月图标/名称 |
 
 ## 后续计划 · 角色详情面板（2026-09-13）
 
@@ -95,7 +95,7 @@
 | 现状 | 固定播 `public/video/sign.webm`；黑底 + 波浪；播完多停 1s 淡出 |
 | 可调 | 设置 → 软件动画：开关 / 背景色 / 重置首次体验 |
 | 不可调 | 片源、时长、波浪样式写死 |
-| 标题 | Splash HTML title 已改为 **Xiyue**（原 eIsland） |
+| 标题 | Splash HTML title 已改为 **Assa**（原 eIsland） |
 | 重做 | 待汐月片头素材后替换 `sign.webm`，无需改代码 |
 | 优先级 | P1（品牌观感）；素材就绪前保持现片 |
 
@@ -110,7 +110,7 @@
 
 ### 制作流程
 
-1. **定稿脚本（1–3s）**：汐月少女剪影/七态闪回 → 字「汐月 / Xiyue」→ 淡出  
+1. **定稿脚本（1–3s）**：汐月少女剪影/七态闪回 → 字「汐月 / Assa」→ 淡出  
 2. **工具**：AE / Blender / After Effects 模板，或 Figma 动效导出再编码  
 3. **规格**：约 1920×1080（或 800×450 近岛形），H.264 或 VP9 **WebM**，≤2s，≤1.5MB；黑底默认可透明  
 4. **落地**：覆盖 `src/renderer/public/video/sign.webm`  

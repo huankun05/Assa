@@ -30,7 +30,7 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsTab } from './states/maxExpand/components/SettingsTab';
-import windowIcon from '../../../resources/icon/xiyue.svg';
+import windowIcon from '../../../resources/icon/assa.svg';
 
 const MAC_CONTROLS_KEY = 'standalone-window-mac-controls';
 
@@ -43,6 +43,7 @@ export function SettingsWindow(): ReactElement {
   const [macControls, setMacControls] = useState(false);
 
   useEffect(() => {
+    document.getElementById('settings-skeleton')?.remove();
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         e.preventDefault();

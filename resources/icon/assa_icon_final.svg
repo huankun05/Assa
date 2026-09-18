@@ -1,0 +1,92 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 背景渐变：深蓝到紫蓝 -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a3e"/>
+      <stop offset="50%" style="stop-color:#0d2050"/>
+      <stop offset="100%" style="stop-color:#0a3060"/>
+    </linearGradient>
+
+    <!-- 月亮金色渐变 -->
+    <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff0a0"/>
+      <stop offset="50%" style="stop-color:#ffd700"/>
+      <stop offset="100%" style="stop-color:#f0a500"/>
+    </linearGradient>
+
+    <!-- 月亮光晕 -->
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:0"/>
+    </radialGradient>
+
+    <!-- 海面渐变 -->
+    <linearGradient id="seaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d3a7a"/>
+      <stop offset="100%" style="stop-color:#082850"/>
+    </linearGradient>
+
+    <!-- 月光倒影 -->
+    <linearGradient id="reflectGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:0"/>
+    </linearGradient>
+
+    <!-- 海天过渡 -->
+    <linearGradient id="horizonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a2a5e;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#2a4a7e;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#0d3a7a;stop-opacity:0"/>
+    </linearGradient>
+
+    <!-- 星星发光 -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- 圆角裁剪 -->
+    <clipPath id="clip">
+      <rect x="0" y="0" width="1024" height="1024" rx="160" ry="160"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <!-- 背景 -->
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#bgGrad)"/>
+
+    <!-- 星星（右上角，点状+小四角星） -->
+    <circle cx="680" cy="160" r="4" fill="#ffe880" opacity="0.8" filter="url(#glow)"/>
+    <circle cx="780" cy="200" r="3" fill="#ffe880" opacity="0.6"/>
+    <circle cx="850" cy="140" r="5" fill="#ffe880" opacity="0.9" filter="url(#glow)"/>
+    <path d="M 750 120 L 756 136 L 772 142 L 756 148 L 750 164 L 744 148 L 728 142 L 744 136 Z" fill="#ffe880" opacity="0.7" filter="url(#glow)"/>
+    <circle cx="700" cy="240" r="2.5" fill="#ffe880" opacity="0.5"/>
+    <circle cx="880" cy="220" r="3" fill="#ffe880" opacity="0.6"/>
+
+    <!-- 月亮光晕 -->
+    <ellipse cx="280" cy="260" rx="180" ry="180" fill="url(#moonGlow)"/>
+
+    <!-- 大金色弯月（左上角，清晰可见） -->
+    <path d="M 360 140 A 150 150 0 1 0 360 440 A 115 115 0 1 1 360 140 Z" fill="url(#moonGrad)"/>
+
+    <!-- 海天过渡带（柔和不割裂） -->
+    <rect x="0" y="460" width="1024" height="80" fill="url(#horizonGrad)"/>
+
+    <!-- 海面 -->
+    <rect x="0" y="500" width="1024" height="524" fill="url(#seaGrad)"/>
+
+    <!-- 月光倒影（简洁光带） -->
+    <ellipse cx="290" cy="510" rx="55" ry="12" fill="#ffd700" opacity="0.5"/>
+    <rect x="265" y="510" width="50" height="200" fill="url(#reflectGrad)" opacity="0.35"/>
+
+    <!-- 三层简洁波浪线 -->
+    <path d="M 0 580 Q 170 565 340 580 T 680 580 T 1024 580" stroke="#4a9eff" stroke-width="10" fill="none" opacity="0.5" stroke-linecap="round"/>
+    <path d="M 0 660 Q 200 648 400 660 T 800 660 T 1024 660" stroke="#3a8eef" stroke-width="8" fill="none" opacity="0.4" stroke-linecap="round"/>
+    <path d="M 0 750 Q 230 740 460 750 T 920 750 T 1024 750" stroke="#2d7dd2" stroke-width="6" fill="none" opacity="0.3" stroke-linecap="round"/>
+
+    <!-- 倒影波光 -->
+    <ellipse cx="280" cy="600" rx="25" ry="5" fill="#ffe680" opacity="0.35"/>
+    <ellipse cx="300" cy="660" rx="20" ry="4" fill="#ffe680" opacity="0.3"/>
+    <ellipse cx="275" cy="720" rx="15" ry="3" fill="#ffe680" opacity="0.25"/>
+  </g>
+</svg>

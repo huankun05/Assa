@@ -10,15 +10,15 @@ _model = None
 
 
 # 默认使用仓库内已下载的模型（data/models/faster-whisper-base），避免联网拉取；
-# 也可用 XIYUE_WHISPER_MODEL 指向 HF 模型名（如 base/small）或任意本地目录。
+# 也可用 ASSA_WHISPER_MODEL 指向 HF 模型名（如 base/small）或任意本地目录。
 DEFAULT_MODEL = os.environ.get(
-    "XIYUE_WHISPER_MODEL",
+    "ASSA_WHISPER_MODEL",
     str(Path(__file__).resolve().parent.parent / "data" / "models" / "faster-whisper-base"),
 )
 
 # 默认 CPU：GPU 需要本机装 CUDA12 的 cublas/cudnn DLL（ctranslate2 在首次推理时才加载，
-# 缺失会抛 "cublas64_12.dll is not found"）。想用 GPU：设 XIYUE_STT_DEVICE=cuda。
-DEFAULT_DEVICE = os.environ.get("XIYUE_STT_DEVICE", "cpu")
+# 缺失会抛 "cublas64_12.dll is not found"）。想用 GPU：设 ASSA_STT_DEVICE=cuda。
+DEFAULT_DEVICE = os.environ.get("ASSA_STT_DEVICE", "cpu")
 
 
 def current_device() -> str:

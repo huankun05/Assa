@@ -108,6 +108,8 @@ const makeOpenMeteoBody = (overrides?: Record<string, unknown>): string => {
       wind_speed_10m_max: [15, 18, 10],
       uv_index_max: [6, 7, 4],
       precipitation_probability_max: [10, 20, 80],
+      sunrise: ['2026-09-15T05:42', '2026-09-16T05:43', '2026-09-17T05:44'],
+      sunset: ['2026-09-15T18:05', '2026-09-16T18:03', '2026-09-17T18:02'],
     },
   };
   const merged = overrides
@@ -209,6 +211,23 @@ describe('weatherApi', () => {
       expect(data.forecast[0].description).toBe('多云');
       expect(data.forecast[1].description).toBe('小雨');
       expect(data.forecast[1].precipitationProbability).toBe(80);
+      expect(data.sunrise).toBe('2026-09-15T05:42');
+      expect(data.sunset).toBe('2026-09-15T18:05');
+    });
+
+    it('requests sunrise/sunset from Open-Meteo daily params', async () => {
+      mockNetFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: makeOpenMeteoBody(),
+      });
+
+      const { fetchWeather } = await import('../weatherApi');
+      await fetchWeather({ latitude: 39.9, longitude: 116.4 });
+
+      const calledUrl: string = mockNetFetch.mock.calls[0][0];
+      expect(calledUrl).toContain('sunrise');
+      expect(calledUrl).toContain('sunset');
     });
 
     it('builds correct Open-Meteo URL with query params', async () => {

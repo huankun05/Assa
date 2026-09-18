@@ -31,7 +31,7 @@ import { ControlCenterTab } from '../pages/time';
 import { LyricsTab } from '../pages/lyric';
 import { WeatherTab } from '../pages/weather';
 import { PomodoroTab } from '../pages/pomodoro';
-import { XiyueTab } from '../pages/xiyue';
+import { AssaTab } from '../pages/assa';
 import { CustomPage } from '../pages/custom/CustomPage';
 
 type HoverFormProps = ReturnType<typeof useHover>;
@@ -78,7 +78,7 @@ export function HoverForm(props: HoverFormProps): ReactElement {
         {hoverTab === 'lyrics' && <LyricsTab />}
         {hoverTab === 'weather' && <WeatherTab />}
         {hoverTab === 'pomodoro' && <PomodoroTab />}
-        {hoverTab === 'xiyue' && <XiyueTab />}
+        {hoverTab === 'assa' && <AssaTab />}
         {hoverTab.startsWith('custom:') && (
           <CustomPage tabId={hoverTab.slice('custom:'.length)} />
         )}

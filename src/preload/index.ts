@@ -169,19 +169,22 @@ const api = {
   hideWindowTemporarily: (durationMs = 3000): void => {
     ipcRenderer.send('window:temp-hide', durationMs);
   },
-  /** AI 信任等级（0–3），读写 agent/persona/xiyue.json */
-  xiyueTrustLevelGet: (): Promise<number> => ipcRenderer.invoke('xiyue:trust-level:get'),
-  xiyueTrustLevelSet: (level: number): Promise<number> => ipcRenderer.invoke('xiyue:trust-level:set', level),
+  /** AI 信任等级（0–3），读写 agent/persona/assa.json */
+  assaTrustLevelGet: (): Promise<number> => ipcRenderer.invoke('assa:trust-level:get'),
+  assaTrustLevelSet: (level: number): Promise<number> => ipcRenderer.invoke('assa:trust-level:set', level),
+  /** AI 显示名（visible_name），读写 agent/persona/assa.json */
+  assaVisibleNameGet: (): Promise<string> => ipcRenderer.invoke('assa:visible-name:get'),
+  assaVisibleNameSet: (name: string): Promise<string> => ipcRenderer.invoke('assa:visible-name:set', name),
   /** 工具审计日志（最近 N 条，新在前） */
-  xiyueAuditLogList: (limit?: number): Promise<unknown[]> => ipcRenderer.invoke('xiyue:audit-log:list', limit),
-  xiyueMemoryList: (): Promise<{ items?: unknown[] }> => ipcRenderer.invoke('xiyue:memory-list'),
-  xiyueEmotionGet: (): Promise<{ state?: string; mood?: string } | null> => ipcRenderer.invoke('xiyue:emotion-get'),
-  xiyueMemoryDelete: (id: number): Promise<unknown> => ipcRenderer.invoke('xiyue:memory-delete', id),
-  xiyueMemoryClear: (): Promise<unknown> => ipcRenderer.invoke('xiyue:memory-clear'),
-  xiyueBrowserEnabledGet: (): Promise<boolean> => ipcRenderer.invoke('xiyue:browser-enabled:get'),
-  xiyueBrowserEnabledSet: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('xiyue:browser-enabled:set', enabled),
-  xiyueSessionPassGet: (): Promise<boolean> => ipcRenderer.invoke('xiyue:session-pass:get'),
-  xiyueSessionPassSet: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('xiyue:session-pass:set', enabled),
+  assaAuditLogList: (limit?: number): Promise<unknown[]> => ipcRenderer.invoke('assa:audit-log:list', limit),
+  assaMemoryList: (): Promise<{ items?: unknown[] }> => ipcRenderer.invoke('assa:memory-list'),
+  assaEmotionGet: (): Promise<{ state?: string; mood?: string } | null> => ipcRenderer.invoke('assa:emotion-get'),
+  assaMemoryDelete: (id: number): Promise<unknown> => ipcRenderer.invoke('assa:memory-delete', id),
+  assaMemoryClear: (): Promise<unknown> => ipcRenderer.invoke('assa:memory-clear'),
+  assaBrowserEnabledGet: (): Promise<boolean> => ipcRenderer.invoke('assa:browser-enabled:get'),
+  assaBrowserEnabledSet: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('assa:browser-enabled:set', enabled),
+  assaSessionPassGet: (): Promise<boolean> => ipcRenderer.invoke('assa:session-pass:get'),
+  assaSessionPassSet: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('assa:session-pass:set', enabled),
   showWindow: (): void => {
     ipcRenderer.send('window:show');
   },
@@ -316,6 +319,10 @@ const api = {
   ): Promise<SearchLocalFileResult[]> => {
     return ipcRenderer.invoke('app:search-local-files', rootDir, keyword, options);
   },
+  /** 探测 Everything CLI 是否可用 */
+  everythingAvailable: (): Promise<boolean> => {
+    return ipcRenderer.invoke('app:everything-available');
+  },
   /**
    * 执行本地 Agent 工具（主进程执行）
    */
@@ -380,46 +387,46 @@ const api = {
   /**
    * 汐月 Hermes 侧车：健康检查
    */
-  xiyueHealth: (): Promise<{ ok: boolean; model?: string; error?: string }> => {
-    return ipcRenderer.invoke('xiyue:health');
+  assaHealth: (): Promise<{ ok: boolean; model?: string; error?: string }> => {
+    return ipcRenderer.invoke('assa:health');
   },
   /**
    * 汐月 Hermes 侧车：文本对话（返回 { user, reply, audio, audio_b64 }）
    */
-  xiyueChat: (text: string): Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }> => {
-    return ipcRenderer.invoke('xiyue:chat', text);
+  assaChat: (text: string): Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }> => {
+    return ipcRenderer.invoke('assa:chat', text);
   },
   /**
    * 汐月 Hermes 侧车：语音对话（录音→STT→LLM→TTS）
    */
-  xiyueVoice: (): Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }> => {
-    return ipcRenderer.invoke('xiyue:voice');
+  assaVoice: (): Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }> => {
+    return ipcRenderer.invoke('assa:voice');
   },
   /**
    * 汐月 Hermes 侧车：本地转写（16k mono wav base64 → 文本）
    */
-  xiyueTranscribe: (audioB64: string): Promise<{ text: string }> => {
-    return ipcRenderer.invoke('xiyue:transcribe', audioB64);
+  assaTranscribe: (audioB64: string): Promise<{ text: string }> => {
+    return ipcRenderer.invoke('assa:transcribe', audioB64);
   },
   /**
-   * 汐月 Hermes 侧车：启动工具化流式对话（SSE 事件经 onXiyueStreamEvent 推送）
+   * 汐月 Hermes 侧车：启动工具化流式对话（SSE 事件经 onAssaStreamEvent 推送）
    */
-  xiyueStreamChatStart: (sessionId: string, text: string): Promise<{ ok: boolean; error?: string }> => {
-    return ipcRenderer.invoke('xiyue:stream:start', sessionId, text);
+  assaStreamChatStart: (sessionId: string, text: string): Promise<{ ok: boolean; error?: string }> => {
+    return ipcRenderer.invoke('assa:stream:start', sessionId, text);
   },
   /**
    * 汐月 Hermes 侧车：中止流式会话
    */
-  xiyueStreamAbort: (sessionId: string): Promise<{ ok: boolean }> => {
-    return ipcRenderer.invoke('xiyue:stream:abort', sessionId);
+  assaStreamAbort: (sessionId: string): Promise<{ ok: boolean }> => {
+    return ipcRenderer.invoke('assa:stream:abort', sessionId);
   },
   /**
    * 汐月 Hermes 侧车：回传本地工具执行结果
    */
-  xiyueToolResult: (requestId: string, result: unknown): Promise<{ ok: boolean }> => {
-    return ipcRenderer.invoke('xiyue:tool-result', requestId, result);
+  assaToolResult: (requestId: string, result: unknown): Promise<{ ok: boolean }> => {
+    return ipcRenderer.invoke('assa:tool-result', requestId, result);
   },
-  xiyueIdentity: (): Promise<{
+  assaIdentity: (): Promise<{
     name: string;
     visible_name: string;
     english_name: string;
@@ -438,17 +445,17 @@ const api = {
     tools_enabled: boolean;
     max_tool_rounds: number;
   }> => {
-    return ipcRenderer.invoke('xiyue:identity');
+    return ipcRenderer.invoke('assa:identity');
   },
   /**
    * 监听汐月流式对话事件
    * @returns 取消监听函数
    */
-  onXiyueStreamEvent: (
+  onAssaStreamEvent: (
     sessionId: string,
     callback: (event: { type: string; payload?: Record<string, unknown> }) => void,
   ): (() => void) => {
-    const channel = `xiyue:stream:event:${sessionId}`;
+    const channel = `assa:stream:event:${sessionId}`;
     const handler = (
       _event: Electron.IpcRendererEvent,
       data: { type: string; payload?: Record<string, unknown> },
@@ -530,6 +537,12 @@ const api = {
    */
   openSettingsWindow: (): Promise<boolean> => {
     return ipcRenderer.invoke('app:open-settings-window');
+  },
+  /**
+   * 后台预热设置窗（进控制中心时调用，不显示）
+   */
+  preloadSettingsWindow: (): Promise<boolean> => {
+    return ipcRenderer.invoke('app:preload-settings-window');
   },
   /**
    * 重置为首次启动（删除首次启动标记，下次启动重新播放启动动画并进入引导）
@@ -853,14 +866,6 @@ const api = {
    */
   loadWallpaperFile: (filePath: string): Promise<string | null> => {
     return ipcRenderer.invoke('wallpaper:load-file', filePath);
-  },
-  /**
-   * 生成相册网格缩略图，避免批量传输和解码原图
-   * @param filePath - 图片文件绝对路径
-   * @returns 缩略图 data URL，失败返回 null
-   */
-  loadAlbumThumbnail: (filePath: string): Promise<string | null> => {
-    return ipcRenderer.invoke('album:load-thumbnail', filePath);
   },
   /**
    * 清理 userData/wallpapers/ 下的自定义壁纸缓存

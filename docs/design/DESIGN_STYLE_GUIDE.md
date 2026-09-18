@@ -1,4 +1,4 @@
-# Xiyue（eIsland）设计风格指南
+# Assa（eIsland）设计风格指南
 
 > **⚠ 本文部分章节已过时。**  
 > **UI 开发请优先阅读并遵循：[`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)**（颜色 token、图标保色/遮罩、岛不抢焦点、汐月角色替换恐龙、Lucide 策略）。  
@@ -7,14 +7,14 @@
 > - 「像素小恐龙」作为产品形象（§1、§4.2、§9）→ 主形象为**汐月少女**  
 > - 「浮层必须 backdrop-filter」一刀切（§2.6）→ **岛体有意不透明**；仅桌面浮层强制玻璃  
 >
-> 适用：灵动岛（Dynamic Island）、截图工具栏、贴图浮窗、启动屏、设置面板等所有 Xiyue 浮层 UI。
+> 适用：灵动岛（Dynamic Island）、截图工具栏、贴图浮窗、启动屏、设置面板等所有 Assa 浮层 UI。
 > 本文档基于 `src/renderer/styles/`、`resources/capture.css`、`resources/pin.css`、灵动岛状态组件（`src/renderer/components/states/agent`）综合提炼。
 
 ---
 
 ## 1. 设计基因（Design DNA）
 
-Xiyue 是 **Apple Dynamic Island 复刻** 的 Windows 浮层工具，整体语言由三层叠加：
+Assa 是 **Apple Dynamic Island 复刻** 的 Windows 浮层工具，整体语言由三层叠加：
 
 1. **Apple-inspired 极简骨架**
    - iOS Dynamic Island 的「细长胶囊 → 状态条 → 全屏面板」三段式形变
@@ -162,7 +162,7 @@ backdrop-filter: blur(<n>px) saturate(1.4);
 | 尺寸角标/底部提示 | `10px ~ 14px` | `1.2 ~ 1.3` |
 
 **铁律（修订）**：  
-- **桌面浮层**（截图/贴图/OCR/设置面板等）必须带 `backdrop-filter: blur + saturate(1.4)` 才是 Xiyue 风；裸 `background` 视为未完成。  
+- **桌面浮层**（截图/贴图/OCR/设置面板等）必须带 `backdrop-filter: blur + saturate(1.4)` 才是 Assa 风；裸 `background` 视为未完成。  
 - **灵动岛壳**（idle/hover/agent）**有意不透明实底**，不强制 backdrop-filter（对齐 iOS，保可读性与性能）。详见 `DESIGN_SYSTEM.md` §4.1。
 
 ---
@@ -387,7 +387,7 @@ CSS（`agent.css`）：
 
 ## 8. 改动检查清单（Code Review）
 
-每改一个 Xiyue UI 模块，自查：
+每改一个 Assa UI 模块，自查：
 
 - [ ] 颜色是否走 `rgba(var(--color-text-rgb), α)` 或设计 token，没硬编码 `#fff`/`#000`？
 - [ ] 是否带 `backdrop-filter: blur(X) saturate(1.4)` 与 `-webkit-` 前缀？

@@ -114,6 +114,43 @@ Verification: `grep -rn "defaultValue" src/renderer/components/<changed-dir>/` s
 - Add the plugin name to both `publish-npm` and `publish-gpr` job matrices.
 - Without registration, the new plugin will never be published to npm or GitHub Packages.
 
+## 10. Performance Discipline: Unused Paths Stay Off (Resource Gate)
+
+**不启用用户未使用的功能/服务/网络请求。省内存、省 CPU、少一次多余的 IPC/外呼。**
+
+适用于：主进程常驻服务、定时器、预创建窗口、天气/定位等外部 API、插件 watcher、动画预加载。
+
+### 规则
+
+1. **功能选择即开关**  
+   用户选了「自定义位置优先」→ **禁止再打 IP 定位**（含启动预警、节流刷新、失败回退路径上的 IP）。  
+   通用模式：优先级路径成功后立刻返回；未选中的来源不得作为「静默预热」偷偷请求。
+
+2. **默认关闭非关键服务**  
+   例如：Codex 监听、外部 Agent 扫描、非必需 watcher——默认 off 或延后启动；用户开启才轮询。
+
+3. **按需预热，用完可卸**  
+   窗口预热（设置/独立窗）只在可能用到时触发；长时间隐藏应可销毁。  
+   不要为「可能用到」在启动路径无条件拉起重窗口/重依赖。
+
+4. **多源定位/数据源**  
+   主源成功即停；备用源只在失败时调用。  
+   禁止并行无意义地打多家 API「反正免费」。
+
+5. **审查检查清单**（PR / 改动后自问）  
+   - [ ] 用户关掉的选项是否还有网络/轮询/子进程？  
+   - [ ] 自定义路径是否仍会触发 IP / GPS / 第三方？  
+   - [ ] 新服务是否有默认关闭或空闲销毁？  
+   - [ ] 启动 `whenReady` 是否塞了非关键 I/O？
+
+### 反例 / 正例
+
+| 反例 | 正例 |
+|------|------|
+| 自定义城市有效仍请求 ip-api | 自定义优先：仅 custom → cached |
+| 启动即 precreate 所有窗口 | 启动空闲预热 + 10min 无用销毁 |
+| 天气三源并行请求 | 优先级链，失败才下一个 |
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

@@ -49,7 +49,11 @@ const rootEl = root;
 /** 启动时初始化主题（读取持久化设置并应用 data-theme，在 React 挂载前执行避免闪烁） */
 async function bootstrap(): Promise<void> {
   await initTheme();
-  await initFonts();
+  /**
+   * 字体不阻塞 createRoot：大 TTF/OTF 的 base64 传输与 atob 会显著拉长首屏。
+   * 先挂载 UI，字体就绪后通过 CSS 变量生效（短暂回退系统字体可接受）。
+   */
+  void initFonts();
   await bootstrapAuthSession();
   await hydrateWeatherLocationConfigFromStore();
 
@@ -59,9 +63,6 @@ async function bootstrap(): Promise<void> {
   }).catch(() => {
     applyIslandOpacity(100);
   });
-
-  /** 启动时拉取最新天气数据（内部流程：读缓存 → 获取定位 → 获取天气 → 写缓存） */
-  useIslandStore.getState().fetchWeatherData();
 
   /** 定时刷新天气：每 30 分钟一次（fetchWeatherData 内部有 5 分钟节流保护） */
   setInterval(() => {
@@ -78,6 +79,8 @@ async function bootstrap(): Promise<void> {
     </StrictMode>
   );
 
+  /** 挂载后再拉天气，避免与首屏渲染抢主线程 */
+  useIslandStore.getState().fetchWeatherData().catch(() => {});
 }
 
 void bootstrap();

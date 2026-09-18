@@ -30,10 +30,11 @@ const { handleMock } = vi.hoisted(() => ({
   handleMock: vi.fn(),
 }));
 
-const { existsSyncMock, readFileSyncMock, writeFileSyncMock } = vi.hoisted(() => ({
+const { existsSyncMock, readFileSyncMock, writeFileSyncMock, statSyncMock } = vi.hoisted(() => ({
   existsSyncMock: vi.fn(),
   readFileSyncMock: vi.fn(),
   writeFileSyncMock: vi.fn(),
+  statSyncMock: vi.fn(),
 }));
 
 const { joinMock } = vi.hoisted(() => ({
@@ -54,6 +55,7 @@ vi.mock('fs', () => ({
   existsSync: existsSyncMock,
   readFileSync: readFileSyncMock,
   writeFileSync: writeFileSyncMock,
+  statSync: statSyncMock,
 }));
 
 vi.mock('path', () => ({
@@ -74,11 +76,14 @@ describe('registerStoreIpcHandlers', () => {
     existsSyncMock.mockReset();
     readFileSyncMock.mockReset();
     writeFileSyncMock.mockReset();
+    statSyncMock.mockReset();
     broadcastSettingChangeMock.mockReset();
     handleMock.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
       handlers.set(channel, handler);
     });
     joinMock.mockImplementation((...segments: string[]) => segments.join('/'));
+    /** 缓存依赖 mtime/size；固定值即可，写路径会显式清缓存 */
+    statSyncMock.mockReturnValue({ mtimeMs: 1, size: 10 });
   });
 
   describe('registration', () => {

@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Xiyue",
+    "appName": "Assa",
     "errors": {
       "rootMountNotFound": "#root mount node not found"
     }
@@ -14,7 +14,6 @@
       "todo": "Todo",
       "countdown": "Countdown",
       "urlFavorites": "URL Favorites",
-      "album": "Album",
       "mail": "Mail",
       "localFileSearch": "File Search",
       "clipboardHistory": "Clipboard",
@@ -130,7 +129,7 @@
     },
     "github": {
       "title": "Open Source",
-      "subtitle": "Xiyue is an open source project",
+      "subtitle": "Assa is an open source project",
       "links": {
         "repo": "GitHub",
         "website": "Website",
@@ -145,7 +144,7 @@
       "subtitle": "Thanks to our sponsors for their support"
     },
     "welcome": {
-      "title": "Welcome to Xiyue",
+      "title": "Welcome to Assa",
       "subtitle": "Setup complete, start your Dynamic Island experience",
       "desc": "A Windows desktop float widget and AI assistant inspired by Apple Dynamic Island,\\nmaking your desktop smarter and more delightful."
     },
@@ -313,7 +312,7 @@
         },
         "shortcut": {
           "toggleIsland": "Hide/Show",
-          "quitIsland": "Quit Xiyue",
+          "quitIsland": "Quit Assa",
           "resetPosition": "Reset position shortcut",
           "screenshot": "Area screenshot",
           "switchSong": "Switch song"
@@ -394,10 +393,10 @@
       "lyrics": "Music",
       "weather": "Weather",
       "expand": "Expand",
-      "xiyue": "Xiyue AI",
+      "assa": "Xiyue AI",
       "switchToPage": "Switch to {{label}} page"
     },
-    "xiyue": {
+    "assa": {
       "openChat": "Open Xiyue AI chat",
       "hint": "Click to chat, or talk by voice",
       "voice": "Voice chat"
@@ -410,7 +409,9 @@
     },
     "tools": {
       "screenshot": "Screenshot",
-      "taskManager": "Task Manager"
+      "taskManager": "Task Manager",
+      "fileSearch": "File Search",
+      "editControlCenter": "Edit control center buttons"
     },
     "media": {
       "brightness": "Brightness",
@@ -465,7 +466,9 @@
         "dayAfterTomorrow": "D+2"
       },
       "rainPrefix": "R",
-      "windPrefix": "W"
+      "windPrefix": "W",
+      "sunrise": "Sunrise",
+      "sunset": "Sunset"
     },
     "custom": {
       "missing": "Page not found or deleted",
@@ -707,18 +710,6 @@
       "mute": "Mute",
       "unmute": "Unmute",
       "empty": "No music playing"
-    },
-    "album": {
-      "title": "Album Carousel",
-      "count": "{{count}} items",
-      "empty": "No media in album",
-      "open": "Open album",
-      "prev": "Previous",
-      "next": "Next",
-      "pause": "Pause carousel",
-      "play": "Resume carousel",
-      "position": "{{index}} / {{total}}",
-      "videoTag": "Video"
     },
     "countdown": {
       "title": "Countdown",
@@ -1111,127 +1102,6 @@
       "olderThan30Days": "Older than 30 days"
     }
   },
-  "albumTab": {
-    "title": "Album",
-    "count": "{{count}} items",
-    "dropHint": "Drop to import media files",
-    "empty": {
-      "title": "No media yet",
-      "desc": "Drag images/videos here, or click \"Add Media\"",
-      "filteredTitle": "No items under current filter",
-      "filteredDesc": "Switch to All / Images / Videos"
-    },
-    "actions": {
-      "add": "Add Media",
-      "remove": "Remove",
-      "removeAria": "Remove media {{name}}",
-      "selectAllVisible": "Select All",
-      "unselectAllVisible": "Unselect All",
-      "clearSelection": "Clear Selection",
-      "removeSelected": "Delete Selected",
-      "select": "Select",
-      "cancelSelect": "Cancel"
-    },
-    "selection": {
-      "selectedCount": "{{count}} selected",
-      "toggle": "Select media {{name}}",
-      "hint": "Click items to select"
-    },
-    "sort": {
-      "label": "Sort",
-      "addedDesc": "Most recently added",
-      "addedAsc": "Earliest added first",
-      "nameAsc": "Name A → Z",
-      "nameDesc": "Name Z → A",
-      "durationDesc": "Duration long → short",
-      "durationAsc": "Duration short → long"
-    },
-    "filter": {
-      "label": "Media Filter",
-      "all": "All",
-      "image": "Images",
-      "video": "Videos"
-    },
-    "group": {
-      "label": "View Mode",
-      "none": "All",
-      "folder": "By Folder",
-      "date": "By Date",
-      "all": "All Media",
-      "count": "{{count}} items",
-      "unknownFolder": "Unknown Folder",
-      "unknownDate": "Unknown Date"
-    },
-    "columns": {
-      "aria": "Adjust columns per row",
-      "smaller": "Decrease columns",
-      "larger": "Increase columns"
-    },
-    "thumb": {
-      "loading": "Loading…",
-      "failed": "Failed to load"
-    },
-    "viewer": {
-      "back": "Back to overview",
-      "prev": "Previous",
-      "next": "Next",
-      "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out",
-      "zoomOne": "Actual size (1:1)",
-      "zoomFit": "Fit to window",
-      "fit": "Fit",
-      "play": "Play",
-      "pause": "Pause",
-      "mute": "Mute",
-      "unmute": "Unmute",
-      "hideControls": "Hide Controls",
-      "showControls": "Show Controls",
-      "seek": "Seek",
-      "volume": "Volume",
-      "openInExplorer": "Show in Explorer",
-      "saveAs": "Save As",
-      "loading": "Loading media…",
-      "failed": "Failed to load media"
-    },
-    "meta": {
-      "title": "Media Info",
-      "name": "Name",
-      "format": "Format",
-      "resolution": "Resolution",
-      "duration": "Duration",
-      "size": "Size",
-      "addedAt": "Added",
-      "path": "Full Path",
-      "mediaType": "Media Type",
-      "mediaTypeImage": "Image",
-      "mediaTypeVideo": "Video",
-      "codec": "Codec",
-      "fps": "FPS",
-      "setAsIslandBackground": "Set As Island Background",
-      "exifTitle": "EXIF",
-      "exifEmpty": "No EXIF data",
-      "make": "Make",
-      "model": "Model",
-      "dateTimeOriginal": "Captured At",
-      "exposure": "Exposure",
-      "fNumber": "Aperture",
-      "iso": "ISO",
-      "focalLength": "Focal Length"
-    },
-    "status": {
-      "added": "Imported {{count}} media file(s)",
-      "allDuplicated": "Media file already exists, skipped duplicates",
-      "unsupportedOnly": "No supported image/video format detected",
-      "zoomReset": "Reset to actual size",
-      "openInExplorerFailed": "Cannot locate {{name}}. The file may have been moved or deleted.",
-      "saveAsSuccess": "Saved {{name}}",
-      "saveAsCanceled": "Save canceled",
-      "saveAsFailed": "Failed to save {{name}}. Please try again.",
-      "removedSelected": "Deleted {{count}} media file(s)",
-      "setIslandBackgroundSuccess": "Set {{name}} as island background",
-      "setIslandBackgroundFailed": "Failed to set island background. Please try again."
-    }
-  },
   "sliderCaptcha": {
     "title": "Slider Verification",
     "subtitle": "Challenge service powered by Pyisland Server & eIsland",
@@ -1243,181 +1113,6 @@
     "actions": {
       "cancel": "Cancel",
       "confirm": "Confirm"
-    }
-  },
-  "miniGameTab": {
-    "sidebar": {
-      "index": "Navigation"
-    },
-    "index": {
-      "title": "Quick Navigation",
-      "reset": "Reset",
-      "edit": "Edit",
-      "done": "Done",
-      "searchPlaceholder": "Search game items...",
-      "searchClear": "Clear search",
-      "searchEmpty": "No matching game items",
-      "hintEdit": "Drag cards to reorder, then click Done to save.",
-      "hintView": "Click a card to jump to the corresponding game.",
-      "ariaNav": "Mini game quick navigation",
-      "removeCard": "Remove {{label}}",
-      "ariaAddPanel": "Addable navigation cards",
-      "addableTitle": "Addable cards",
-      "emptyAddable": "No cards available to add"
-    },
-    "nav": {
-      "game-2048": {
-        "label": "2048",
-        "desc": "Classic merge-number mini game with score and leaderboard support."
-      },
-      "game-gomoku": {
-        "label": "Gomoku",
-        "desc": "Local two-player gomoku match; connect five to win."
-      }
-    },
-    "games": {
-      "2048": "2048",
-      "gomoku": "Gomoku"
-    },
-    "comingSoon": "Coming Soon",
-    "unknownUser": "Unknown User",
-    "loginRequired": "Please log in to view scores and leaderboard",
-    "loading": "Loading...",
-    "loadError": "Failed to load data",
-    "retry": "Retry",
-    "refresh": "Refresh",
-    "myBest": "My Best",
-    "highScore": "High Score",
-    "duration": "Duration",
-    "moves": "Moves",
-    "plays": "Plays",
-    "noRecord": "No records yet",
-    "leaderboard": "Leaderboard",
-    "myRank": "Your Rank",
-    "leaderboardRestartHint": "Scores from games started after a restart will not be counted on the leaderboard.",
-    "rankUnavailable": "Unranked",
-    "lbUser": "User",
-    "lbScore": "Score",
-    "lbEmpty": "No leaderboard data yet",
-    "auth": {
-      "entryTitle": "Log in to view leaderboard and scores",
-      "gotoLogin": "Log In",
-      "gotoRegister": "Register",
-      "hint": "Log in to sync your scores, view the leaderboard, and compete with other players."
-    },
-    "game2048": {
-      "score": "Score",
-      "best": "Best",
-      "newGame": "New Game",
-      "gameOver": "Game Over",
-      "tryAgain": "Try Again",
-      "hint": "Use arrow keys or WASD to slide tiles"
-    },
-    "gomoku": {
-      "hint": "Black and white take turns; connect five to win.",
-      "mode": "Match Mode",
-      "modePve": "Human vs AI",
-      "modePvp": "Human vs Human",
-      "difficulty": "Select Match Difficulty",
-      "difficultyNovice": "Novice",
-      "difficultyEasy": "Easy",
-      "difficultyHard": "Hard",
-      "difficultyExpert": "Expert",
-      "difficultyMaster": "Master",
-      "status": "Status",
-      "thinking": "Thinking...",
-      "turnBlack": "Black to move",
-      "turnWhite": "White to move",
-      "winnerBlack": "Black wins",
-      "winnerWhite": "White wins",
-      "victory": "Victory",
-      "defeat": "Defeat",
-      "draw": "Draw",
-      "restart": "Restart",
-      "highlightLastMove": "Highlight Last Move",
-      "unrankedHint": "Gomoku is not connected to online leaderboard yet.",
-      "boardAria": "Gomoku board",
-      "cellAria": "Row {{row}}, column {{col}}"
-    }
-  },
-  "stockTab": {
-    "title": "Stock Market",
-    "subtitle": "Search symbols and view live prices, change rates, and professional candlestick charts.",
-    "autoRefresh": "Auto refreshes every 30 seconds",
-    "sidebar": {
-      "toggle": "Toggle sidebar",
-      "deleteFavorite": "Delete favorite",
-      "favorites": "Favorites",
-      "search": "Search",
-      "favoritesHint": "Manage your watchlist",
-      "searchHint": "Search stocks by name or symbol",
-      "favoriteSearchLabel": "Search Favorites",
-      "favoriteSearchPlaceholder": "Search",
-      "selectedCount": "{{count}} selected",
-      "deleteSelected": "Delete",
-      "noFavoriteMatches": "No matching favorites",
-      "noFavorites": "No favorites yet"
-    },
-    "empty": {
-      "name": "No stock selected",
-      "chart": "No K-line data"
-    },
-    "loading": {
-      "chart": "Loading K-line data..."
-    },
-    "period": {
-      "day": "Daily K-line",
-      "week": "Weekly K-line",
-      "month": "Monthly K-line",
-      "short": {
-        "day": "D",
-        "week": "W",
-        "month": "M"
-      }
-    },
-    "actions": {
-      "search": "Search",
-      "searching": "Searching...",
-      "clear": "Clear",
-      "addFavorite": "Add",
-      "addFavoriteWithName": "Add {{name}} to favorites",
-      "removeFavorite": "Remove {{name}} from favorites",
-      "refresh": "Refresh market data"
-    },
-    "search": {
-      "aria": "Stock search and filters",
-      "keywordLabel": "Search Stocks",
-      "keywordPlaceholder": "Enter name or symbol"
-    },
-    "metrics": {
-      "aria": "Key stock metrics",
-      "updatedAt": "Updated at {{time}}",
-      "previousClose": "Prev Close",
-      "high": "High",
-      "low": "Low",
-      "volume": "Volume",
-      "amount": "Amount",
-      "source": "Source"
-    },
-    "chart": {
-      "aria": "Stock candlestick chart",
-      "title": "Stock K-line",
-      "candlestick": "Candlestick",
-      "volume": "Volume",
-      "priceAxis": "Price",
-      "volumeAxis": "Volume",
-      "exportMenu": "Chart export menu",
-      "range": {
-        "1m": "1M",
-        "3m": "3M",
-        "6m": "6M",
-        "1y": "1Y",
-        "all": "All"
-      }
-    },
-    "error": {
-      "default": "Failed to load market data. Please try again later.",
-      "symbolFormat": "Enter a symbol with market prefix, such as SH600519, SZ000651, HK00700, or USMSFT."
     }
   },
   "stt": {
@@ -1469,7 +1164,6 @@
       "expanded": "Back",
       "todo": "Todo",
       "urlFavorites": "URL Favorites",
-      "album": "Album",
       "mail": "Mail",
       "localFileSearch": "File Search",
       "clipboardHistory": "Clipboard",
@@ -1933,7 +1627,11 @@
       "loading": "Scanning local files...",
       "empty": "No results yet. Try another keyword or folder.",
       "rootPlaceholder": "Choose or enter a root folder, e.g. C:\\Users",
-      "keywordPlaceholder": "Enter filename keyword, e.g. report, .pdf"
+      "keywordPlaceholder": "Enter filename keyword, e.g. report, .pdf",
+      "everythingReady": "Everything ready",
+      "engineEverything": "Everything",
+      "engineDirectory": "Directory scan",
+      "engineEverythingHint": "Everything detected; search uses full-volume index first"
     },
     "memo": {
       "search": "Search title, content, or tags...",
@@ -2031,7 +1729,6 @@
       "layout-preview": "Layout Preview",
       "expand-layout": "Expand Layout",
       "maxexpand-layout": "MaxExpand Layout",
-      "album": "Album Settings",
       "hide-process-list": "Hidden Window List",
       "position": "Position Calibration",
       "theme": "Theme",
@@ -2063,7 +1760,7 @@
       "shortcut": "Shortcuts",
       "user": "Account",
       "update": "Updates",
-      "pluginMarket": "Market",
+      "pluginMarket": "Wallpaper",
       "about": "About"
     },
     "mail": {
@@ -2310,14 +2007,22 @@
       },
       "controlCenter": {
         "title": "Control Center Buttons",
-        "hint": "Toggle which buttons appear in the Hover control center (time page), and drag or use up/down to reorder. Showing {{count}} / {{total}} buttons.",
+        "hint": "Drag icons to reorder; click to remove (Settings / Page Manager are fixed). Max {{max}}, currently {{count}}.",
         "moveUp": "Move up",
         "moveDown": "Move down",
         "hideBtn": "Hide this button",
         "showBtn": "Show this button",
         "shownLabel": "Show",
         "hiddenLabel": "Hide",
-        "resetDefault": "Restore defaults"
+        "resetDefault": "Restore defaults",
+        "alwaysVisible": "Always shown; cannot hide",
+        "fixedLabel": "Fixed",
+        "previewBar": "Control center preview (drag to reorder)",
+        "clickHide": "Click to remove from bar",
+        "clickShow": "Click to add to control center",
+        "emptyBar": "Bar is empty — add from below",
+        "poolHint": "Not shown (click to add): max {{max}}",
+        "allShown": "All buttons are already shown"
       },
       "notifications": {
         "configChanged": {
@@ -2364,7 +2069,6 @@
           "countdown": "Countdown",
           "pomodoro": "Pomodoro",
           "urlFavorites": "URL Favorites",
-          "album": "Album Carousel",
           "mokugyo": "Mokugyo",
           "breakReminder": "Break Reminder"
         },
@@ -2380,7 +2084,6 @@
           "songArtist": "Sample Artist",
           "songAlbum": "Sample Album",
           "samplePreview": "Sample Preview",
-          "albumFile": "sample-image.jpg",
           "urlNoteGithub": "Code Hosting",
           "urlNoteStackOverflow": "Tech Q&A",
           "breakSedentary": "Stand up and move",
@@ -2428,7 +2131,6 @@
         "tabLabels": {
           "todo": "Todo",
           "urlFavorites": "URL Favorites",
-          "album": "Album",
           "mail": "Mail",
           "localFileSearch": "File Search",
           "clipboardHistory": "Clipboard",
@@ -2606,31 +2308,6 @@
         "previewPlay": "Preview",
         "previewStop": "Stop"
       },
-      "album": {
-        "carouselTitle": "Album Carousel Mode",
-        "carouselHint": "Configure overview album card order, interval, media filter, and click behavior",
-        "intervalLabel": "Carousel interval",
-        "interval3s": "3s",
-        "interval5s": "5s",
-        "interval8s": "8s",
-        "orderLabel": "Carousel order",
-        "orderSequential": "Sequential",
-        "orderRandom": "Random",
-        "filterLabel": "Media filter",
-        "filterHint": "Choose which media types are included in overview album card rotation",
-        "filterAll": "All",
-        "filterImage": "Images only",
-        "filterVideo": "Videos only",
-        "clickBehaviorLabel": "Card click behavior",
-        "clickBehaviorHint": "Configure what happens when clicking the overview album card",
-        "clickBehaviorOpen": "Open album page",
-        "clickBehaviorNone": "No action",
-        "playbackTitle": "Autoplay & Video Behavior",
-        "playbackHint": "Only affects the overview album carousel card, not the album main page.",
-        "autoRotateToggle": "Enable auto carousel",
-        "videoAutoPlayToggle": "Autoplay videos",
-        "videoMutedToggle": "Mute video playback"
-      },
       "urlParser": {
         "title": "Clipboard URL Monitor",
         "hint": "Show prompt when URL is detected in clipboard",
@@ -2655,8 +2332,8 @@
       },
       "autostart": {
         "toolsHint": "Common app actions and log tools",
-        "quit": "Quit Xiyue",
-        "restart": "Restart Xiyue",
+        "quit": "Quit Assa",
+        "restart": "Restart Assa",
         "openLogs": "Open logs folder",
         "clearLogs": "Clear log cache",
         "logsClearing": "Clearing...",
@@ -2671,7 +2348,7 @@
         },
         "status": {
           "disabled": "Auto start is disabled.",
-          "enabled": "Xiyue will start on login.",
+          "enabled": "Assa will start on login.",
           "highPriority": "Starts with higher priority for faster load."
         }
       },
@@ -2833,9 +2510,19 @@
         "hint": "Prefer IP-based auto location or custom location"
       },
       "customCityTitle": "Custom City",
-      "customCityHint": "Only used when 'Custom Location First' is active. Test before saving; Chinese / Pinyin / English are supported.",
-      "cityName": "City Name",
-      "cityPlaceholder": "e.g. Hangzhou / Tokyo / New York",
+      "customCityHint": "Only used when 'Custom Location First' is active. Keyword search (Haidian) or Province → City → District cascade.",
+      "locationMode": {
+        "search": "Keyword search",
+        "cascade": "Province cascade"
+      },
+      "cascade": {
+        "province": "Province",
+        "city": "City",
+        "district": "District"
+      },
+      "cityName": "City / District",
+      "cityPlaceholder": "e.g. Haidian / Hangzhou / Tokyo",
+      "districtSearching": "Searching…",
       "testing": "Testing...",
       "testCustomLocation": "Test Custom Location (Multiple APIs)",
       "saveLocation": "Save Location Settings",
@@ -2951,8 +2638,8 @@
           "hint": "Click Edit and press keys (e.g. Alt+X, Ctrl+Shift+H)"
         },
         "quitApp": {
-          "title": "Quit Xiyue Shortcut",
-          "hint": "Press to quit Xiyue immediately"
+          "title": "Quit Assa Shortcut",
+          "hint": "Press to Quit Assa immediately"
         },
         "resetPosition": {
           "title": "Reset Position Shortcut",
@@ -3420,7 +3107,7 @@
         "register": "Sign Up",
         "loginBtn": "Sign In",
         "registerBtn": "Create account",
-        "hint": "Sign in and registration are powered by Xiyue server",
+        "hint": "Sign in and registration are powered by Assa server",
         "entryTitle": "Sign in to manage avatar, profile, and account security settings",
         "gotoLogin": "Go to Sign In",
         "gotoRegister": "Go to Sign Up",
@@ -3834,10 +3521,6 @@
         "label": "MaxExpand Layout",
         "desc": "Adjust page order and visibility."
       },
-      "album": {
-        "label": "Album Settings",
-        "desc": "Configure album carousel and album entry behavior."
-      },
       "hide-process-list": {
         "label": "Hidden Window List",
         "desc": "Manage hidden windows and auto-hide rules."
@@ -3956,9 +3639,16 @@
       },
       "backToCategory": "返回"
     },
+    "aiName": {
+      "title": "AI Name",
+      "hint": "Set the display name of the AI assistant. Changes apply immediately. Leave blank to restore the default “Xiyue”.",
+      "placeholder": "e.g. Xiyue",
+      "save": "Save",
+      "saving": "Saving…"
+    },
     "aiSecurity": {
       "trustTitle": "AI Trust Level",
-      "trustHint": "Controls how freely Xiyue may run tools and read data. Changes apply immediately."
+      "trustHint": "Controls how freely Assa may run tools and read data. Changes apply immediately."
     },
     "audit": {
       "title": "Tool Audit Log",
@@ -3967,7 +3657,7 @@
       "empty": "No tool calls yet"
     },
     "memory": {
-      "title": "Xiyue Memory (read-only)",
+      "title": "Assa Memory (read-only)",
       "hint": "Working memories distilled from chats. Full delete UI comes later.",
       "empty": "No memories yet. Chat a bit and they will appear here.",
       "clear": "Clear memories",
@@ -3988,6 +3678,56 @@
       "desc": "搜索配置项，或按分类进入。",
       "searchPlaceholder": "搜索设置…",
       "hot": "Frequent"
+    },
+    "customPages": {
+      "title": "Page Manager",
+      "desc": "Manage custom island pages (embedded web / blank). This page manages which pages exist; order & visibility live under Settings · Interaction layout.",
+      "addTitle": "Add page",
+      "addHint": "Title is required; embedded pages need an https URL",
+      "titleLabel": "Page title",
+      "titlePlaceholder": "e.g. Docs / Bilibili",
+      "templateUrl": "Embedded web",
+      "templateBlank": "Blank container",
+      "urlLabel": "URL",
+      "urlPlaceholder": "https://...",
+      "addButton": "Add page",
+      "listTitle": "Existing pages",
+      "listHint": "Shown on hover nav dots; ESC closes this window",
+      "empty": "No custom pages yet",
+      "noUrl": "No URL set",
+      "blankTag": "Blank container",
+      "editUrlPrompt": "Edit URL",
+      "editUrl": "Edit URL",
+      "delete": "Delete",
+      "confirmDelete": "Delete page \"{{title}}\"?",
+      "messages": {
+        "titleRequired": "Please enter a page title",
+        "added": "Added — adjust order in control center / layout settings"
+      },
+      "ccHint": "Choose which Hover control-center buttons show, order and visibility (max simultaneous).",
+      "hubDesc": "Collections for what is shown: window tabs, control center, island layouts, custom pages. Click a group to expand.",
+      "expandLayoutHint": "Choose which pages show on expand (tier 2) and order.",
+      "maxExpandLayoutHint": "Choose max-expand page order and visibility.",
+      "customPagesTitle": "Island custom pages",
+      "customPagesHint": "Embedded web / blank containers on hover nav dots"
+    },
+    "wallpaper": {
+      "local": {
+        "title": "Local wallpapers",
+        "hint": "Built-in presets + my wallpapers. Save imports and switch quickly.",
+        "builtin": "Presets",
+        "import": "Import / Current",
+        "importImage": "Import image",
+        "importVideo": "Import video",
+        "saveCurrent": "Save to my wallpapers",
+        "clear": "Clear background",
+        "mine": "My wallpapers ({{count}})",
+        "empty": "No saved wallpapers yet. Use a preset or import, then save.",
+        "remove": "Remove",
+        "untitled": "Custom wallpaper",
+        "currentImage": "Current: image background",
+        "currentVideo": "Current: video background (playback in Theme)"
+      }
     }
   },
   "idle": {

@@ -11,7 +11,7 @@ from agent.router.types import RouteResult, REASON_NO_RULE, REASON_PATTERN_MATCH
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# 与 schemas/xiyue_tools.json + 主进程执行器一致；仅允许白名单
+# 与 schemas/assa_tools.json + 主进程执行器一致；仅允许白名单
 ALLOWED_TOOLS = frozenset(
     {
         "volume.set",

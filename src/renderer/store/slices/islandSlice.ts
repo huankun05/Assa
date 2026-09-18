@@ -27,6 +27,7 @@
 import type { StateCreator } from 'zustand';
 import type { ControlCenterButtonConfig, CustomPageDef, IslandSlice } from '../types';
 import { DEFAULT_CONTROL_CENTER_BUTTONS } from '../../components/config/controlCenterButtons';
+import { TAB_LIST } from '../../components/config/standaloneWindowTabs';
 import { emptyNotification } from '../constants/defaults';
 import { getIslandWindowShrinkDelay } from '../constants/islandTransition';
 import { playNotificationSoundOnce } from '../../utils/audio/notificationSound';
@@ -39,10 +40,19 @@ function persistCustomPages(defs: CustomPageDef[]): void {
 }
 
 const CONTROL_CENTER_BUTTONS_STORE_KEY = 'hover-control-center-buttons';
+const STANDALONE_TAB_LAYOUT_STORE_KEY = 'standalone-tab-layout';
 
 /** 持久化控制中心按钮池配置到本地存储 */
 function persistControlCenterButtons(config: ControlCenterButtonConfig[]): void {
   window.api?.storeWrite(CONTROL_CENTER_BUTTONS_STORE_KEY, config).catch(() => {});
+}
+
+function persistStandaloneTabLayout(layout: Array<{ id: string; visible: boolean }>): void {
+  window.api?.storeWrite(STANDALONE_TAB_LAYOUT_STORE_KEY, layout).catch(() => {});
+}
+
+function defaultStandaloneTabLayout(): Array<{ id: string; visible: boolean }> {
+  return TAB_LIST.map((tab) => ({ id: tab.key, visible: true }));
 }
 
 function readCliProvider(): 'claude' | 'codex' {
@@ -65,7 +75,8 @@ export const createIslandSlice: StateCreator<
   hoverTab: 'time',
   customPages: [],
   controlCenterButtons: DEFAULT_CONTROL_CENTER_BUTTONS,
-  expandTab: 'tools',
+  standaloneTabLayout: defaultStandaloneTabLayout(),
+  expandTab: 'overview',
   maxExpandTab: 'todo',
   cliProvider: readCliProvider(),
   notification: emptyNotification,
@@ -193,6 +204,10 @@ export const createIslandSlice: StateCreator<
   setControlCenterButtons: (config) => {
     set({ controlCenterButtons: config });
     persistControlCenterButtons(config);
+  },
+  setStandaloneTabLayout: (layout) => {
+    set({ standaloneTabLayout: layout });
+    persistStandaloneTabLayout(layout);
   },
   setExpandTab: (tab) => set({ expandTab: tab }),
   setMaxExpandTab: (tab) => set({ maxExpandTab: tab }),

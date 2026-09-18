@@ -26,13 +26,12 @@
 
 import type { WindowTab } from './standaloneWindowTypes';
 
-export const VALID_TABS = new Set<WindowTab>(['todo', 'countdown', 'urlFavorites', 'album', 'mail', 'localFileSearch', 'clipboardHistory', 'memo', 'alarm', 'toolbox', 'chat', 'translate', 'customPages']);
+export const VALID_TABS = new Set<WindowTab>(['todo', 'countdown', 'urlFavorites', 'mail', 'localFileSearch', 'clipboardHistory', 'memo', 'alarm', 'toolbox', 'chat', 'translate', 'customPages']);
 
 export const TAB_LIST: { key: WindowTab; labelKey: string }[] = [
   { key: 'todo', labelKey: 'standalone.tabs.todo' },
   { key: 'countdown', labelKey: 'standalone.tabs.countdown' },
   { key: 'urlFavorites', labelKey: 'standalone.tabs.urlFavorites' },
-  { key: 'album', labelKey: 'standalone.tabs.album' },
   { key: 'mail', labelKey: 'standalone.tabs.mail' },
   { key: 'localFileSearch', labelKey: 'standalone.tabs.localFileSearch' },
   { key: 'clipboardHistory', labelKey: 'standalone.tabs.clipboardHistory' },

@@ -3,7 +3,7 @@
  */
 export type SettingsUsageMap = Record<string, { count: number; lastAt: number }>;
 
-const STORAGE_KEY = 'xiyue-settings-usage-v1';
+const STORAGE_KEY = 'assa-settings-usage-v1';
 const DECAY_HALF_LIFE_DAYS = 7;
 
 function readMap(): SettingsUsageMap {

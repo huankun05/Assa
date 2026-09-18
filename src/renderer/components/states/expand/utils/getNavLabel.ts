@@ -35,11 +35,13 @@ export const getNavLabel = (
     defaultValue:
       tab === 'hover'
         ? '返回'
-        : tab === 'tools'
-          ? '工具'
-          : tab === 'translation'
-            ? '翻译'
-            : tab === 'performanceMonitor'
-              ? '性能监控'
-              : '最大展开',
+        : tab === 'overview'
+          ? '总览'
+          : tab === 'tools'
+            ? '工具'
+            : tab === 'translation'
+              ? '翻译'
+              : tab === 'performanceMonitor'
+                ? '性能监控'
+                : '最大展开',
   });

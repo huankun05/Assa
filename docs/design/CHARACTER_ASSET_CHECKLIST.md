@@ -51,9 +51,9 @@
 
 | 用途 | 文件名 | 格式 | 路径 | 状态 |
 |------|--------|------|------|------|
-| 源图（512px） | `xiyue_512.png` | PNG | `resources/icon/` | ✅ |
-| 应用图标（多尺寸） | `xiyue_256x256.ico` | ICO（16/32/48/64/128/256） | `resources/icon/` | ✅ |
-| 托盘图标 | `xiyue_16x16.ico` | ICO（16/32） | `resources/icon/` | ✅ |
+| 源图（512px） | `assa_512.png` | PNG | `resources/icon/` | ✅ |
+| 应用图标（多尺寸） | `assa_256x256.ico` | ICO（16/32/48/64/128/256） | `resources/icon/` | ✅ |
+| 托盘图标 | `assa_16x16.ico` | ICO（16/32） | `resources/icon/` | ✅ |
 
 ### 2.2 图标设计规范
 
@@ -67,13 +67,13 @@
 
 | 文件 | 修改内容 | 状态 |
 |------|----------|------|
-| `electron-builder.json` | `win.icon` → `xiyue_256x256.ico` | ✅ |
-| `src/main/tray.ts` | `TRAY_ICON_PATH` → `xiyue_16x16.ico` | ✅ |
-| `src/main/window/mainWindow.ts` | `icon` → `xiyue_256x256.ico` | ✅ |
-| `src/main/window/settingsWindow.ts` | `icon` → `xiyue_256x256.ico` | ✅ |
-| `src/main/window/standaloneWindow.ts` | `icon` → `xiyue_256x256.ico` | ✅ |
-| `src/main/window/splashWindow.ts` | `icon` → `xiyue_256x256.ico` | ✅ |
-| `src/main/window/guideWindow.ts` | `icon` → `xiyue_256x256.ico` | ✅ |
+| `electron-builder.json` | `win.icon` → `assa_256x256.ico` | ✅ |
+| `src/main/tray.ts` | `TRAY_ICON_PATH` → `assa_16x16.ico` | ✅ |
+| `src/main/window/mainWindow.ts` | `icon` → `assa_256x256.ico` | ✅ |
+| `src/main/window/settingsWindow.ts` | `icon` → `assa_256x256.ico` | ✅ |
+| `src/main/window/standaloneWindow.ts` | `icon` → `assa_256x256.ico` | ✅ |
+| `src/main/window/splashWindow.ts` | `icon` → `assa_256x256.ico` | ✅ |
+| `src/main/window/guideWindow.ts` | `icon` → `assa_256x256.ico` | ✅ |
 
 ---
 
@@ -89,9 +89,9 @@
 
 ### 3.2 文件位置
 
-- 配置：`src/renderer/components/states/hover/pages/xiyue/config/xiyueMoodConfig.ts`
-- 组件：`src/renderer/components/states/hover/pages/xiyue/components/XiyueAvatar.tsx`
-- 样式：`src/renderer/styles/hover/xiyue-tab.css`
+- 配置：`src/renderer/components/states/hover/pages/assa/config/assaMoodConfig.ts`
+- 组件：`src/renderer/components/states/hover/pages/assa/components/AssaAvatar.tsx`
+- 样式：`src/renderer/styles/hover/assa-tab.css`
 
 ---
 
@@ -123,10 +123,10 @@
 | `resources/icon/eisland.svg` | eIsland 原 SVG，保留备份 | 保留 |
 | `resources/icon/eisland_16x16.ico` | eIsland 原托盘图标，保留备份 | 保留 |
 | `resources/icon/eisland_256x256.ico` | eIsland 原应用图标，保留备份 | 保留 |
-| `resources/icon/xiyue.svg` | 早期手画 SVG v1，未采用 | 保留 |
-| `resources/icon/xiyue_icon_v2.svg` | 手画 SVG v2，未采用 | 保留 |
-| `resources/icon/xiyue_icon_v3.svg` | 手画 SVG v3，未采用 | 保留 |
-| `resources/icon/xiyue_icon_final.svg` | 手画简约 SVG，未采用 | 保留 |
+| `resources/icon/assa.svg` | 早期手画 SVG v1，未采用 | 保留 |
+| `resources/icon/assa_icon_v2.svg` | 手画 SVG v2，未采用 | 保留 |
+| `resources/icon/assa_icon_v3.svg` | 手画 SVG v3，未采用 | 保留 |
+| `resources/icon/assa_icon_final.svg` | 手画简约 SVG，未采用 | 保留 |
 
 ---
 

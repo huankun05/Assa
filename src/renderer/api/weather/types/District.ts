@@ -74,6 +74,28 @@ export interface DistrictResolvedLocation {
   city: string;
   /** 行政区编码 */
   adcode?: string;
+  /** 层级（district/city/province…） */
+  level?: string;
+  /** 省份 */
+  province?: string;
+  /** 区县名 */
+  district?: string;
+}
+
+/** 搜索候选（用于设置页联想下拉） */
+export interface DistrictSearchCandidate extends DistrictResolvedLocation {
+  /** 展示名：如「海淀区 · 北京市」 */
+  label: string;
+}
+
+/** 级联下拉选项 */
+export interface DistrictCascadeOption {
+  /** 行政区编码 */
+  adcode: string;
+  /** 名称 */
+  name: string;
+  /** 层级 */
+  level?: string;
 }
 
 /** 行政区查询结果 */

@@ -24,5 +24,5 @@
  * @author 鸡哥
  */
 
-/** 天气图标加载失败时的兜底图标路径 */
-export const FALLBACK_WEATHER_ICON = './svg/NA.svg';
+/** 天气图标加载失败时的兜底图标路径（Meteocons 雾天，保持彩色套系） */
+export const FALLBACK_WEATHER_ICON = './icon/weather/meteocons/fog-night.svg';

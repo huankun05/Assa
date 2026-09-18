@@ -25,6 +25,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import useIslandStore from '../../store/slices';
 import type { SyncedLyricLine, TimerState } from '../../store/types';
 import type { TranslationLyricsResult } from '../../api/lyrics/lrcApi';
 import type { IslandState } from './useDynamicIslandShell';
@@ -37,7 +38,6 @@ interface UseIslandStateBridgesOptions {
   syncedLyrics: SyncedLyricLine[] | null;
   lyricsLoading: boolean;
   translationLyrics: TranslationLyricsResult | null;
-  currentPositionMs: number;
   setLyrics: () => void;
   setLyricsTranslation: () => void;
   setAgentVoiceInput: () => void;
@@ -56,7 +56,6 @@ export function useIslandStateBridges(options: UseIslandStateBridgesOptions): vo
     syncedLyrics,
     lyricsLoading,
     translationLyrics,
-    currentPositionMs,
     setLyrics,
     setLyricsTranslation,
     setAgentVoiceInput,
@@ -104,7 +103,8 @@ export function useIslandStateBridges(options: UseIslandStateBridgesOptions): vo
       const hasTranslation = translationLyrics?.status === 'available'
         && Boolean(translationLyrics.lines && translationLyrics.lines.length > 0);
       if (hasTranslation && lyricsTranslationEnabled) {
-        /** 原文与翻译完全一致时显示普通歌词 */
+        /** 原文与翻译完全一致时显示普通歌词；位置用 getState() 读，避免 4Hz 进度订阅拖整树 */
+        const currentPositionMs = useIslandStore.getState().currentPositionMs;
         if (isCurrentLyricIdenticalToTranslation(syncedLyrics, translationLyrics, currentPositionMs)) {
           setLyrics();
         } else {
@@ -114,7 +114,7 @@ export function useIslandStateBridges(options: UseIslandStateBridgesOptions): vo
         setLyrics();
       }
     }
-  }, [state, timerState, isPlaying, syncedLyrics, lyricsLoading, translationLyrics, lyricsEnabled, lyricsTranslationEnabled, currentPositionMs, setLyrics, setLyricsTranslation]);
+  }, [state, timerState, isPlaying, syncedLyrics, lyricsLoading, translationLyrics, lyricsEnabled, lyricsTranslationEnabled, setLyrics, setLyricsTranslation]);
 
   /** 歌词状态下翻译歌词加载完成 → 升级到 lyricsTranslation（原文与翻译一致时保持 lyrics） */
   useEffect(() => {
@@ -123,10 +123,11 @@ export function useIslandStateBridges(options: UseIslandStateBridgesOptions): vo
     const hasTranslation = translationLyrics?.status === 'available'
       && Boolean(translationLyrics.lines && translationLyrics.lines.length > 0);
     if (hasTranslation) {
+      const currentPositionMs = useIslandStore.getState().currentPositionMs;
       if (isCurrentLyricIdenticalToTranslation(syncedLyrics, translationLyrics, currentPositionMs)) return;
       setLyricsTranslation();
     }
-  }, [state, translationLyrics, lyricsTranslationEnabled, currentPositionMs, syncedLyrics, setLyricsTranslation]);
+  }, [state, translationLyrics, lyricsTranslationEnabled, syncedLyrics, setLyricsTranslation]);
 
   /** 翻译歌词关闭时，从 lyricsTranslation 回退到 lyrics */
   useEffect(() => {

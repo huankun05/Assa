@@ -24,4 +24,4 @@
  * @author 鸡哥
  */
 
-export type WindowTab = 'todo' | 'countdown' | 'urlFavorites' | 'album' | 'mail' | 'localFileSearch' | 'clipboardHistory' | 'memo' | 'alarm' | 'toolbox' | 'chat' | 'translate' | 'customPages';
+export type WindowTab = 'todo' | 'countdown' | 'urlFavorites' | 'mail' | 'localFileSearch' | 'clipboardHistory' | 'memo' | 'alarm' | 'toolbox' | 'chat' | 'translate' | 'customPages';

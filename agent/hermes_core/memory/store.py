@@ -28,7 +28,7 @@ _DEFAULT_DB_PATH = Path(__file__).parent.parent.parent / "data" / "core.db"
 
 
 def get_db_path() -> Path:
-    """Brain 数据库路径：Xiyue 统一走 resolve_data_dir()（XIYUE_DATA_DIR > 默认）。"""
+    """Brain 数据库路径：Assa 统一走 resolve_data_dir()（ASSA_DATA_DIR > 默认）。"""
     try:
         from agent.memory.store import resolve_data_dir
 

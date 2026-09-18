@@ -59,7 +59,7 @@ POST /chat/stream  (及 /chat)
 
 ## 4. 默认规则包（一期）
 
-> **约束**：工具名必须与 `schemas` / 主进程执行器 / `xiyue_tools.json` **一致**；B1 核对前不得合并启用。
+> **约束**：工具名必须与 `schemas` / 主进程执行器 / `assa_tools.json` **一致**；B1 核对前不得合并启用。
 
 | rule_id | 触发例 | 候选 tool（待 B1 核名） |
 |---|---|---|
@@ -126,7 +126,7 @@ POST /chat/stream  (及 /chat)
 | media.play_pause / next / prev | ✅ | **启用** |
 | sys.launch | ✅ 中文名映射 | **启用** |
 
-**B2 默认方案 A**：在 `schemas/xiyue_tools.json` **补登记**工具（confirm=false, level=1），Router 只绑 schema 内名字，避免双轨。
+**B2 默认方案 A**：在 `schemas/assa_tools.json` **补登记**工具（confirm=false, level=1），Router 只绑 schema 内名字，避免双轨。
 
 **后续增强（已做）**：`sys.launch` 中文名映射（记事本→notepad 等）；用户规则示例 `data/rules.json.example`（复制为 `rules.json` 启用）。
 

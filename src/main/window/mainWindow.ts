@@ -69,7 +69,7 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
   async function getWindowIdentityTitle(): Promise<string> {
     if (cachedIdentityVisibleName) return cachedIdentityVisibleName;
     try {
-      const data = await window.api?.xiyueIdentity?.();
+      const data = await window.api?.assaIdentity?.();
       if (data?.visible_name) {
         cachedIdentityVisibleName = String(data.visible_name);
         return cachedIdentityVisibleName;
@@ -77,7 +77,7 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
     } catch {
       // ignore
     }
-    return '汐月';
+    return 'Assa';
   }
 
   function getTargetDisplay(): Electron.Display {
@@ -159,8 +159,8 @@ export function createMainWindowService(options: CreateMainWindowServiceOptions)
       title,
       hasShadow: false,
       icon: is.dev
-        ? join(__dirname, '../../resources/icon/xiyue_256x256.ico')
-        : join(process.resourcesPath, 'icon/xiyue_256x256.ico'),
+        ? join(__dirname, '../../resources/icon/assa_256x256.ico')
+        : join(process.resourcesPath, 'icon/assa_256x256.ico'),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,

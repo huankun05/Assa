@@ -238,7 +238,7 @@ export function getGuidePages(t: TFunction): GuidePage[] {
   return [
     {
       imageSrc: './svg/eisland.svg',
-      title: t('guide.welcome.title', { defaultValue: '欢迎使用汐月' }),
+      title: t('guide.welcome.title', { defaultValue: '欢迎使用 Assa' }),
       desc: t('guide.welcome.desc', {
         defaultValue: '一款灵感来自 Apple 灵动岛的 Windows 桌面浮窗与 AI 管家，\n让你的桌面更灵动、更高效。',
       }),

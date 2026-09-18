@@ -82,7 +82,6 @@ describe('SvgIcon', () => {
     expect(SvgIcon).toHaveProperty('UNMUTE');
     expect(SvgIcon).toHaveProperty('VISIBLE');
     expect(SvgIcon).toHaveProperty('INVISIBLE');
-    expect(SvgIcon).toHaveProperty('PHOTO_ALBUM');
     expect(SvgIcon).toHaveProperty('MOKUGYO');
     expect(SvgIcon).toHaveProperty('DEEPSEEK');
     expect(SvgIcon).toHaveProperty('EXPAND');

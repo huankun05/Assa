@@ -1,0 +1,138 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 背景渐变：深蓝到紫蓝 -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a2a6c"/>
+      <stop offset="60%" style="stop-color:#252a7a"/>
+      <stop offset="100%" style="stop-color:#3a2a8a"/>
+    </linearGradient>
+
+    <!-- 月亮金色渐变 -->
+    <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff0a0"/>
+      <stop offset="50%" style="stop-color:#ffe060"/>
+      <stop offset="100%" style="stop-color:#f0c040"/>
+    </linearGradient>
+
+    <!-- 月亮光晕 -->
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffe060;stop-opacity:0.35"/>
+      <stop offset="60%" style="stop-color:#ffe060;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#ffe060;stop-opacity:0"/>
+    </radialGradient>
+
+    <!-- 海面渐变 -->
+    <linearGradient id="seaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d3a7a"/>
+      <stop offset="30%" style="stop-color:#104890"/>
+      <stop offset="60%" style="stop-color:#1558a8"/>
+      <stop offset="100%" style="stop-color:#1a68c0"/>
+    </linearGradient>
+
+    <!-- 沙滩渐变 -->
+    <linearGradient id="sandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0d8a0"/>
+      <stop offset="50%" style="stop-color:#e8c888"/>
+      <stop offset="100%" style="stop-color:#dcb870"/>
+    </linearGradient>
+
+    <!-- 浅海渐变 -->
+    <linearGradient id="shallowSea" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a78d0"/>
+      <stop offset="100%" style="stop-color:#4a98e8"/>
+    </linearGradient>
+
+    <!-- 星星发光 -->
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- 圆角裁剪 -->
+    <clipPath id="roundClip">
+      <rect x="0" y="0" width="1024" height="1024" rx="160" ry="160"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#roundClip)">
+    <!-- 天空背景 -->
+    <rect x="0" y="0" width="1024" height="520" fill="url(#skyGrad)"/>
+
+    <!-- 月亮光晕 -->
+    <ellipse cx="240" cy="200" rx="180" ry="180" fill="url(#moonGlow)"/>
+
+    <!-- 金色弯月（左上角） -->
+    <path d="M 300 100 A 130 130 0 1 0 300 360 A 100 100 0 1 1 300 100 Z" fill="url(#moonGrad)"/>
+
+    <!-- 星星（右上角） -->
+    <!-- 大四角星 -->
+    <path d="M 860 100 L 872 130 L 902 142 L 872 154 L 860 184 L 848 154 L 818 142 L 848 130 Z" fill="#ffe880" filter="url(#softGlow)"/>
+    <!-- 中四角星 -->
+    <path d="M 720 110 L 728 130 L 748 138 L 728 146 L 720 166 L 712 146 L 692 138 L 712 130 Z" fill="#ffe880" filter="url(#softGlow)"/>
+    <!-- 小四角星 -->
+    <path d="M 780 190 L 786 204 L 800 210 L 786 216 L 780 230 L 774 216 L 760 210 L 774 204 Z" fill="#ffe880" opacity="0.9" filter="url(#softGlow)"/>
+    <!-- 圆点星 -->
+    <circle cx="680" cy="180" r="4" fill="#ffe880" opacity="0.8"/>
+    <circle cx="810" cy="70" r="3" fill="#ffe880" opacity="0.7"/>
+    <circle cx="920" cy="200" r="3.5" fill="#ffe880" opacity="0.75"/>
+    <circle cx="840" cy="250" r="4" fill="#ffe880" opacity="0.6"/>
+
+    <!-- 紫色云层（中下部） -->
+    <ellipse cx="100" cy="420" rx="140" ry="70" fill="#5a4a9a" opacity="0.7"/>
+    <ellipse cx="200" cy="440" rx="120" ry="55" fill="#6a5aaa" opacity="0.6"/>
+    <ellipse cx="480" cy="430" rx="130" ry="60" fill="#5a4a9a" opacity="0.65"/>
+    <ellipse cx="580" cy="445" rx="110" ry="50" fill="#6a5aaa" opacity="0.55"/>
+    <ellipse cx="700" cy="435" rx="100" ry="45" fill="#5a4a9a" opacity="0.5"/>
+
+    <!-- 海面 -->
+    <rect x="0" y="440" width="1024" height="584" fill="url(#seaGrad)"/>
+
+    <!-- 海面波浪纹理（深色） -->
+    <path d="M 0 480 Q 200 470 400 480 T 800 480 T 1024 480" stroke="#0a2a60" stroke-width="6" fill="none" opacity="0.4"/>
+    <path d="M 0 530 Q 250 520 500 530 T 1000 530 T 1024 530" stroke="#0a2a60" stroke-width="5" fill="none" opacity="0.35"/>
+    <path d="M 0 590 Q 180 580 360 590 T 720 590 T 1024 590" stroke="#0a2a60" stroke-width="4" fill="none" opacity="0.3"/>
+
+    <!-- 月光倒影（破碎金色光斑） -->
+    <ellipse cx="250" cy="455" rx="70" ry="10" fill="#ffe060" opacity="0.7"/>
+    <ellipse cx="280" cy="475" rx="55" ry="8" fill="#ffe060" opacity="0.6"/>
+    <ellipse cx="230" cy="495" rx="50" ry="7" fill="#ffe060" opacity="0.55"/>
+    <ellipse cx="300" cy="515" rx="45" ry="6" fill="#ffe060" opacity="0.5"/>
+    <ellipse cx="260" cy="540" rx="40" ry="6" fill="#ffe060" opacity="0.45"/>
+    <ellipse cx="320" cy="565" rx="35" ry="5" fill="#ffe060" opacity="0.4"/>
+    <ellipse cx="280" cy="590" rx="30" ry="5" fill="#ffe060" opacity="0.35"/>
+    <ellipse cx="340" cy="615" rx="25" ry="4" fill="#ffe060" opacity="0.3"/>
+    <ellipse cx="300" cy="640" rx="22" ry="4" fill="#ffe060" opacity="0.25"/>
+    <ellipse cx="350" cy="665" rx="18" ry="3" fill="#ffe060" opacity="0.2"/>
+
+    <!-- 沙滩（左下角） -->
+    <path d="M 0 560 L 0 1024 L 1024 1024 L 1024 920 Q 800 820 600 780 Q 400 740 200 700 Q 100 660 0 560 Z" fill="url(#sandGrad)"/>
+
+    <!-- 沙滩阴影层次 -->
+    <path d="M 0 700 Q 200 760 400 800 Q 600 840 800 890 L 1024 950 L 1024 1024 L 0 1024 Z" fill="#d4a860" opacity="0.3"/>
+
+    <!-- 浅海区域（沙滩边缘） -->
+    <path d="M 0 560 Q 100 660 200 700 Q 400 740 600 780 Q 800 820 1024 920 L 1024 750 Q 800 700 600 670 Q 400 640 200 610 Q 100 590 0 560 Z" fill="url(#shallowSea)" opacity="0.8"/>
+
+    <!-- 白色浪花（沿着沙滩曲线） -->
+    <path d="M 0 560 Q 100 660 200 700 Q 400 740 600 780 Q 800 820 1024 920" stroke="#ffffff" stroke-width="12" fill="none" opacity="0.9" stroke-linecap="round"/>
+    <path d="M 50 600 Q 150 680 280 715 Q 450 755 620 790 Q 780 825 950 880" stroke="#ffffff" stroke-width="8" fill="none" opacity="0.7" stroke-linecap="round"/>
+    <path d="M 120 650 Q 220 710 350 740 Q 500 775 680 810" stroke="#ffffff" stroke-width="6" fill="none" opacity="0.5" stroke-linecap="round"/>
+
+    <!-- 浪花泡沫点 -->
+    <circle cx="180" cy="680" r="5" fill="#ffffff" opacity="0.6"/>
+    <circle cx="320" cy="725" r="4" fill="#ffffff" opacity="0.5"/>
+    <circle cx="480" cy="760" r="5" fill="#ffffff" opacity="0.55"/>
+    <circle cx="620" cy="795" r="4" fill="#ffffff" opacity="0.5"/>
+    <circle cx="750" cy="825" r="3.5" fill="#ffffff" opacity="0.45"/>
+    <circle cx="250" cy="705" r="3" fill="#ffffff" opacity="0.4"/>
+    <circle cx="550" cy="775" r="3" fill="#ffffff" opacity="0.4"/>
+    <circle cx="850" cy="860" r="4" fill="#ffffff" opacity="0.4"/>
+
+    <!-- 浅海小波 -->
+    <path d="M 100 620 Q 200 610 300 620 T 500 620" stroke="#ffffff" stroke-width="3" fill="none" opacity="0.3"/>
+    <path d="M 400 680 Q 500 672 600 680 T 800 680" stroke="#ffffff" stroke-width="3" fill="none" opacity="0.25"/>
+  </g>
+</svg>

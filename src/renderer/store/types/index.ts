@@ -41,7 +41,7 @@ export type AnimationSpeed = 'slow' | 'medium' | 'fast';
 export type IslandShapeMode = 'notch' | 'pill';
 
 /** Hover 状态下的子标签页类型 */
-export type HoverTab = 'time' | 'lyrics' | 'weather' | 'xiyue' | 'pomodoro' | 'expand' | `custom:${string}`;
+export type HoverTab = 'time' | 'lyrics' | 'weather' | 'assa' | 'pomodoro' | 'expand' | `custom:${string}`;
 
 /** 自定义页面定义（原则 A 后半：用户自主创建的内嵌 URL / 空白组件容器页） */
 export interface CustomPageDef {
@@ -56,7 +56,7 @@ export interface CustomPageDef {
 }
 
 /** 控制中心（time 页）按钮池按钮标识 */
-export type ControlCenterButtonId = 'hide' | 'quit' | 'brightness' | 'volume' | 'screenshot' | 'taskManager' | 'toolbox' | 'calculator' | 'translate' | 'managePages' | 'settings';
+export type ControlCenterButtonId = 'hide' | 'quit' | 'brightness' | 'volume' | 'screenshot' | 'taskManager' | 'toolbox' | 'calculator' | 'translate' | 'fileSearch' | 'managePages' | 'settings';
 
 /** 控制中心按钮池配置项（顺序 + 显隐） */
 export interface ControlCenterButtonConfig {
@@ -67,13 +67,13 @@ export interface ControlCenterButtonConfig {
 }
 
 /** Expanded 状态下的子标签页类型（时间仪表板 overview 与音乐总览 song 已移除） */
-export type ExpandTab = 'hover' | 'tools' | 'translation' | 'performanceMonitor';
+export type ExpandTab = 'hover' | 'overview' | 'tools' | 'translation' | 'performanceMonitor';
 
 /** CLI 活动提供方 */
 export type CliProvider = 'claude' | 'codex';
 
 /** MaxExpand 状态下的子标签页类型 */
-export type MaxExpandTab = 'aiChat' | 'todo' | 'urlFavorites' | 'localFileSearch' | 'clipboardHistory' | 'album' | 'mail' | 'memo' | 'countdown' | 'alarm' | 'toolbox' | 'miniGame' | 'stock' | 'cli' | 'settings';
+export type MaxExpandTab = 'aiChat' | 'todo' | 'urlFavorites' | 'localFileSearch' | 'clipboardHistory' | 'mail' | 'memo' | 'countdown' | 'alarm' | 'toolbox' | 'cli' | 'settings';
 
 /** 歌词显示模式 */
 export type LrcMode = 'off' | 'info' | 'lrc';
@@ -112,7 +112,7 @@ export interface MediaInfo {
   duration_ms: number;
 }
 
-/** NowPlaying 原始数据结构（来自 @xiyue/windows-smtc-helper SmtcMonitor） */
+/** NowPlaying 原始数据结构（来自 @assa/windows-smtc-helper SmtcMonitor） */
 export type NowPlayingInfo = {
   title: string;
   artist: string;
@@ -180,6 +180,10 @@ export interface WeatherData {
   uvIndex: number;
   forecast: [DayForecast, DayForecast];
   iconCode: number;
+  /** 今日日出本地时间 ISO（部分数据源提供，可选） */
+  sunrise?: string;
+  /** 今日日落本地时间 ISO（部分数据源提供，可选） */
+  sunset?: string;
 }
 
 /** 计时器状态类型 */
@@ -368,6 +372,8 @@ export interface IslandSlice {
   hoverTab: HoverTab;
   customPages: CustomPageDef[];
   controlCenterButtons: ControlCenterButtonConfig[];
+  /** 独立窗顶栏 Tab 显隐与顺序 */
+  standaloneTabLayout: Array<{ id: string; visible: boolean }>;
   expandTab: ExpandTab;
   maxExpandTab: MaxExpandTab;
   cliProvider: CliProvider;
@@ -402,6 +408,7 @@ export interface IslandSlice {
   updateCustomPage: (id: string, patch: Partial<CustomPageDef>) => void;
   setCustomPages: (defs: CustomPageDef[]) => void;
   setControlCenterButtons: (config: ControlCenterButtonConfig[]) => void;
+  setStandaloneTabLayout: (layout: Array<{ id: string; visible: boolean }>) => void;
   setExpandTab: (tab: ExpandTab) => void;
   setMaxExpandTab: (tab: MaxExpandTab) => void;
   setCliProvider: (provider: CliProvider) => void;

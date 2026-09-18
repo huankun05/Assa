@@ -28,7 +28,7 @@ import { useRef, useState, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import useIslandStore from '../../../store/isLandStore';
 import type { AgentPhase } from './config/agentContentConfig';
-import type { AgentMood } from '../hover/pages/xiyue/config/xiyueMoodConfig';
+import type { AgentMood } from '../hover/pages/assa/config/assaMoodConfig';
 import type { AuthPending } from './types/AuthPending';
 import { useAgentAutoScroll } from './hooks/useAgentAutoScroll';
 import { useAgentDisplayState } from './hooks/useAgentDisplayState';

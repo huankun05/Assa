@@ -41,17 +41,15 @@ export function SongWidget(): ReactElement {
   const [showLyrics, setShowLyrics] = useState(false);
   const [isMuted, setIsMuted] = useState<boolean | null>(null);
   const [mutePending, setMutePending] = useState(false);
-  const {
-    mediaInfo,
-    coverImage,
-    isPlaying,
-    isMusicPlaying,
-    dominantColor,
-    syncedLyrics,
-    lyricsLoading,
-    currentPositionMs,
-    setExpandTab,
-  } = useIslandStore();
+  const mediaInfo = useIslandStore((s) => s.mediaInfo);
+  const coverImage = useIslandStore((s) => s.coverImage);
+  const isPlaying = useIslandStore((s) => s.isPlaying);
+  const isMusicPlaying = useIslandStore((s) => s.isMusicPlaying);
+  const dominantColor = useIslandStore((s) => s.dominantColor);
+  const syncedLyrics = useIslandStore((s) => s.syncedLyrics);
+  const lyricsLoading = useIslandStore((s) => s.lyricsLoading);
+  const currentPositionMs = useIslandStore((s) => s.currentPositionMs);
+  const setExpandTab = useIslandStore((s) => s.setExpandTab);
   const { lyricsEnabled, karaokeEnabled } = useLyricsSettings();
   const { currentIdx, hasLyrics, isIntro, currentLine, currentText, hasSyllables } = useCurrentLyric(
     syncedLyrics,

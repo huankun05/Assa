@@ -57,8 +57,8 @@ function loadWindowsScreenshotHelper(): WindowsScreenshotHelper | null {
   if (cachedHelper !== undefined) return cachedHelper;
 
   const candidates = [
-    '@xiyue/windows-screenshot-helper',
-    join(process.cwd(), 'plugins', 'xiyue-windows-screenshot-helper'),
+    '@assa/windows-screenshot-helper',
+    join(process.cwd(), 'plugins', 'assa-windows-screenshot-helper'),
   ];
 
   const errors: string[] = [];

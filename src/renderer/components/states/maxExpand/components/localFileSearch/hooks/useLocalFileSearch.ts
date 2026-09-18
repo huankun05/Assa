@@ -52,7 +52,20 @@ export function useLocalFileSearch(): UseLocalFileSearchReturn {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<LocalFileSearchItem[]>([]);
   const [iconMap, setIconMap] = useState<Record<string, string>>({});
+  const [everythingAvailable, setEverythingAvailable] = useState(false);
+  const [searchEngine, setSearchEngine] = useState<'everything' | 'directory' | null>(null);
   const iconLoadingPathsRef = useRef<Set<string>>(new Set());
+
+  /** 探测 Everything CLI */
+  useEffect(() => {
+    let cancelled = false;
+    window.api?.everythingAvailable?.().then((ok) => {
+      if (!cancelled) setEverythingAvailable(ok === true);
+    }).catch(() => {
+      if (!cancelled) setEverythingAvailable(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   /** 启动时从持久化加载搜索根目录 */
   useEffect(() => {
@@ -106,12 +119,13 @@ export function useLocalFileSearch(): UseLocalFileSearchReturn {
     }).catch(() => {});
   };
 
-  /** 执行搜索 */
+  /** 执行搜索：有 Everything 时可只输关键词全盘搜；否则需目录 */
   const handleSearch = (): void => {
     const trimmedRootDir = rootDir.trim();
     const trimmedKeyword = keyword.trim();
-    if (!trimmedRootDir || !trimmedKeyword) {
+    if (!trimmedKeyword || (!everythingAvailable && !trimmedRootDir)) {
       setResults([]);
+      setSearchEngine(null);
       return;
     }
     const parsedExtensions = parseCsvValues(extensionsInput);
@@ -128,10 +142,15 @@ export function useLocalFileSearch(): UseLocalFileSearchReturn {
       matchScope,
       extensions: parsedExtensions,
       excludeDirs: parsedExcludeDirs,
+      preferEverything: true,
     }).then((items) => {
-      setResults(Array.isArray(items) ? items : []);
+      const list = Array.isArray(items) ? items : [];
+      setResults(list);
+      // 主进程优先 Everything；有结果且无目录限制时按引擎推断
+      setSearchEngine(everythingAvailable && list.length > 0 ? 'everything' : 'directory');
     }).catch(() => {
       setResults([]);
+      setSearchEngine(null);
     }).finally(() => {
       setLoading(false);
     });
@@ -160,6 +179,7 @@ export function useLocalFileSearch(): UseLocalFileSearchReturn {
     excludeDirsInput, setExcludeDirsInput,
     includeDirectories, setIncludeDirectories,
     loading, results, iconMap, countText,
+    everythingAvailable, searchEngine,
     handlePickRootDir, handleSearch,
   };
 }

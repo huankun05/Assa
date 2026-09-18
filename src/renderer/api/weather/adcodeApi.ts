@@ -27,9 +27,59 @@
 import { loadNetworkConfig } from '../../store/utils/storage';
 import { logger } from '../../utils/logger';
 import i18n from '../../i18n';
-import type { DistrictQueryParams, DistrictItem, DistrictResolvedLocation, DistrictQueryResult } from './types/District';
+import type {
+  DistrictQueryParams,
+  DistrictItem,
+  DistrictResolvedLocation,
+  DistrictQueryResult,
+  DistrictCascadeOption,
+} from './types/District';
 
-export type { DistrictQueryParams, DistrictItem, DistrictResolvedLocation, DistrictQueryResult };
+export type {
+  DistrictQueryParams,
+  DistrictItem,
+  DistrictResolvedLocation,
+  DistrictQueryResult,
+  DistrictCascadeOption,
+};
+
+/** 中国大陆省级 adcode 固定表（接口无法一键列出全部省，级联第一级用此表） */
+export const CHINA_PROVINCES: DistrictCascadeOption[] = [
+  { adcode: '110000', name: '北京市' },
+  { adcode: '120000', name: '天津市' },
+  { adcode: '130000', name: '河北省' },
+  { adcode: '140000', name: '山西省' },
+  { adcode: '150000', name: '内蒙古自治区' },
+  { adcode: '210000', name: '辽宁省' },
+  { adcode: '220000', name: '吉林省' },
+  { adcode: '230000', name: '黑龙江省' },
+  { adcode: '310000', name: '上海市' },
+  { adcode: '320000', name: '江苏省' },
+  { adcode: '330000', name: '浙江省' },
+  { adcode: '340000', name: '安徽省' },
+  { adcode: '350000', name: '福建省' },
+  { adcode: '360000', name: '江西省' },
+  { adcode: '370000', name: '山东省' },
+  { adcode: '410000', name: '河南省' },
+  { adcode: '420000', name: '湖北省' },
+  { adcode: '430000', name: '湖南省' },
+  { adcode: '440000', name: '广东省' },
+  { adcode: '450000', name: '广西壮族自治区' },
+  { adcode: '460000', name: '海南省' },
+  { adcode: '500000', name: '重庆市' },
+  { adcode: '510000', name: '四川省' },
+  { adcode: '520000', name: '贵州省' },
+  { adcode: '530000', name: '云南省' },
+  { adcode: '540000', name: '西藏自治区' },
+  { adcode: '610000', name: '陕西省' },
+  { adcode: '620000', name: '甘肃省' },
+  { adcode: '630000', name: '青海省' },
+  { adcode: '640000', name: '宁夏回族自治区' },
+  { adcode: '650000', name: '新疆维吾尔自治区' },
+  { adcode: '710000', name: '台湾省' },
+  { adcode: '810000', name: '香港特别行政区' },
+  { adcode: '820000', name: '澳门特别行政区' },
+];
 
 function toFiniteNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -143,41 +193,164 @@ export async function fetchDistrictByAdcode(params: DistrictQueryParams): Promis
   return parsed;
 }
 
+/** 层级优先级：区县 > 市 > 省 > 街道（更精确的行政区优先） */
+function levelRank(level?: string): number {
+  if (level === 'district') return 3;
+  if (level === 'city') return 2;
+  if (level === 'province') return 1;
+  if (level === 'street') return 0;
+  return 1.5;
+}
+
+function buildDistrictCandidate(item: DistrictItem, keyword: string): DistrictSearchCandidate | null {
+  const coords = resolveDistrictCoordinates(item);
+  if (!coords) return null;
+  const name = typeof item.name === 'string' ? item.name : keyword;
+  const province = typeof item.province === 'string' ? item.province : '';
+  const district = typeof item.district === 'string' ? item.district : '';
+  const city = typeof item.city === 'string' ? item.city : '';
+  const parent = province || city || district;
+  const label = parent && parent !== name ? `${name} · ${parent}` : name;
+  return {
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+    city: name,
+    adcode: typeof item.adcode === 'string' ? item.adcode : undefined,
+    level: typeof item.level === 'string' ? item.level : undefined,
+    province: province || undefined,
+    district: district || undefined,
+    label,
+  };
+}
+
+function scoreCandidate(candidate: DistrictSearchCandidate, keyword: string): number {
+  const name = candidate.city.toLowerCase();
+  const normalized = keyword.toLowerCase();
+  let score = name === normalized ? 100 : (name.includes(normalized) ? 50 : 10);
+  score += levelRank(candidate.level) * 5;
+  return score;
+}
+
 /**
- * 通过城市关键字查询并解析经纬度
+ * 关键字搜索行政区域候选（支持区级），按精确度排序
+ */
+export async function searchDistrictLocations(keyword: string): Promise<DistrictSearchCandidate[]> {
+  const text = keyword.trim();
+  if (!text) return [];
+
+  const result = await fetchDistrictByAdcode({ keyword: text, subdistrict: 0, page: 1, pageSize: 20 });
+  const list = extractDistrictItems(result);
+  const candidates = list
+    .map((item) => buildDistrictCandidate(item, text))
+    .filter((value): value is DistrictSearchCandidate => Boolean(value))
+    .map((candidate) => ({ candidate, score: scoreCandidate(candidate, text) }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.candidate);
+
+  // 同名去重（保留分数更高的一条已由排序保证）
+  const seen = new Set<string>();
+  const unique: DistrictSearchCandidate[] = [];
+  for (const c of candidates) {
+    const key = `${c.city}|${c.adcode ?? `${c.latitude},${c.longitude}`}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(c);
+  }
+  return unique;
+}
+
+/**
+ * 通过城市/区县关键字查询并解析经纬度
+ * 大城市请尽量输入「海淀区 / 朝阳区」等区名，精度更高
  */
 export async function resolveDistrictLocationByKeyword(keyword: string): Promise<DistrictResolvedLocation> {
   const text = keyword.trim();
   if (!text) throw new Error(i18n.t('settings.weather.adcode.emptyKeyword', { defaultValue: '请输入城市名称' }));
 
-  const result = await fetchDistrictByAdcode({ keyword: text, subdistrict: 0, page: 1, pageSize: 10 });
+  const result = await fetchDistrictByAdcode({ keyword: text, subdistrict: 0, page: 1, pageSize: 20 });
   const list = extractDistrictItems(result);
   if (!list.length) {
     throw new Error(i18n.t('settings.weather.adcode.notFound', { defaultValue: '未查询到该城市，请尝试更完整名称' }));
   }
 
-  const normalized = text.toLowerCase();
-  const scored = list
-    .map((item) => {
-      const name = typeof item.name === 'string' ? item.name : '';
-      const coords = resolveDistrictCoordinates(item);
-      if (!coords) return null;
-      const score = name.toLowerCase() === normalized ? 2 : (name.includes(text) ? 1 : 0);
-      return { item, coords, score };
-    })
-    .filter((value): value is { item: DistrictItem; coords: { latitude: number; longitude: number }; score: number } => Boolean(value))
-    .sort((a, b) => b.score - a.score);
-
-  if (!scored.length) {
+  const candidates = list
+    .map((item) => buildDistrictCandidate(item, text))
+    .filter((value): value is DistrictSearchCandidate => Boolean(value));
+  if (!candidates.length) {
     throw new Error(i18n.t('settings.weather.adcode.noCoords', { defaultValue: '查询结果缺少经纬度信息' }));
   }
 
-  const best = scored[0];
-  const name = typeof best.item.name === 'string' ? best.item.name : text;
+  const best = candidates
+    .map((candidate) => ({ candidate, score: scoreCandidate(candidate, text) }))
+    .sort((a, b) => b.score - a.score)[0].candidate;
+
   return {
-    latitude: best.coords.latitude,
-    longitude: best.coords.longitude,
-    city: name,
-    adcode: typeof best.item.adcode === 'string' ? best.item.adcode : undefined,
+    latitude: best.latitude,
+    longitude: best.longitude,
+    city: best.city,
+    adcode: best.adcode,
+    level: best.level,
+    province: best.province,
+    district: best.district,
+  };
+}
+
+/**
+ * 按 adcode 拉取下一级行政区（用于省市县级联）
+ * @param adcode - 父级编码
+ * @param subdistrict - 子级深度 1 即可
+ */
+export async function fetchDistrictChildrenByAdcode(
+  adcode: string,
+  subdistrict: 1 | 2 = 1,
+): Promise<DistrictCascadeOption[]> {
+  const code = adcode.trim();
+  if (!code) return [];
+  const result = await fetchDistrictByAdcode({ adcode: code, subdistrict, page: 1, pageSize: 100 });
+  const list = extractDistrictItems(result);
+  // 去掉与父级同码的自身节点
+  return list
+    .filter((item) => {
+      const itemCode = typeof item.adcode === 'string' ? item.adcode : '';
+      const name = typeof item.name === 'string' ? item.name : '';
+      if (!itemCode || !name) return false;
+      if (itemCode === code) return false;
+      const level = typeof item.level === 'string' ? item.level : '';
+      return level === 'city' || level === 'district' || level === 'province';
+    })
+    .map((item) => ({
+      adcode: typeof item.adcode === 'string' ? item.adcode : '',
+      name: typeof item.name === 'string' ? item.name : '',
+      level: typeof item.level === 'string' ? item.level : undefined,
+    }))
+    .filter((item) => item.adcode && item.name)
+    .sort((a, b) => a.adcode.localeCompare(b.adcode));
+}
+
+/**
+ * 按 adcode 精确定位（级联选择后保存用，避免同名区县歧义）
+ */
+export async function resolveLocationByAdcode(adcode: string): Promise<DistrictResolvedLocation> {
+  const code = adcode.trim();
+  if (!code) throw new Error(i18n.t('settings.weather.adcode.emptyKeyword', { defaultValue: '请输入城市名称' }));
+
+  const result = await fetchDistrictByAdcode({ adcode: code, subdistrict: 0, page: 1, pageSize: 5 });
+  const list = extractDistrictItems(result);
+  const exact = list.find((item) => (typeof item.adcode === 'string' ? item.adcode : '') === code) ?? list[0];
+  if (!exact) {
+    throw new Error(i18n.t('settings.weather.adcode.notFound', { defaultValue: '未查询到该城市，请尝试更完整名称' }));
+  }
+  const candidate = buildDistrictCandidate(exact, typeof exact.name === 'string' ? exact.name : code);
+  if (!candidate) {
+    throw new Error(i18n.t('settings.weather.adcode.noCoords', { defaultValue: '查询结果缺少经纬度信息' }));
+  }
+  return {
+    latitude: candidate.latitude,
+    longitude: candidate.longitude,
+    city: candidate.city,
+    adcode: candidate.adcode,
+    level: candidate.level,
+    province: candidate.province,
+    district: candidate.district,
   };
 }

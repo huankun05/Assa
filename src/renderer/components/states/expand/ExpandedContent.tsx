@@ -24,7 +24,7 @@
  * @author 鸡哥
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useIslandStore from '../../../store/slices';
 import type { ExpandTab, MaxExpandTab } from '../../../store/types';
@@ -39,13 +39,21 @@ import { useExpandTabAnimation } from './hooks/useExpandTabAnimation';
 import { useExpandWheelNav } from './hooks/useExpandWheelNav';
 import { getNavLabel } from './utils/getNavLabel';
 
+/** 负一屏（总览）按需加载：未切到该 Tab 不拉齐全部 widget */
+const OverviewTab = lazy(() => import('./components/OverviewTab').then((m) => ({ default: m.OverviewTab })));
+
 /**
  * Expanded 状态内容组件
  * @description 扩展状态下的完整功能面板，底部正中间导航点切换 Tab
  */
 export function ExpandedContent(): React.ReactElement {
   const { t } = useTranslation();
-  const { expandTab, setExpandTab, setHover, setMaxExpand, maxExpandTab, setMaxExpandTab } = useIslandStore();
+  const expandTab = useIslandStore((s) => s.expandTab);
+  const maxExpandTab = useIslandStore((s) => s.maxExpandTab);
+  const setExpandTab = useIslandStore((s) => s.setExpandTab);
+  const setHover = useIslandStore((s) => s.setHover);
+  const setMaxExpand = useIslandStore((s) => s.setMaxExpand);
+  const setMaxExpandTab = useIslandStore((s) => s.setMaxExpandTab);
   const contentRef = useRef<HTMLDivElement>(null);
   const expandTabRef = useRef(expandTab);
   expandTabRef.current = expandTab;
@@ -115,6 +123,11 @@ export function ExpandedContent(): React.ReactElement {
       {/* Tab 内容区域 */}
       <div className="expand-tab-content" onClick={(e) => e.stopPropagation()}>
         <div className={`expand-tab-transition${tabAnimation ? ` expand-tab-slide-${slideDir}` : ''}`} key={expandTab}>
+          {expandTab === 'overview' && (
+            <Suspense fallback={null}>
+              <OverviewTab />
+            </Suspense>
+          )}
           {expandTab === 'tools' && <ToolsTab />}
           {expandTab === 'translation' && <TranslationTab />}
           {expandTab === 'performanceMonitor' && <PerformanceMonitorTab />}

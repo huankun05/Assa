@@ -1,5 +1,5 @@
 {
   "deprecated": true,
-  "replacedBy": "xiyue_tools.json",
-  "note": "本文件为设计期中文工具表（16 项），从未被运行时加载。现行单一事实源为 xiyue_tools.json（19 项，与主进程终审 / 侧车 policy 同源）。完整旧内容见 git 历史。"
+  "replacedBy": "assa_tools.json",
+  "note": "本文件为设计期中文工具表（16 项），从未被运行时加载。现行单一事实源为 assa_tools.json（19 项，与主进程终审 / 侧车 policy 同源）。完整旧内容见 git 历史。"
 }

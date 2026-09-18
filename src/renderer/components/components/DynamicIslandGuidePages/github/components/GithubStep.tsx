@@ -46,7 +46,7 @@ export function GithubStep({ onNext, onPrev }: GithubStepProps): ReactElement {
     <div className="guide-step">
       <div className="guide-step-header">
         <h2>{t('guide.github.title', { defaultValue: '开源信息' })}</h2>
-        <p>{t('guide.github.subtitle', { defaultValue: '汐月是一个开源项目' })}</p>
+        <p>{t('guide.github.subtitle', { defaultValue: 'Assa 是一个开源项目' })}</p>
       </div>
       <div className="guide-github-content">
         <div className="guide-github-links">

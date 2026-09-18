@@ -1529,6 +1529,73 @@
   font-weight: 400;
 }
 
+/* 天气自定义位置：区级搜索候选下拉 */
+.settings-weather-district-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid rgba(120, 140, 170, 0.35);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.settings-weather-district-suggestion-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-weather-district-suggestion-item:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.settings-weather-district-suggestion-item.is-muted {
+  cursor: default;
+  color: rgba(120, 140, 170, 0.9);
+}
+
+.settings-weather-district-suggestion-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.settings-weather-district-suggestion-meta {
+  font-size: 11px;
+  opacity: 0.65;
+  line-height: 1.2;
+}
+
+[data-theme='dark'] .settings-weather-district-suggestions {
+  background: #1e2533;
+  border-color: rgba(140, 160, 190, 0.28);
+}
+
+.settings-weather-cascade-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.settings-weather-cascade-row > .settings-field {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
 .settings-field-input {
   background: rgba(var(--color-text-rgb), 0.06);
   border: 1px solid rgba(var(--color-text-rgb), 0.1);
@@ -7034,13 +7101,59 @@ button.settings-user-image-translation-image-wrap:hover {
   border-radius: 4px;
 }
 
-.ff-meta-list {
+/* 格式工厂元信息列表（原复用 album-meta-*，相册下线后改为 ff 自有类 + 兼容别名） */
+.ff-meta-list,
+.album-meta-list {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
   padding: 2px 0;
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--color-text-rgb), 0.12) transparent;
+}
+
+.ff-meta-list::-webkit-scrollbar,
+.album-meta-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ff-meta-list::-webkit-scrollbar-thumb,
+.album-meta-list::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-text-rgb), 0.12);
+  border-radius: 2px;
+}
+
+.ff-meta-list::-webkit-scrollbar-thumb:hover,
+.album-meta-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-text-rgb), 0.18);
+}
+
+.album-meta-row,
+.ff-meta-row {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+
+.album-meta-label,
+.ff-meta-label {
+  font-size: 11px;
+  color: rgba(var(--color-text-rgb), 0.56);
+  white-space: nowrap;
+}
+
+.album-meta-value,
+.ff-meta-value {
+  font-size: 11px;
+  color: rgba(var(--color-text-rgb), 0.88);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .ff-meta-list::-webkit-scrollbar {

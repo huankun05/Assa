@@ -56,6 +56,8 @@ interface OpenMeteoResponse {
     wind_speed_10m_max?: number[];
     uv_index_max?: number[];
     precipitation_probability_max?: number[];
+    sunrise?: string[];
+    sunset?: string[];
   };
 }
 
@@ -94,6 +96,8 @@ interface QWeatherDailyItem {
   humidity?: string;
   precip?: string;
   uvIndex?: string;
+  sunrise?: string;
+  sunset?: string;
 }
 
 interface QWeatherDailyResponse {
@@ -156,8 +160,9 @@ async function resolveWeatherAlertLocation(): Promise<WeatherAlertLocation> {
     }
   };
 
+  // 自定义优先：禁止 IP 请求，仅自定义 → 缓存；避免 VPN 时误定位与多余网络开销
   const sourceOrder = locationConfig.priority === 'custom'
-    ? ['custom', 'ip', 'cached'] as const
+    ? ['custom', 'cached'] as const
     : ['ip', 'custom', 'cached'] as const;
 
   const resolvedByOrder = await sourceOrder.reduce<Promise<WeatherAlertLocation | null>>(
@@ -479,6 +484,8 @@ function mapQWeatherDailyToData(data: QWeatherDailyResponse): WeatherData {
     windSpeed: currentWind,
     uvIndex: currentUv,
     iconCode: mapUapiIconToWmoCode(currentIcon, currentDesc),
+    sunrise: today.sunrise,
+    sunset: today.sunset,
     forecast: [
       makeForecast(daily[1]),
       makeForecast(daily[2]),
@@ -523,6 +530,8 @@ function mapOpenMeteoToData(data: OpenMeteoResponse): WeatherData {
     windSpeed,
     uvIndex: Math.round(uvIndexMax[0] ?? 0),
     iconCode: weatherCode,
+    sunrise: daily.sunrise?.[0],
+    sunset: daily.sunset?.[0],
     forecast: [
       makeForecast(1),
       makeForecast(2),
@@ -540,7 +549,7 @@ export async function fetchWeather(config: WeatherApiConfig): Promise<WeatherDat
     latitude: String(config.latitude),
     longitude: String(config.longitude),
     current: 'temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m',
-    daily: 'temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max,uv_index_max,precipitation_probability_max',
+    daily: 'temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max,uv_index_max,precipitation_probability_max,sunrise,sunset',
     timezone: 'auto',
     forecast_days: '3',
   });

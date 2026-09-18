@@ -25,7 +25,8 @@
  * @author 鸡哥
  */
 
-import { app, BrowserWindow, globalShortcut } from 'electron';
+import { BrowserWindow, globalShortcut } from 'electron';
+import { quitAppFast } from './appRestart';
 
 interface CreateHotkeyServiceOptions {
   getMainWindow: () => BrowserWindow | null;
@@ -268,7 +269,7 @@ export function createHotkeyService(options: CreateHotkeyServiceOptions): Hotkey
 
     try {
       const success = globalShortcut.register(accelerator, () => {
-        app.quit();
+        quitAppFast();
       });
 
       if (success) {

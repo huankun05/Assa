@@ -55,10 +55,23 @@ export function useIslandTimeStrings(options: UseIslandTimeStringsOptions): Isla
   useEffect(() => {
     const update = (): void => {
       const now = new Date();
-      setTimeStr(formatTime(now));
-      setDayStr(formatWeekday(now));
-      setFullTimeStr(formatFullTime(now));
-      setLunarStr(getLunarDate(now));
+      /** 仅值变化时 setState，避免每秒 4 次无条件更新 */
+      setTimeStr((prev) => {
+        const next = formatTime(now);
+        return prev === next ? prev : next;
+      });
+      setDayStr((prev) => {
+        const next = formatWeekday(now);
+        return prev === next ? prev : next;
+      });
+      setFullTimeStr((prev) => {
+        const next = formatFullTime(now);
+        return prev === next ? prev : next;
+      });
+      setLunarStr((prev) => {
+        const next = getLunarDate(now);
+        return prev === next ? prev : next;
+      });
     };
 
     update();

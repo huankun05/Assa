@@ -68,12 +68,7 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
       item('theme', '主题外观', '深色 / 浅色 / 跟随系统，壁纸与透明度', { tab: 'app', appPage: 'theme' }, SETTINGS_TAB_ICONS.theme),
       item('animation', '软件动画', '弹性、速度与启动画面', { tab: 'app', appPage: 'animation' }, SETTINGS_TAB_ICONS.animation),
       item('position', '位置校准', '多显示器与岛位置微调', { tab: 'app', appPage: 'position' }, SETTINGS_TAB_ICONS.position),
-      item('album', '相册配置', '总览相册轮播与点击行为', { tab: 'app', appPage: 'album' }, SETTINGS_TAB_ICONS.album),
-      item('layout-preview', '布局预览', 'Expand 总览控件与时钟样式', { tab: 'app', appPage: 'layout-preview' }, SETTINGS_TAB_ICONS['layout-preview']),
-      item('expand-layout', '展开布局', '展开态页面顺序与可见性', { tab: 'app', appPage: 'expand-layout' }, SETTINGS_TAB_ICONS['expand-layout']),
-      item('maxexpand-layout', '全展开布局', '最大展开态页面顺序与可见性', { tab: 'app', appPage: 'maxexpand-layout' }, SETTINGS_TAB_ICONS['maxexpand-layout']),
-      item('control-center', '控制中心按钮', 'Hover 时间页按钮排序', { tab: 'app', appPage: 'control-center' }, SETTINGS_TAB_ICONS['control-center']),
-      item('pluginMarket', '壁纸市场', '浏览与贡献壁纸', { tab: 'pluginMarket' }, SETTINGS_TAB_ICONS.pluginMarket),
+      item('pluginMarket', '壁纸', '预设、导入、我的壁纸与社区壁纸', { tab: 'pluginMarket' }, SETTINGS_TAB_ICONS.pluginMarket),
     ],
   },
   {

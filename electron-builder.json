@@ -1,7 +1,7 @@
 {
-  "appId": "com.xiyue.app",
-  "productName": "汐月",
-  "copyright": "© 2026 汐月",
+  "appId": "com.assa.app",
+  "productName": "Assa",
+  "copyright": "© 2026 Assa",
   "directories": {
     "buildResources": "resources",
     "output": "dist"
@@ -11,8 +11,8 @@
     "!out/renderer/.vite/**"
   ],
   "asarUnpack": [
-    "node_modules/@xiyue/**/src/bin/Release/**/*",
-    "node_modules/@xiyue/**/*.node",
+    "node_modules/@assa/**/src/bin/Release/**/*",
+    "node_modules/@assa/**/*.node",
     "node_modules/koffi/**/*"
   ],
   "extraResources": [
@@ -68,12 +68,12 @@
       "filter": ["**/*"]
     },
     {
-      "from": "node_modules/@xiyue/windows-brightness-helper/src/bin/Release/net10.0/win-x64",
+      "from": "node_modules/@assa/windows-brightness-helper/src/bin/Release/net10.0/win-x64",
       "to": "helpers/brightness",
       "filter": ["**/*"]
     },
     {
-      "from": "node_modules/@xiyue/windows-volume-helper/src/bin/Release/net10.0/win-x64",
+      "from": "node_modules/@assa/windows-volume-helper/src/bin/Release/net10.0/win-x64",
       "to": "helpers/volume",
       "filter": ["**/*"]
     },
@@ -88,7 +88,7 @@
     }
   ],
   "win": {
-    "icon": "resources/icon/xiyue_256x256.ico",
+    "icon": "resources/icon/assa_256x256.ico",
     "target": [
       {
         "target": "nsis",

@@ -54,14 +54,14 @@ const closeBrokenB = `ps.on('close', (code) => {
             const candidates = [];
             try { candidates.push(path.join(fs.realpathSync(base), 'data', 'soft-restart.flag')); } catch (e) { /* ignore */ }
             try { candidates.push(path.join(base, 'data', 'soft-restart.flag')); } catch (e) { /* ignore */ }
-            try { candidates.push(path.join(require('os').tmpdir(), 'xiyue-soft-restart.flag')); } catch (e) { /* ignore */ }
+            try { candidates.push(path.join(require('os').tmpdir(), 'assa-soft-restart.flag')); } catch (e) { /* ignore */ }
             const hit = candidates.find((flag) => {
                 try { return flag && fs.existsSync(flag); } catch (e) { return false; }
             });
             if (hit) {
                 try { fs.unlinkSync(hit); } catch (e) { /* ignore */ }
                 try {
-                    const log = path.join(require('os').tmpdir(), 'xiyue-dev-restart.log');
+                    const log = path.join(require('os').tmpdir(), 'assa-dev-restart.log');
                     fs.appendFileSync(log, '[patch] soft-restart flag hit, relaunch electron\\n');
                 } catch (e) { /* ignore */ }
                 setTimeout(() => {
@@ -80,14 +80,14 @@ const closeNew = `ps.on('close', (code) => {
             const candidates = [];
             try { candidates.push(path.join(fs.realpathSync(base), 'data', 'soft-restart.flag')); } catch (e) { /* ignore */ }
             try { candidates.push(path.join(base, 'data', 'soft-restart.flag')); } catch (e) { /* ignore */ }
-            try { candidates.push(path.join(tmp, 'xiyue-soft-restart.flag')); } catch (e) { /* ignore */ }
+            try { candidates.push(path.join(tmp, 'assa-soft-restart.flag')); } catch (e) { /* ignore */ }
             const hit = candidates.find((flag) => {
                 try { return flag && fs.existsSync(flag); } catch (e) { return false; }
             });
             if (hit) {
                 try { fs.unlinkSync(hit); } catch (e) { /* ignore */ }
                 try {
-                    fs.appendFileSync(path.join(tmp, 'xiyue-dev-restart.log'), '[patch] soft-restart flag hit, relaunch electron\\n');
+                    fs.appendFileSync(path.join(tmp, 'assa-dev-restart.log'), '[patch] soft-restart flag hit, relaunch electron\\n');
                 } catch (e) { /* ignore */ }
                 setTimeout(() => {
                     try { startElectron(root); } catch (e) { console.error(e); }

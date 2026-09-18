@@ -72,29 +72,6 @@ export interface UrlFavoriteItem {
   createdAt: number;
 }
 
-export interface OverviewAlbumItem {
-  id: number;
-  path: string;
-  name: string;
-  ext: string;
-  mediaType: 'image' | 'video';
-  addedAt: number;
-}
-
-export type AlbumOrderMode = 'sequential' | 'random';
-export type AlbumMediaFilter = 'all' | 'image' | 'video';
-export type AlbumCardClickBehavior = 'open-album' | 'none';
-
-export interface OverviewAlbumCardConfig {
-  intervalMs: number;
-  autoRotate: boolean;
-  orderMode: AlbumOrderMode;
-  mediaFilter: AlbumMediaFilter;
-  clickBehavior: AlbumCardClickBehavior;
-  videoAutoPlay: boolean;
-  videoMuted: boolean;
-}
-
 export type PomodoroPhase = 'work' | 'shortBreak' | 'longBreak';
 
 export interface PomodoroData {

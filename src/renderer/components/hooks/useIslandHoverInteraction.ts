@@ -91,7 +91,8 @@ export function useIslandHoverInteraction(options: UseIslandHoverInteractionOpti
     let checkTimer: ReturnType<typeof setTimeout> | null = null;
     let aborted = false;
     let mousePassthroughState: boolean | null = null;
-    const CHECK_INTERVAL = 50;
+    /** 50ms→200ms：20Hz IPC 与主进程抢消息循环；200ms 悬停响应仍可接受 */
+    const CHECK_INTERVAL = 200;
 
     const setMousePassthrough = (enabled: boolean): void => {
       if (mousePassthroughState === enabled) return;

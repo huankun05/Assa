@@ -31,7 +31,6 @@ import { TodoTab } from './components/todo/components/TodoTab';
 import { UrlFavoritesTab } from './components/urlFavorites';
 import { LocalFileSearchTab } from './components/localFileSearch/components/LocalFileSearchTab';
 import { ClipboardHistoryTab } from './components/clipBoardHistory';
-import { AlbumTab } from './components/album/components/AlbumTab';
 import { MailTab } from './components/mail';
 import { CountdownTab } from './components/countdown';
 import { MemoTab } from './components/memo/components/MemoTab';
@@ -45,7 +44,6 @@ function renderEagerActiveTab(activeTab: MaxExpandTab, loadingFallback: ReactEle
   if (activeTab === 'urlFavorites') return <UrlFavoritesTab />;
   if (activeTab === 'localFileSearch') return <LocalFileSearchTab />;
   if (activeTab === 'clipboardHistory') return <ClipboardHistoryTab />;
-  if (activeTab === 'album') return <AlbumTab />;
   if (activeTab === 'mail') return <MailTab />;
   if (activeTab === 'memo') return <MemoTab />;
   if (activeTab === 'countdown') return <CountdownTab />;

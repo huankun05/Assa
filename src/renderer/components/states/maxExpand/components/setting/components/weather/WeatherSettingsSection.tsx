@@ -24,13 +24,20 @@
  * @author 鸡哥
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { WeatherSettingsPageKey } from '../../utils/settingsConfig';
 import type { WeatherLocationPriority, WeatherProvider } from '../../../../../../../store/utils/storage';
+import type { DistrictCascadeOption, DistrictSearchCandidate } from '../../../../../../../api/weather/types/District';
+import {
+  searchDistrictLocations,
+  fetchDistrictChildrenByAdcode,
+  CHINA_PROVINCES,
+} from '../../../../../../../api/weather/adcodeApi';
 import { SvgIcon } from '../../../../../../../utils/SvgIcon';
 import { SettingsPageNavigation, SettingsPageNavigationToggle } from '../SettingsPageNavigation';
+import { SettingsSelect } from '../common/SettingsSelect';
 
 interface WeatherMessage {
   type: 'error' | 'success';
@@ -46,6 +53,8 @@ interface WeatherSettingsSectionProps {
   setWeatherLocationConfigMessage: (message: WeatherMessage | null) => void;
   weatherCustomCityInput: string;
   setWeatherCustomCityInput: (value: string) => void;
+  weatherCustomAdcode: string;
+  setWeatherCustomAdcode: (value: string) => void;
   testWeatherCustomLocation: () => Promise<void>;
   setWeatherCustomLocationTesting: (value: boolean) => void;
   setWeatherCustomLocationTestMessage: (message: WeatherMessage | null) => void;
@@ -73,6 +82,19 @@ interface WeatherSettingsSectionProps {
 export function WeatherSettingsSection(props: WeatherSettingsSectionProps): ReactElement {
   const { t } = useTranslation();
   const [pageNavigationExpanded, setPageNavigationExpanded] = useState(false);
+  const [districtCandidates, setDistrictCandidates] = useState<DistrictSearchCandidate[]>([]);
+  const [showCandidates, setShowCandidates] = useState(false);
+  const [searchingDistricts, setSearchingDistricts] = useState(false);
+  const districtSearchTimerRef = useRef<number | null>(null);
+  const districtSearchSeqRef = useRef(0);
+  /** 输入方式：关键字联想 / 省市县级联 */
+  const [locationInputMode, setLocationInputMode] = useState<'search' | 'cascade'>('search');
+  const [cascadeCities, setCascadeCities] = useState<DistrictCascadeOption[]>([]);
+  const [cascadeDistricts, setCascadeDistricts] = useState<DistrictCascadeOption[]>([]);
+  const [cascadeProvince, setCascadeProvince] = useState('');
+  const [cascadeCity, setCascadeCity] = useState('');
+  const [cascadeDistrict, setCascadeDistrict] = useState('');
+  const [cascadeLoading, setCascadeLoading] = useState(false);
   const locationPriorityKeyMap: Record<WeatherLocationPriority, string> = {
     ip: 'settings.weather.options.locationPriority.ip',
     custom: 'settings.weather.options.locationPriority.custom',
@@ -91,6 +113,8 @@ export function WeatherSettingsSection(props: WeatherSettingsSectionProps): Reac
     setWeatherLocationConfigMessage,
     weatherCustomCityInput,
     setWeatherCustomCityInput,
+    weatherCustomAdcode,
+    setWeatherCustomAdcode,
     testWeatherCustomLocation,
     setWeatherCustomLocationTesting,
     setWeatherCustomLocationTestMessage,
@@ -109,6 +133,103 @@ export function WeatherSettingsSection(props: WeatherSettingsSectionProps): Reac
     weatherSettingsPageLabels,
     setWeatherSettingsPage,
   } = props;
+
+  // 区级联想：输入防抖搜索，候选可点选（大城市场景下比只输「北京市」更准）
+  useEffect(() => {
+    if (districtSearchTimerRef.current !== null) {
+      window.clearTimeout(districtSearchTimerRef.current);
+      districtSearchTimerRef.current = null;
+    }
+    const keyword = weatherCustomCityInput.trim();
+    if (keyword.length < 2) {
+      setDistrictCandidates([]);
+      setShowCandidates(false);
+      setSearchingDistricts(false);
+      return;
+    }
+    setSearchingDistricts(true);
+    const seq = ++districtSearchSeqRef.current;
+    districtSearchTimerRef.current = window.setTimeout(() => {
+      searchDistrictLocations(keyword)
+        .then((list) => {
+          if (seq !== districtSearchSeqRef.current) return;
+          setDistrictCandidates(list);
+          setShowCandidates(list.length > 0);
+        })
+        .catch(() => {
+          if (seq !== districtSearchSeqRef.current) return;
+          setDistrictCandidates([]);
+          setShowCandidates(false);
+        })
+        .finally(() => {
+          if (seq !== districtSearchSeqRef.current) return;
+          setSearchingDistricts(false);
+        });
+    }, 320);
+    return () => {
+      if (districtSearchTimerRef.current !== null) {
+        window.clearTimeout(districtSearchTimerRef.current);
+        districtSearchTimerRef.current = null;
+      }
+    };
+  }, [weatherCustomCityInput]);
+
+  // 级联：选省 → 拉市；选市 → 拉区
+  useEffect(() => {
+    let cancelled = false;
+    setCascadeCities([]);
+    setCascadeDistricts([]);
+    setCascadeCity('');
+    setCascadeDistrict('');
+    if (!cascadeProvince) return;
+    setCascadeLoading(true);
+    fetchDistrictChildrenByAdcode(cascadeProvince, 1)
+      .then((list) => {
+        if (cancelled) return;
+        setCascadeCities(list);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCascadeCities([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCascadeLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cascadeProvince]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCascadeDistricts([]);
+    setCascadeDistrict('');
+    if (!cascadeCity) return;
+    setCascadeLoading(true);
+    fetchDistrictChildrenByAdcode(cascadeCity, 1)
+      .then((list) => {
+        if (cancelled) return;
+        setCascadeDistricts(list);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCascadeDistricts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCascadeLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cascadeCity]);
+
+  /** 应用级联选中节点：写入关键字输入 + adcode，保存时走精确解析 */
+  const applyCascadeSelection = (option: DistrictCascadeOption | null): void => {
+    if (!option) return;
+    setWeatherCustomCityInput(option.name);
+    setWeatherCustomAdcode(option.adcode);
+    setWeatherLocationConfigMessage(null);
+  };
 
   return (
     <div className="max-expand-settings-section">
@@ -158,23 +279,124 @@ export function WeatherSettingsSection(props: WeatherSettingsSectionProps): Reac
 
               <div className="settings-card">
                 <div className="settings-card-header">
-                  <div className="settings-card-title">{t('settings.weather.customCityTitle', { defaultValue: '自定义城市' })}</div>
-                  <div className="settings-card-subtitle">{t('settings.weather.customCityHint', { defaultValue: '仅在“自定义位置优先”生效，可先测试再保存；支持中文 / 拼音 / 英文。' })}</div>
+                  <div className="settings-card-title">{t('settings.weather.customCityTitle', { defaultValue: '自定义位置' })}</div>
+                  <div className="settings-card-subtitle">{t('settings.weather.customCityHint', { defaultValue: '仅在“自定义位置优先”生效。可关键字联想（海淀区），也可省→市→区级联下拉。' })}</div>
                 </div>
-                <div className="settings-hotkey-row">
-                  <label className="settings-field" style={{ flex: 1 }}>
-                    <span className="settings-field-label">{t('settings.weather.cityName', { defaultValue: '城市名称' })}</span>
-                    <input
-                      className="settings-field-input"
-                      type="text"
-                      placeholder={t('settings.weather.cityPlaceholder', { defaultValue: '例如：杭州 / Tokyo / New York' })}
-                      value={weatherCustomCityInput}
-                      onChange={(e) => {
-                        setWeatherCustomCityInput(e.target.value);
+                <div className="settings-lyrics-source-options" style={{ marginBottom: 10 }}>
+                  <button
+                    type="button"
+                    className={`settings-lyrics-source-btn${locationInputMode === 'search' ? ' active' : ''}`}
+                    onClick={() => setLocationInputMode('search')}
+                  >
+                    {t('settings.weather.locationMode.search', { defaultValue: '关键字搜索' })}
+                  </button>
+                  <button
+                    type="button"
+                    className={`settings-lyrics-source-btn${locationInputMode === 'cascade' ? ' active' : ''}`}
+                    onClick={() => setLocationInputMode('cascade')}
+                  >
+                    {t('settings.weather.locationMode.cascade', { defaultValue: '省市县级联' })}
+                  </button>
+                </div>
+
+                {locationInputMode === 'search' && (
+                  <div className="settings-hotkey-row">
+                    <label className="settings-field" style={{ flex: 1, position: 'relative' }}>
+                      <span className="settings-field-label">{t('settings.weather.cityName', { defaultValue: '城市 / 区县' })}</span>
+                      <input
+                        className="settings-field-input"
+                        type="text"
+                        placeholder={t('settings.weather.cityPlaceholder', { defaultValue: '例如：海淀区 / 杭州 / Tokyo' })}
+                        value={weatherCustomCityInput}
+                        onChange={(e) => {
+                          setWeatherCustomCityInput(e.target.value);
+                          setWeatherCustomAdcode('');
+                        }}
+                        onFocus={() => {
+                          if (districtCandidates.length) setShowCandidates(true);
+                        }}
+                        onBlur={() => {
+                          window.setTimeout(() => setShowCandidates(false), 120);
+                        }}
+                      />
+                      {(showCandidates || searchingDistricts) && (
+                        <div className="settings-weather-district-suggestions" role="listbox">
+                          {searchingDistricts && !districtCandidates.length && (
+                            <div className="settings-weather-district-suggestion-item is-muted">
+                              {t('settings.weather.districtSearching', { defaultValue: '搜索中…' })}
+                            </div>
+                          )}
+                          {districtCandidates.map((item, index) => (
+                            <button
+                              key={`${item.adcode ?? item.latitude}-${item.longitude}-${index}`}
+                              type="button"
+                              className="settings-weather-district-suggestion-item"
+                              role="option"
+                              aria-selected={false}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setWeatherCustomCityInput(item.city);
+                                setWeatherCustomAdcode(item.adcode ?? '');
+                                setShowCandidates(false);
+                                setWeatherLocationConfigMessage(null);
+                              }}
+                            >
+                              <span className="settings-weather-district-suggestion-name">{item.city}</span>
+                              <span className="settings-weather-district-suggestion-meta">
+                                {item.label}
+                                {item.level ? ` · ${item.level}` : ''}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                )}
+
+                {locationInputMode === 'cascade' && (
+                  <div className="settings-weather-cascade-row">
+                    <SettingsSelect
+                      label={t('settings.weather.cascade.province', { defaultValue: '省 / 直辖市' })}
+                      value={cascadeProvince}
+                      options={CHINA_PROVINCES.map((p) => ({ value: p.adcode, label: p.name }))}
+                      onChange={(v) => {
+                        const opt = CHINA_PROVINCES.find((p) => p.adcode === v);
+                        setCascadeProvince(v);
+                        if (opt) {
+                          setWeatherCustomCityInput(opt.name);
+                          setWeatherCustomAdcode(opt.adcode);
+                        }
                       }}
                     />
-                  </label>
-                </div>
+                    <SettingsSelect
+                      label={t('settings.weather.cascade.city', { defaultValue: '市' })}
+                      value={cascadeCity}
+                      options={cascadeCities.map((c) => ({ value: c.adcode, label: c.name }))}
+                      onChange={(v) => {
+                        const opt = cascadeCities.find((c) => c.adcode === v);
+                        setCascadeCity(v);
+                        if (opt) applyCascadeSelection(opt);
+                      }}
+                    />
+                    <SettingsSelect
+                      label={t('settings.weather.cascade.district', { defaultValue: '区 / 县' })}
+                      value={cascadeDistrict}
+                      options={cascadeDistricts.map((d) => ({ value: d.adcode, label: d.name }))}
+                      onChange={(v) => {
+                        const opt = cascadeDistricts.find((d) => d.adcode === v);
+                        setCascadeDistrict(v);
+                        if (opt) applyCascadeSelection(opt);
+                      }}
+                    />
+                    {cascadeLoading && (
+                      <span className="settings-weather-district-suggestion-meta" style={{ alignSelf: 'flex-end', paddingBottom: 8 }}>
+                        {t('settings.weather.districtSearching', { defaultValue: '搜索中…' })}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="settings-hotkey-row">
                   <button
                     className="settings-hotkey-btn"

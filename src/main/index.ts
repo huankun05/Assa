@@ -37,10 +37,10 @@ import { startClipboardUrlWatcher, stopClipboardUrlWatcher } from './clipboard/u
 import { createClipboardUrlState } from './clipboard/clipboardUrlState';
 import { registerClaudeCodeStatusIpcHandlers } from './ipc/agent/claudeCodeStatusIpc';
 import { registerCodexStatusIpcHandlers } from './ipc/agent/codexStatusIpc';
-import { registerXiyueAgentIpcHandlers } from './ipc/agent/xiyueAgentIpc';
-import { registerXiyueIdentityIpcHandlers } from './ipc/agent/xiyueIdentity';
-import { registerXiyueSecurityIpcHandlers } from './ipc/agent/xiyueSecurityIpc';
-import { startXiyueAgent, stopXiyueAgent } from './services/xiyueAgentService';
+import { registerAssaAgentIpcHandlers } from './ipc/agent/assaAgentIpc';
+import { registerAssaIdentityIpcHandlers } from './ipc/agent/assaIdentity';
+import { registerAssaSecurityIpcHandlers } from './ipc/agent/assaSecurityIpc';
+import { startAssaAgent, stopAssaAgent } from './services/assaAgentService';
 import { registerClipboardIpcHandlers } from './ipc/settings/clipboard';
 import { registerCaptureIpcHandlers } from './ipc/window/capture';
 import { disposeLocalOcrWorker } from './services/captureLocalOcrService';
@@ -72,12 +72,12 @@ import { broadcastSettingChange, registerSettingsPreviewHandler } from './utils/
 import { registerAppLifecycleHandlers } from './services/appLifecycle';
 import { applyChromiumPerformanceFlags } from './services/chromiumFlags';
 import { createHotkeyService } from './services/hotkeyService';
-import { registerRestartCleanup, quitAppFast, isApplicationQuitting, isRestarting } from './services/appRestart';
+import { registerRestartCleanup, isApplicationQuitting, isRestarting } from './services/appRestart';
 import { initUpdaterService } from './services/updaterService';
 import { createCaptureWindowService } from './window/captureWindow';
 import { createMainWindowService } from './window/mainWindow';
 import { precreateStandaloneWindow } from './window/standaloneWindow';
-import { openSettingsWindow } from './window/settingsWindow';
+import { openSettingsWindow, preloadSettingsWindow } from './window/settingsWindow';
 import { showSplashWindow, closeSplashWindow, dismissSplashWindow } from './window/splashWindow';
 import { showGuideWindow } from './window/guideWindow';
 import { createSmtcService } from './music/smtcService';
@@ -87,7 +87,7 @@ import { createAutoHideWatcher } from './system/autoHideWatcher';
 import { createExternalAgentWatcher } from './system/externalAgentWatcher';
 import { createClaudeCodeStatusService } from './system/claudeCodeStatusService';
 import { createCodexStatusService } from './system/codexStatusService';
-import { play, pause, next } from '@xiyue/windows-smtc-helper';
+import { play, pause, next } from '@assa/windows-smtc-helper';
 import {
   queryFocusedWindow,
   queryOpenWindowsWithIcons,
@@ -157,8 +157,8 @@ try {
  * 尽早注册，避免首条 toast 落到默认 Electron AUMID。
  */
 try {
-  app.setName('汐月');
-  app.setAppUserModelId('com.xiyue.app');
+  app.setName('Assa');
+  app.setAppUserModelId('com.assa.app');
 } catch {
   // ignore
 }
@@ -183,7 +183,7 @@ process.on('uncaughtException', (err) => {
   try {
     const { appendFileSync } = require('fs') as typeof import('fs');
     const { join: joinPath } = require('path') as typeof import('path');
-    appendFileSync(joinPath(app.getPath('temp'), 'xiyue-dev-restart.log'), `[fatal] uncaughtException ${err?.stack || err}\n`);
+    appendFileSync(joinPath(app.getPath('temp'), 'assa-dev-restart.log'), `[fatal] uncaughtException ${err?.stack || err}\n`);
   } catch {
     // ignore
   }
@@ -192,7 +192,7 @@ process.on('unhandledRejection', (reason) => {
   try {
     const { appendFileSync } = require('fs') as typeof import('fs');
     const { join: joinPath } = require('path') as typeof import('path');
-    appendFileSync(joinPath(app.getPath('temp'), 'xiyue-dev-restart.log'), `[fatal] unhandledRejection ${String(reason)}\n`);
+    appendFileSync(joinPath(app.getPath('temp'), 'assa-dev-restart.log'), `[fatal] unhandledRejection ${String(reason)}\n`);
   } catch {
     // ignore
   }
@@ -208,6 +208,7 @@ let cachedFullscreenDetector: { isAnyFullscreenWindow: () => boolean } | null | 
  * @description dev 下任务栏常显示 Electron：宿主是 electron.exe。
  *   创建带汐月 ICO 的 .lnk，固定到任务栏/开始菜单后图标会正确。
  *   打包安装后的 toast/任务栏品牌由 installer + appId 负责。幂等，失败忽略。
+ *   路径/文件名一律 ASCII（Assa）：中文目录名在 WSH/VBS 编码链路易乱码导致 Save 失败。
  */
 function registerWindowsTaskbarShortcut(): void {
   if (process.platform !== 'win32') return;
@@ -219,24 +220,25 @@ function registerWindowsTaskbarShortcut(): void {
       'Windows',
       'Start Menu',
       'Programs',
-      '汐月',
+      'Assa',
     );
     if (!existsSync(appsDir)) mkdirSync(appsDir, { recursive: true });
     const exe = process.execPath;
     const projectRoot = app.getAppPath();
-    const iconPath = join(projectRoot, 'resources', 'icon', 'xiyue_256x256.ico');
-    const lnkPath = join(appsDir, '汐月.lnk');
+    const iconPath = join(projectRoot, 'resources', 'icon', 'assa_256x256.ico');
+    const lnkPath = join(appsDir, 'Assa.lnk');
+    /** 全 ASCII：不依赖 UTF-16 VBS，规避系统脚本中文路径问题 */
     const vbs = [
       'Set WshShell = CreateObject("WScript.Shell")',
       `Set lnk = WshShell.CreateShortcut("${lnkPath.replace(/\\/g, '\\\\')}")`,
       `lnk.TargetPath = "${exe.replace(/\\/g, '\\\\')}"`,
-      `lnk.Arguments = "."`,
+      'lnk.Arguments = "."',
       `lnk.WorkingDirectory = "${projectRoot.replace(/\\/g, '\\\\')}"`,
       `lnk.IconLocation = "${iconPath.replace(/\\/g, '\\\\')}"`,
-      'lnk.Description = "汐月灵动岛"',
+      'lnk.Description = "Assa Dynamic Island"',
       'lnk.Save',
     ].join('\r\n');
-    const vbsPath = join(appsDir, 'register-xiyue-shortcut.vbs');
+    const vbsPath = join(appsDir, 'register-assa-shortcut.vbs');
     writeFileSync(vbsPath, vbs, 'ascii');
     const child = spawn('wscript.exe', [vbsPath], {
       windowsHide: true,
@@ -253,7 +255,7 @@ function detectAnyFullscreenWindow(): boolean {
   if (process.platform !== 'win32') return false;
   if (cachedFullscreenDetector === undefined) {
     try {
-      cachedFullscreenDetector = require('@xiyue/windows-fullscreen-detector') as { isAnyFullscreenWindow: () => boolean };
+      cachedFullscreenDetector = require('@assa/windows-fullscreen-detector') as { isAnyFullscreenWindow: () => boolean };
     } catch (err) {
       cachedFullscreenDetector = null;
       console.warn('[FullscreenDetector] unavailable:', err);
@@ -938,7 +940,7 @@ function runAppExitCleanup(): void {
   neteaseWatcherLauncher.stop();
   void disposeLocalOcrWorker();
   stopLocalOcrMtService();
-  stopXiyueAgent();
+  stopAssaAgent();
   stopSystemLevelMonitors();
   destroyTray();
   try {
@@ -984,8 +986,8 @@ registerAppLifecycleHandlers({
  */
 app.whenReady().then(() => {
   // AUMID 已在模块加载时注册；这里再设一次，兼容 @electron-toolkit/utils 路径
-  app.setName('汐月');
-  electronApp.setAppUserModelId('com.xiyue.app');
+  app.setName('Assa');
+  electronApp.setAppUserModelId('com.assa.app');
   try {
     registerWindowsTaskbarShortcut();
   } catch {
@@ -1012,7 +1014,7 @@ app.whenReady().then(() => {
   /** 清理历史 force-kill VBS，避免脏文件堆积 */
   try {
     const tempDir = app.getPath('temp');
-    const vbsPrefix = 'xiyue-force-kill-';
+    const vbsPrefix = 'assa-force-kill-';
     for (const name of readdirSync(tempDir)) {
       if (name.startsWith(vbsPrefix) && name.endsWith('.vbs')) {
         try {
@@ -1028,11 +1030,11 @@ app.whenReady().then(() => {
 
   /** 汐月 Hermes Python 侧车：延后 2s 启动，避免与主窗创建抢 CPU/磁盘 */
   setTimeout(() => {
-    startXiyueAgent();
+    startAssaAgent();
   }, 2000);
-  registerXiyueAgentIpcHandlers();
-  registerXiyueIdentityIpcHandlers();
-  registerXiyueSecurityIpcHandlers();
+  registerAssaAgentIpcHandlers();
+  registerAssaIdentityIpcHandlers();
+  registerAssaSecurityIpcHandlers();
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);
@@ -1106,8 +1108,7 @@ app.whenReady().then(() => {
   mainWindowService.createWindow();
   createTray(() => mainWindow);
 
-  // 启动空闲后预创建独立窗口：把「首次打开」的建窗 + loadURL 成本前移，使第一次打开也秒开。
-  // 仅常驻一个隐藏窗口（所有 tab 共用），代价是启动即占用约一个窗口内存（~50–150MB）。
+  // 启动空闲后预创建独立窗口 + 设置窗：把「首次打开」的建窗 + loadURL 成本前移。
   // 退出由 onWindowAllClosed → app.quit() 显式驱动，隐藏窗口不会卡住退出。
   if (process.platform === 'win32') {
     setTimeout(() => {
@@ -1117,6 +1118,14 @@ app.whenReady().then(() => {
         console.error('[StandaloneWindow] 预创建失败（不影响正常使用）：', err);
       }
     }, 6000);
+    // 设置窗稍后预热：直载设置应用，点设置可接近秒开
+    setTimeout(() => {
+      try {
+        preloadSettingsWindow();
+      } catch (err) {
+        console.error('[SettingsWindow] 预热失败（不影响正常使用）：', err);
+      }
+    }, 8000);
   }
 
   smtcService.initWorker();

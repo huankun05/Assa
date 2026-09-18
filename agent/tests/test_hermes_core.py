@@ -20,7 +20,7 @@ def test_db_path_under_data_dir() -> None:
     p = get_db_path()
     assert p.name == "core.db"
     assert "agent" in p.parts and "memory" in p.parts
-    assert str(p).startswith(str(ROOT / "data")) or "XIYUE_DATA_DIR" in p.parts or p.exists()
+    assert str(p).startswith(str(ROOT / "data")) or "ASSA_DATA_DIR" in p.parts or p.exists()
 
 
 def test_extract_and_injection() -> None:

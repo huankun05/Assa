@@ -34,6 +34,10 @@ import {
   getWeekLabel,
   getWeatherIconPath,
   getWeatherSmallIconPath,
+  parseLocalTime,
+  resolveIsDay,
+  resolveSolarGlowKind,
+  getSolarIconPath,
 } from '../utils/weatherUtils';
 
 /**
@@ -49,13 +53,13 @@ export function WeatherTab(): React.ReactElement {
   const hoverTab = useIslandStore(s => s.hoverTab);
   const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'success' | 'error'>('idle');
   const [toastTimer, setToastTimer] = useState<number | null>(null);
-  const hour = new Date().getHours();
-  /** 图标码能区分日夜时优先用数据，否则回退本机 6–18 点 */
-  const inferIsDay = (iconCode: number): boolean => {
-    if (iconCode >= 500 && iconCode < 1000) return hour >= 6 && hour < 18;
-    return hour >= 6 && hour < 18;
-  };
-  const isDay = inferIsDay(weather.iconCode);
+  const now = new Date();
+  const sunriseDate = parseLocalTime(weather.sunrise);
+  const sunsetDate = parseLocalTime(weather.sunset);
+  /** 优先用真实日出日落推断日夜，否则回退 6–18 点 */
+  const isDay = resolveIsDay(sunriseDate, sunsetDate, now);
+  /** 朝霞/晚霞装饰图标（日出日落 ±40 分钟；无数据时用粗时段） */
+  const solarGlow = resolveSolarGlowKind(sunriseDate, sunsetDate, now);
   const currentWeatherDesc = abbreviateWeatherDescription(weather.description, t);
 
   // 切换到天气 tab 时自动刷新一次（节流保护：5 分钟内不重复）
@@ -107,16 +111,31 @@ export function WeatherTab(): React.ReactElement {
 
   return (
     <div className="weather-tab">
-      {/* 左：大天气图标 + 天气描述 / 刷新反馈 */}
+      {/* 左：大天气图标 + 朝霞/晚霞角标 + 天气描述 / 刷新反馈 */}
       <div className="weather-tab-icon-block">
-        <img
-          src={getWeatherIconPath(weather.iconCode, isDay)}
-          alt={currentWeatherDesc}
-          className={`weather-tab-icon weather-tab-icon-clickable${refreshState === 'refreshing' ? ' weather-tab-icon-spinning' : ''}`}
-          onClick={handleRefresh}
-          onError={handleIconError}
-          title={t('hover.weather.refreshTitle', { defaultValue: '点击刷新天气' })}
-        />
+        <div className="weather-tab-icon-wrap">
+          <img
+            src={getWeatherIconPath(weather.iconCode, isDay)}
+            alt={currentWeatherDesc}
+            className={`weather-tab-icon weather-tab-icon-clickable${refreshState === 'refreshing' ? ' weather-tab-icon-spinning' : ''}`}
+            onClick={handleRefresh}
+            onError={handleIconError}
+            title={t('hover.weather.refreshTitle', { defaultValue: '点击刷新天气' })}
+          />
+          {solarGlow && (
+            <img
+              src={getSolarIconPath(solarGlow)}
+              alt={solarGlow === 'sunrise'
+                ? t('hover.weather.sunrise', { defaultValue: '日出' })
+                : t('hover.weather.sunset', { defaultValue: '日落' })}
+              className={`weather-tab-solar weather-tab-solar-${solarGlow}`}
+              title={solarGlow === 'sunrise'
+                ? t('hover.weather.sunrise', { defaultValue: '日出' })
+                : t('hover.weather.sunset', { defaultValue: '日落' })}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          )}
+        </div>
         <span className={`weather-tab-desc${refreshState !== 'idle' ? ' weather-tab-toast weather-tab-toast-' + refreshState : ''}`}>
           {refreshState === 'refreshing' && (t('hover.weather.refreshing', { defaultValue: '刷新中...' }))}
           {refreshState === 'success' && (t('hover.weather.updated', { defaultValue: '已更新' }) + ' · ' + formatTime())}

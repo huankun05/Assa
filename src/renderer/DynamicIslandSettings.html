@@ -29,7 +29,39 @@
     <title>eIsland - 设置</title>
   </head>
   <body>
+    <!-- 骨架屏：JS 加载/React 挂载前即可见，避免预热直载时白屏 -->
+    <div id="settings-skeleton" style="
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: #f4f6fa; color: #6b7a90; font: 14px/1.5 system-ui, -apple-system, 'PingFang SC', sans-serif;
+      z-index: 9999; transition: opacity 0.25s ease;
+    ">
+      <div style="text-align:center">
+        <div style="
+          width:28px;height:28px;margin:0 auto 12px;border-radius:50%;
+          border:2px solid #c5d0e0;border-top-color:#3b82f6;animation:sk-spin 0.7s linear infinite
+        "></div>
+        正在加载设置…
+      </div>
+    </div>
+    <style>@keyframes sk-spin{to{transform:rotate(360deg)}}</style>
     <div id="root"></div>
     <script type="module" src="./DynamicIslandSettingsMain.tsx"></script>
+    <script>
+      // React 挂载后移除骨架（SettingsWindow 会再兜底）
+      (function () {
+        var remove = function () {
+          var el = document.getElementById('settings-skeleton');
+          if (!el) return;
+          el.style.opacity = '0';
+          setTimeout(function () { el.remove(); }, 260);
+        };
+        if (document.readyState === 'complete') {
+          // 等一拍给 React render
+          setTimeout(remove, 400);
+        } else {
+          window.addEventListener('load', function () { setTimeout(remove, 400); });
+        }
+      })();
+    </script>
   </body>
 </html>

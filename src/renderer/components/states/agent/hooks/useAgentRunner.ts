@@ -20,12 +20,12 @@
  * @file useAgentRunner.ts
  * @description Agent 执行流程编排 Hook（汐月 Hermes 专属）
  * @description 原 eIsland 三路由（mihtnelis/Ollama/自定义直连）已移除，
- *   仅保留本地汐月侧车（window.api.xiyueChat）。
+ *   仅保留本地汐月侧车（window.api.assaChat）。
  */
 
 import { useEffect } from 'react';
 import useIslandStore from '../../../../store/isLandStore';
-import { streamXiyueAgent } from '../../../../api/ai/xiyueLocalAgent';
+import { streamAssaAgent } from '../../../../api/ai/assaLocalAgent';
 import type { AiChatMessage } from '../../../../store/types';
 import type { AgentPhase } from '../config/agentContentConfig';
 import type { AuthPending } from '../types/AuthPending';
@@ -101,7 +101,7 @@ export function useAgentRunner(options: UseAgentRunnerOptions): void {
       });
 
       try {
-        await streamXiyueAgent({
+        await streamAssaAgent({
           message: agentPrompt.trim(),
           signal: controller.signal,
           onEvent: handleEvent,
@@ -119,7 +119,7 @@ export function useAgentRunner(options: UseAgentRunnerOptions): void {
             const assistantMsg: AiChatMessage = {
               role: 'assistant',
               content: finalAnswer,
-              model: 'xiyue',
+              model: 'assa',
               finalized: true,
               traceId: traceIdRef.current || undefined,
             };

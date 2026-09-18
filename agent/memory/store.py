@@ -9,8 +9,8 @@
 可被设置面板查看 / 编辑 / 清空。
 
 数据路径（设计 v1.2 §7.1）：统一经 resolve_data_dir() 收口——
-- 正式： %APPDATA%/xiyue/（Tauri app_data_dir）
-- 开发期：环境变量 XIYUE_DATA_DIR 覆盖（默认指向 repo 内 data/，已被 .gitignore 忽略）
+- 正式： %APPDATA%/assa/（Tauri app_data_dir）
+- 开发期：环境变量 ASSA_DATA_DIR 覆盖（默认指向 repo 内 data/，已被 .gitignore 忽略）
 """
 from __future__ import annotations
 
@@ -23,11 +23,11 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def resolve_data_dir() -> Path:
-    """数据目录单一收口：XIYUE_DATA_DIR 环境变量 > repo 内 data/（开发期默认）。"""
-    env = os.environ.get("XIYUE_DATA_DIR")
+    """数据目录单一收口：ASSA_DATA_DIR 环境变量 > repo 内 data/（开发期默认）。"""
+    env = os.environ.get("ASSA_DATA_DIR")
     if env:
         return Path(env)
-    # Phase 3 打包后由 Rust 经 IPC 注入正式路径（%APPDATA%/xiyue）
+    # Phase 3 打包后由 Rust 经 IPC 注入正式路径（%APPDATA%/assa）
     return _REPO_ROOT / "data"
 
 

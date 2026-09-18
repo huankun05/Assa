@@ -1,5 +1,5 @@
 /*
- * eIsland / Xiyue - 本地 OCR / 机器翻译服务桥接
+ * eIsland / Assa - 本地 OCR / 机器翻译服务桥接
  *
  * 拉起用户本机的 Python 服务（F:\Work\Create\OCR\local_capture_service.py），
  * 该服务复用用户已有的 PaddleOCR（高精度 OCR）与 llama.cpp + 腾讯混元 Hy-MT2
@@ -17,7 +17,7 @@ import { readScreenshotLocalOcrDirConfig, DEFAULT_LOCAL_OCR_DIR } from '../confi
 const LOCAL_OCR_MT_PORT = 18765;
 const BASE_URL = `http://127.0.0.1:${LOCAL_OCR_MT_PORT}`;
 
-/** Xiyue 翻译语言代码 → mt_engine 使用的中文全称 */
+/** Assa 翻译语言代码 → mt_engine 使用的中文全称 */
 const LANG_CODE_TO_NAME: Record<string, string> = {
   zh: '中文',
   en: '英语',

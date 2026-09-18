@@ -30,6 +30,8 @@ import type { WindowTab } from '../config/standaloneWindowConfig';
 interface StandaloneWindowChromeProps {
   windowIcon: string;
   tabList: { key: WindowTab; labelKey: string }[];
+  /** 可见 Tab id 集合；null 表示全部可见 */
+  visibleTabIds?: Set<string> | null;
   activeTab: WindowTab;
   switchTab: (tab: WindowTab) => void;
   standaloneMacControls: boolean;
@@ -45,17 +47,22 @@ export function StandaloneWindowChrome(props: StandaloneWindowChromeProps): JSX.
   const {
     windowIcon,
     tabList,
+    visibleTabIds,
     activeTab,
     switchTab,
     standaloneMacControls,
     t,
   } = props;
 
+  const shownTabs = visibleTabIds
+    ? tabList.filter((tab) => visibleTabIds.has(tab.key))
+    : tabList;
+
   return (
     <div className="cw-chrome">
-      <img className="cw-window-icon" src={windowIcon} alt="eIsland" />
+      <img className="cw-window-icon" src={windowIcon} alt="" aria-hidden="true" />
       <div className="cw-tabs">
-        {tabList.map((tab) => (
+        {shownTabs.map((tab) => (
           <button
             key={tab.key}
             className={`cw-tab ${activeTab === tab.key ? 'cw-tab--active' : ''}`}

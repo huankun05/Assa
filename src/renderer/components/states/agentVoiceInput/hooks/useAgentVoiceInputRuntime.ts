@@ -19,7 +19,7 @@
 /**
  * @file useAgentVoiceInputRuntime.ts
  * @description 语音输入球运行时（汐月本地化版）
- * @description 录音→PCM16 本地累积→结束拼 wav→window.api.xiyueTranscribe
+ * @description 录音→PCM16 本地累积→结束拼 wav→window.api.assaTranscribe
  *   （faster-whisper 本地转写），替代原腾讯实时语音识别（已删除）。
  */
 
@@ -35,7 +35,7 @@ import {
 import { getAudioContextCtor } from '../utils/agentVoiceInputAudio';
 import { pushFloat32Frames } from '../utils/agentVoiceInputPcm';
 import { readEffectiveAudioVolume } from '../../../../utils/audio/volume';
-import { stopXiyueTtsPlayback } from '../../../../api/ai/xiyueLocalAgent';
+import { stopAssaTtsPlayback } from '../../../../api/ai/assaLocalAgent';
 
 interface UseAgentVoiceInputRuntimeOptions {
   setStatusText: React.Dispatch<React.SetStateAction<string>>;
@@ -127,7 +127,7 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
 
     const start = async (): Promise<void> => {
       /** 语音打断：开麦时先停掉正在播的 TTS */
-      stopXiyueTtsPlayback();
+      stopAssaTtsPlayback();
       const targetVolume = await readEffectiveAudioVolume('effect').catch(() => 1);
       const triggerSound = new Audio('./audio/AGENT.wav');
       triggerSound.volume = targetVolume;
@@ -221,7 +221,7 @@ export function useAgentVoiceInputRuntime(options: UseAgentVoiceInputRuntimeOpti
                 merged.set(f, offset);
                 offset += f.length;
               });
-              const res = await window.api.xiyueTranscribe(buildWavBase64(merged));
+              const res = await window.api.assaTranscribe(buildWavBase64(merged));
               const text = (res?.text ?? '').trim();
               if (text) {
                 setTranscript(text);

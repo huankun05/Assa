@@ -52,12 +52,17 @@ export function LocalFileSearchTab(): ReactElement {
     excludeDirsInput, setExcludeDirsInput,
     includeDirectories, setIncludeDirectories,
     loading, results, iconMap, countText,
+    everythingAvailable, searchEngine,
     handlePickRootDir, handleSearch,
   } = useLocalFileSearch();
 
   return (
     <div className="local-file-search">
-      <LocalFileSearchHeader countText={countText} />
+      <LocalFileSearchHeader
+        countText={countText}
+        everythingAvailable={everythingAvailable}
+        searchEngine={searchEngine}
+      />
 
       <LocalFileSearchRootRow
         rootDir={rootDir}

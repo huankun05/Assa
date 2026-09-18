@@ -42,13 +42,21 @@ if (!root) {
 }
 const rootEl = root;
 
-async function bootstrap(): Promise<void> {
-  await initTheme();
-  await bootstrapAuthSession();
+function bootstrap(): void {
+  // 先挂 React（与设置窗一致），主题/会话/媒体并行，缩短首屏
+  createRoot(rootEl).render(
+    <StrictMode>
+      <StandaloneWindow />
+    </StrictMode>
+  );
+
+  void initTheme();
+  void bootstrapAuthSession();
 
   const handleNowPlayingUpdate = useIslandStore.getState().handleNowPlayingUpdate;
-  const initialInfo = await window.api.mediaCurrentInfoGet().catch(() => null);
-  handleNowPlayingUpdate(initialInfo as NowPlayingInfo | null);
+  void window.api.mediaCurrentInfoGet().then((info) => {
+    handleNowPlayingUpdate(info as NowPlayingInfo | null);
+  }).catch(() => {});
   const unsubscribeNowPlaying = window.api.onNowPlayingInfo((info: NowPlayingInfo | null) => {
     handleNowPlayingUpdate(info);
   });
@@ -56,12 +64,6 @@ async function bootstrap(): Promise<void> {
   window.addEventListener('beforeunload', () => {
     unsubscribeNowPlaying();
   });
-
-  createRoot(rootEl).render(
-    <StrictMode>
-      <StandaloneWindow />
-    </StrictMode>
-  );
 }
 
-void bootstrap();
+bootstrap();

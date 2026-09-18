@@ -21,7 +21,7 @@
 /**
  * @file localToolIpc.ts
  * @description Agent 本地工具 IPC handler 注册，将渲染进程的本地工具执行请求桥接到主进程。
- *   终审与审计不在此处：统一由 services/xiyueToolSchema.xiyueExecuteTool 收口，
+ *   终审与审计不在此处：统一由 services/assaToolSchema.assaExecuteTool 收口，
  *   本 handler 只做透传与"抛异常 → 失败结果"的兜底转换。
  * @author 鸡哥
  */

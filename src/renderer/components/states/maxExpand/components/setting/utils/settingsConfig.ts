@@ -53,7 +53,7 @@ export const WEATHER_LOCATION_PRIORITY_OPTIONS: Array<{ value: WeatherLocationPr
 
 export const SETTINGS_TABS = ['index', 'app', 'network', 'mail', 'weather', 'music', 'shortcut', 'update', 'pluginMarket', 'about'] as const;
 export type SettingsSidebarTabKey = (typeof SETTINGS_TABS)[number];
-export type AppSettingsPageKey = 'layout-preview' | 'hover-layout' | 'expand-layout' | 'maxexpand-layout' | 'album' | 'hide-process-list' | 'ai-security' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
+export type AppSettingsPageKey = 'layout-preview' | 'hover-layout' | 'expand-layout' | 'maxexpand-layout' | 'hide-process-list' | 'ai-security' | 'position' | 'theme' | 'language' | 'behavior' | 'animation' | 'url-parser' | 'clipboard-history' | 'alarm' | 'break-reminder' | 'autostart' | 'sound' | 'notification' | 'performance' | 'performance-monitor' | 'screenshot-settings' | 'control-center';
 export type WeatherSettingsPageKey = 'location' | 'provider';
 export type MailSettingsPageKey = 'account' | 'imap' | 'preferences';
 export type MusicSettingsPageKey = 'whitelist' | 'lyrics' | 'smtc' | 'providers' | 'like';
@@ -68,7 +68,6 @@ export const SETTINGS_TAB_LABELS: Record<SettingsTabLabelKey, string> = {
   'layout-preview': '布局预览',
   'expand-layout': '展开布局',
   'maxexpand-layout': '全展开布局',
-  album: '相册配置',
   'hide-process-list': '隐私与安全 · 隐藏窗口',
   'ai-security': '隐私与安全 · AI 信任与审计',
   position: '位置校准',
@@ -99,7 +98,7 @@ export const SETTINGS_TAB_LABELS: Record<SettingsTabLabelKey, string> = {
   update: '更新设置',
   'update-check': '检查更新',
   'info-sync': '信息同步',
-  pluginMarket: '壁纸市场',
+  pluginMarket: '壁纸',
   about: '关于软件',
 };
 
@@ -108,7 +107,6 @@ export const SETTINGS_TAB_DESCRIPTIONS: Record<Exclude<SettingsTabLabelKey, 'ind
   'layout-preview': '进入布局预览并调整左右控件展示。',
   'expand-layout': '自定义展开界面页面顺序与可见性。',
   'maxexpand-layout': '自定义全展开界面各页面的显示顺序与可见性。',
-  album: '相册轮播与相册入口相关配置。',
   'hide-process-list': '管理隐藏窗口名单与自动隐藏规则。',
   'ai-security': 'AI 信任等级与工具审计记录。',
   position: '动态调整灵动岛位置并保存',
@@ -140,7 +138,7 @@ export const SETTINGS_TAB_DESCRIPTIONS: Record<Exclude<SettingsTabLabelKey, 'ind
   update: '检查与下载软件更新',
   'update-check': '检查与下载软件更新',
   'info-sync': '信息同步配置',
-  pluginMarket: '壁纸市场入口与壁纸管理',
+  pluginMarket: '预设、导入、我的壁纸与社区壁纸',
   about: '版本信息与项目链接',
 };
 
@@ -150,7 +148,6 @@ export const SETTINGS_TAB_ICONS: Partial<Record<SettingsTabLabelKey, string>> = 
   'layout-preview': SvgIcon.LAYOUT,
   'expand-layout': SvgIcon.LAYOUT,
   'maxexpand-layout': SvgIcon.LAYOUT,
-  album: SvgIcon.PHOTO_ALBUM,
   'hide-process-list': SvgIcon.TASK_MANAGER,
   position: SvgIcon.MOVE,
   network: SvgIcon.NETWORK,
@@ -215,11 +212,12 @@ export interface ExpandNavItem {
 
 export type ExpandNavLayoutConfig = ExpandNavItem[];
 
-export const EXPAND_CONFIGURABLE_TABS: string[] = ['tools', 'translation', 'performanceMonitor'];
+export const EXPAND_CONFIGURABLE_TABS: string[] = ['overview', 'tools', 'translation', 'performanceMonitor'];
 
 export const EXPAND_ALWAYS_VISIBLE_TABS: Set<string> = new Set<string>();
 
 export const EXPAND_TAB_LABELS: Record<string, string> = {
+  overview: '总览',
   tools: '工具',
   translation: '翻译',
   performanceMonitor: '性能监控',
@@ -274,14 +272,13 @@ export interface MaxExpandNavItem {
 
 export type MaxExpandNavLayoutConfig = MaxExpandNavItem[];
 
-export const MAXEXPAND_CONFIGURABLE_TABS: string[] = ['todo', 'urlFavorites', 'album', 'mail', 'localFileSearch', 'clipboardHistory', 'memo', 'countdown', 'alarm', 'toolbox', 'cli'];
+export const MAXEXPAND_CONFIGURABLE_TABS: string[] = ['todo', 'urlFavorites', 'mail', 'localFileSearch', 'clipboardHistory', 'memo', 'countdown', 'alarm', 'toolbox', 'cli'];
 
 export const MAXEXPAND_ALWAYS_VISIBLE_TABS: Set<string> = new Set<string>();
 
 export const MAXEXPAND_TAB_LABELS: Record<string, string> = {
   todo: '待办事项',
   urlFavorites: 'URL 收藏',
-  album: '相册',
   mail: '邮箱',
   localFileSearch: '文件查找',
   clipboardHistory: '剪贴板',
@@ -334,7 +331,7 @@ export function normalizeMaxExpandNavLayoutConfig(raw: unknown): MaxExpandNavLay
   return ordered;
 }
 
-export const APP_SETTINGS_PAGES: AppSettingsPageKey[] = ['layout-preview', 'expand-layout', 'maxexpand-layout', 'album', 'hide-process-list', 'ai-security', 'position', 'theme', 'language', 'behavior', 'animation', 'url-parser', 'clipboard-history', 'alarm', 'break-reminder', 'autostart', 'sound', 'notification', 'performance', 'performance-monitor', 'screenshot-settings', 'control-center'];
+export const APP_SETTINGS_PAGES: AppSettingsPageKey[] = ['layout-preview', 'expand-layout', 'maxexpand-layout', 'hide-process-list', 'ai-security', 'position', 'theme', 'language', 'behavior', 'animation', 'url-parser', 'clipboard-history', 'alarm', 'break-reminder', 'autostart', 'sound', 'notification', 'performance', 'performance-monitor', 'screenshot-settings', 'control-center'];
 export const WEATHER_SETTINGS_PAGES: WeatherSettingsPageKey[] = ['location', 'provider'];
 export const WEATHER_SETTINGS_PAGE_LABELS: Record<WeatherSettingsPageKey, string> = {
   location: '定位配置',
@@ -380,7 +377,6 @@ export const NAV_CARDS: NavCardDef[] = [
   { id: 'layout-preview', label: SETTINGS_TAB_LABELS['layout-preview'], desc: SETTINGS_TAB_DESCRIPTIONS['layout-preview'], icon: SETTINGS_TAB_ICONS['layout-preview'], tab: 'app', appPage: 'layout-preview' },
   { id: 'expand-layout', label: SETTINGS_TAB_LABELS['expand-layout'], desc: SETTINGS_TAB_DESCRIPTIONS['expand-layout'], icon: SETTINGS_TAB_ICONS['expand-layout'], tab: 'app', appPage: 'expand-layout' },
   { id: 'maxexpand-layout', label: SETTINGS_TAB_LABELS['maxexpand-layout'], desc: SETTINGS_TAB_DESCRIPTIONS['maxexpand-layout'], icon: SETTINGS_TAB_ICONS['maxexpand-layout'], tab: 'app', appPage: 'maxexpand-layout' },
-  { id: 'album', label: SETTINGS_TAB_LABELS.album, desc: SETTINGS_TAB_DESCRIPTIONS.album, icon: SETTINGS_TAB_ICONS.album, tab: 'app', appPage: 'album' },
   { id: 'hide-process-list', label: SETTINGS_TAB_LABELS['hide-process-list'], desc: SETTINGS_TAB_DESCRIPTIONS['hide-process-list'], icon: SETTINGS_TAB_ICONS['hide-process-list'], tab: 'app', appPage: 'hide-process-list' },
   { id: 'ai-security', label: SETTINGS_TAB_LABELS['ai-security'], desc: SETTINGS_TAB_DESCRIPTIONS['ai-security'], icon: SETTINGS_TAB_ICONS['ai-security'], tab: 'app', appPage: 'ai-security' },
   { id: 'url-parser', label: SETTINGS_TAB_LABELS['url-parser'], desc: SETTINGS_TAB_DESCRIPTIONS['url-parser'], icon: SETTINGS_TAB_ICONS['url-parser'], tab: 'app', appPage: 'url-parser' },
@@ -443,14 +439,10 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   { label: '全展开导航预览', desc: '预览底部导航点的排列顺序，灰色表示已隐藏的页面。', labelKey: 'settings.app.maxExpandLayout.previewTitle', descKey: 'settings.app.maxExpandLayout.previewHint', tab: 'app', appPage: 'maxexpand-layout' },
   { label: '页面排序与可见性', desc: '拖拽调整页面顺序，点击开关控制页面显示或隐藏。', labelKey: 'settings.app.maxExpandLayout.orderTitle', descKey: 'settings.app.maxExpandLayout.orderHintStatic', tab: 'app', appPage: 'maxexpand-layout' },
   // ── 软件设置 > 相册 ──
-  { label: '相册轮播方式', desc: '配置总览相册卡片的轮播顺序、频率、展示内容与点击行为', labelKey: 'settings.app.album.carouselTitle', descKey: 'settings.app.album.carouselHint', tab: 'app', appPage: 'album' },
-  { label: '展示资源', desc: '选择总览相册卡片参与轮播的资源类型', labelKey: 'settings.app.album.filterLabel', descKey: 'settings.app.album.filterHint', tab: 'app', appPage: 'album' },
-  { label: '点击卡片行为', desc: '配置点击总览相册卡片后的行为', labelKey: 'settings.app.album.clickBehaviorLabel', descKey: 'settings.app.album.clickBehaviorHint', tab: 'app', appPage: 'album' },
-  { label: '自动播放与视频行为', desc: '仅影响总览相册轮播卡片，不影响相册主页面。', labelKey: 'settings.app.album.playbackTitle', descKey: 'settings.app.album.playbackHint', tab: 'app', appPage: 'album' },
   // ── 软件设置 > 隐藏窗口管理 ──
   { label: '全屏时自动隐藏', desc: '检测到任意窗口进入全屏后自动隐藏灵动岛，退出全屏后自动显示。', labelKey: 'settings.app.hideProcess.fullscreenTitle', descKey: 'settings.app.hideProcess.fullscreenHint', tab: 'app', appPage: 'hide-process-list' },
   { label: '隐藏窗口管理', desc: '当黑名单进程对应窗口处于焦点状态时，将立即隐藏灵动岛；失去焦点后自动显示。', labelKey: 'settings.app.hideProcess.title', descKey: 'settings.app.hideProcess.hint', tab: 'app', appPage: 'hide-process-list' },
-  { label: 'AI 信任与审计', desc: '设置汐月自动执行工具的信任等级，并查看最近工具调用记录。', labelKey: 'settings.aiSecurity.trustTitle', descKey: 'settings.aiSecurity.trustHint', tab: 'app', appPage: 'ai-security' },
+  { label: 'AI 信任与审计', desc: '设置 Assa 自动执行工具的信任等级，并查看最近工具调用记录。', labelKey: 'settings.aiSecurity.trustTitle', descKey: 'settings.aiSecurity.trustHint', tab: 'app', appPage: 'ai-security' },
   { label: '当前运行的窗口', desc: '在列表中点击可将窗口加入 / 移出黑名单，支持按进程名搜索。', labelKey: 'settings.app.hideProcess.runningTitle', descKey: 'settings.app.hideProcess.runningHint', tab: 'app', appPage: 'hide-process-list' },
   // ── 软件设置 > 位置校准 ──
   { label: '锁定灵动岛位置', desc: '仅在 pill 模式下禁止通过鼠标拖动灵动岛，位置校准仍可使用。', labelKey: 'settings.app.position.lockTitle', descKey: 'settings.app.position.lockHint', tab: 'app', appPage: 'position' },
@@ -503,7 +495,7 @@ export const SEARCHABLE_SETTINGS: SearchableSettingItem[] = [
   { label: '开机自启', desc: '设置系统启动时是否自动运行灵动岛', labelKey: 'settings.app.autostart.title', descKey: 'settings.app.autostart.hint', tab: 'app', appPage: 'autostart' },
   // ── 软件设置 > 番茄钟时长 ──
   { label: '番茄钟时长', desc: '控制灵动岛番茄钟精简页使用的默认时长', labelKey: 'settings.app.pomodoro.sectionTitle', descKey: 'settings.app.pomodoro.sectionDesc', tab: 'app', appPage: 'behavior' },
-  { label: '控制中心按钮', desc: '配置 Hover 控制中心（时间页）按钮的显示与顺序。', labelKey: 'settings.app.controlCenter.title', descKey: 'settings.app.controlCenter.hint', tab: 'app', appPage: 'control-center' },
+  { label: '控制中心按钮', desc: '已迁至独立窗「页面管理」；此处仅保留深链兼容。', labelKey: 'settings.app.controlCenter.title', descKey: 'settings.customPages.ccHint', tab: 'app', appPage: 'control-center' },
   // ── 软件设置 > 声音设置 ──
   { label: '全局音量', desc: '影响闹钟与音效的整体输出音量。', labelKey: 'settings.sound.global.title', descKey: 'settings.sound.global.hint', tab: 'app', appPage: 'sound' },
   { label: '闹钟音量', desc: '仅影响闹钟响铃与试听音量。', labelKey: 'settings.sound.alarmVolume.title', descKey: 'settings.sound.alarmVolume.hint', tab: 'app', appPage: 'sound' },

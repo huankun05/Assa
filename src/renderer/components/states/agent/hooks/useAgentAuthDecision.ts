@@ -26,7 +26,7 @@
 
 import { useCallback } from 'react';
 import { resolveMihtnelisWebAccess } from '../../../../api/ai/mihtnelisAgentStream';
-import { resolveXiyueLocalToolResult, rejectXiyueLocalTool } from '../../../../api/ai/xiyueLocalTool';
+import { resolveassaLocalToolResult, rejectassaLocalTool } from '../../../../api/ai/assaLocalTool';
 import type { AuthPending } from '../types/AuthPending';
 
 interface UseAgentAuthDecisionOptions {
@@ -61,12 +61,12 @@ export function useAgentAuthDecision(options: UseAgentAuthDecisionOptions): (all
         await resolveMihtnelisWebAccess({ token: tokenRef.current, requestId: auth.requestId, allow });
       } else if (auth.type === 'tool') {
         if (!allow) {
-          await rejectXiyueLocalTool(auth.requestId, '用户拒绝执行工具');
+          await rejectassaLocalTool(auth.requestId, '用户拒绝执行工具');
           return;
         }
         const executor = window.api?.executeAgentLocalTool;
         if (typeof executor !== 'function') {
-          await resolveXiyueLocalToolResult({ requestId: auth.requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
+          await resolveassaLocalToolResult({ requestId: auth.requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
           return;
         }
         let execution: { success?: boolean; result?: unknown; error?: string } = {};
@@ -76,7 +76,7 @@ export function useAgentAuthDecision(options: UseAgentAuthDecisionOptions): (all
         } catch (e: unknown) {
           execution = { success: false, result: {}, error: e instanceof Error ? e.message : '本地工具执行失败' };
         }
-        await resolveXiyueLocalToolResult({
+        await resolveassaLocalToolResult({
           requestId: auth.requestId,
           success: Boolean(execution?.success),
           result: execution?.result,

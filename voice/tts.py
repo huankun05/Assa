@@ -42,11 +42,11 @@ def _get_kokoro_pipeline():
 
 
 def _synthesize_cosyvoice_http(text: str, out: Path, speed: float = 1.0) -> Path | None:
-    """可选：外部 CosyVoice HTTP 服务（XIYUE_COSYVOICE_URL）。失败返回 None。"""
+    """可选：外部 CosyVoice HTTP 服务（ASSA_COSYVOICE_URL）。失败返回 None。"""
     import os
     import urllib.request
 
-    url = (os.environ.get("XIYUE_COSYVOICE_URL") or "").strip()
+    url = (os.environ.get("ASSA_COSYVOICE_URL") or "").strip()
     if not url:
         return None
     try:
@@ -110,7 +110,7 @@ def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None, spee
 
     keep_file=True：写入 TTS_DIR 并返回路径。
     keep_file=False：默认（推荐）——临时目录合成后删除，业务目录不落盘；返回 None。
-    keep_file=None：看环境变量 XIYUE_TTS_DISK（非空且非 0 时落盘）。
+    keep_file=None：看环境变量 ASSA_TTS_DISK（非空且非 0 时落盘）。
     speed：语速倍率（Kokoro）；情绪可轻微调整。
     """
     if not text or not str(text).strip():
@@ -120,7 +120,7 @@ def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None, spee
     import tempfile
 
     if keep_file is None:
-        keep_file = os.environ.get("XIYUE_TTS_DISK", "").strip() not in ("", "0", "false", "False")
+        keep_file = os.environ.get("ASSA_TTS_DISK", "").strip() not in ("", "0", "false", "False")
 
     if keep_file:
         out = TTS_DIR / f"out_{int(time.time() * 1000)}.wav"
@@ -131,7 +131,7 @@ def speak(text: str, engine: str = "kokoro", keep_file: bool | None = None, spee
             result = _synthesize_pyttsx3(text, out)
         return result
 
-    with tempfile.TemporaryDirectory(prefix="xiyue-tts-") as td:
+    with tempfile.TemporaryDirectory(prefix="assa-tts-") as td:
         out = Path(td) / "out.wav"
         result = _synthesize_cosyvoice_http(text, out, speed=speed)
         if result is None:

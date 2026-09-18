@@ -24,12 +24,14 @@
  * @author 鸡哥
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { IslandBgMediaConfig, IslandBgMediaType } from '../config/dynamicIslandConfig';
 import {
   ACTIVE_TAB_STORE_KEY,
   type WindowTab,
 } from '../config/standaloneWindowConfig';
+import { STANDALONE_TAB_LAYOUT_KEY } from '../config/standaloneWindowKeys';
+import useIslandStore from '../../store/slices';
 import { useStandaloneWindowTabSync } from './useStandaloneWindowTabSync';
 import { useStandaloneWindowBackgroundSettingsSync } from './useStandaloneWindowBackgroundSettingsSync';
 import { useStandaloneWindowBackgroundVideoSync } from './useStandaloneWindowBackgroundVideoSync';
@@ -37,6 +39,7 @@ import { useStandaloneWindowBackgroundVideoSync } from './useStandaloneWindowBac
 interface StandaloneWindowShellState {
   activeTab: WindowTab;
   switchTab: (tab: WindowTab) => void;
+  visibleTabIds: Set<string> | null;
   bgMedia: { type: IslandBgMediaType; previewUrl: string } | null;
   bgVideoFit: 'cover' | 'contain';
   bgVideoMuted: boolean;
@@ -58,6 +61,9 @@ interface StandaloneWindowShellState {
  */
 export function useStandaloneWindowShell(): StandaloneWindowShellState {
   const [activeTab, setActiveTab] = useState<WindowTab>('todo');
+  const standaloneTabLayout = useIslandStore((s) => s.standaloneTabLayout);
+  const setStandaloneTabLayout = useIslandStore((s) => s.setStandaloneTabLayout);
+  const [visibleTabIds, setVisibleTabIds] = useState<Set<string> | null>(null);
   const [bgMedia, setBgMedia] = useState<{ type: IslandBgMediaType; previewUrl: string } | null>(null);
   const [bgVideoFit, setBgVideoFit] = useState<'cover' | 'contain'>('cover');
   const [bgVideoMuted, setBgVideoMuted] = useState<boolean>(true);
@@ -69,6 +75,30 @@ export function useStandaloneWindowShell(): StandaloneWindowShellState {
   const [bgImageOpacity, setBgImageOpacity] = useState<number>(30);
   const [bgImageBlur, setBgImageBlur] = useState<number>(0);
   const [standaloneMacControls, setStandaloneMacControls] = useState<boolean>(false);
+
+  /** 同步独立窗 Tab 布局到 store，并算出可见集合（空=全部可见） */
+  useEffect(() => {
+    let cancelled = false;
+    window.api.storeRead(STANDALONE_TAB_LAYOUT_KEY).then((value: unknown) => {
+      if (cancelled) return;
+      if (Array.isArray(value) && value.length) {
+        const layout = value
+          .filter((item): item is { id: string; visible: boolean } => Boolean(item) && typeof (item as { id?: unknown }).id === 'string')
+          .map((item) => ({ id: item.id, visible: item.visible !== false }));
+        if (layout.length) setStandaloneTabLayout(layout);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [setStandaloneTabLayout]);
+
+  useEffect(() => {
+    const layout = standaloneTabLayout;
+    if (!layout?.length) {
+      setVisibleTabIds(null);
+      return;
+    }
+    setVisibleTabIds(new Set(layout.filter((item) => item.visible).map((item) => item.id)));
+  }, [standaloneTabLayout]);
 
   const applyBgMedia = useCallback((media: IslandBgMediaConfig | null, previewUrl: string | null): void => {
     if (!media || !previewUrl) {
@@ -129,6 +159,7 @@ export function useStandaloneWindowShell(): StandaloneWindowShellState {
   return {
     activeTab,
     switchTab,
+    visibleTabIds,
     bgMedia,
     bgVideoFit,
     bgVideoMuted,

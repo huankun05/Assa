@@ -32,7 +32,7 @@ import { StandaloneWindowViewport } from './components/StandaloneWindowViewport'
 import { useStandaloneWindowShell } from './hooks/useStandaloneWindowShell';
 import { TAB_LIST } from './config/standaloneWindowConfig';
 import useIslandStore from '../store/slices';
-import windowIcon from '../../../resources/icon/eisland.svg';
+import windowIcon from '../../../resources/icon/assa.svg';
 
 /**
  * 独立窗口根组件
@@ -44,6 +44,7 @@ export function StandaloneWindow(): ReactElement {
   const {
     activeTab,
     switchTab,
+    visibleTabIds,
     bgMedia,
     bgVideoFit,
     bgVideoMuted,
@@ -57,8 +58,9 @@ export function StandaloneWindow(): ReactElement {
     handleVideoCanPlay,
   } = useStandaloneWindowShell();
 
+  /** 独立窗 = 设置窗同款壳（settings-window + settings-v2 token），不再用旧暗色透底 */
   return (
-    <div className="cw-root">
+    <div className="cw-root settings-window">
       <StandaloneWindowBackground
         bgMedia={bgMedia}
         bgImageOpacity={bgImageOpacity}
@@ -74,6 +76,7 @@ export function StandaloneWindow(): ReactElement {
       <StandaloneWindowChrome
         windowIcon={windowIcon}
         tabList={TAB_LIST}
+        visibleTabIds={visibleTabIds}
         activeTab={activeTab}
         switchTab={switchTab}
         standaloneMacControls={standaloneMacControls}

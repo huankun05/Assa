@@ -34,7 +34,11 @@ import { padZero } from '../utils/padZero';
 /** Idle 状态交互逻辑 Hook */
 export function useIdle(props: IdleContentProps) {
   const { t } = useTranslation();
-  const { isMusicPlaying, coverImage, isPlaying, handleNowPlayingUpdate, dominantColor } = useIslandStore();
+  const isMusicPlaying = useIslandStore((s) => s.isMusicPlaying);
+  const coverImage = useIslandStore((s) => s.coverImage);
+  const isPlaying = useIslandStore((s) => s.isPlaying);
+  const handleNowPlayingUpdate = useIslandStore((s) => s.handleNowPlayingUpdate);
+  const dominantColor = useIslandStore((s) => s.dominantColor);
   const { remainingSeconds, pomodoroRemaining, timerState, pomodoroRunning } = props;
 
   const isTimerActive = timerState === 'running' || timerState === 'paused';

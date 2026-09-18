@@ -656,7 +656,7 @@ describe('adcodeApi', () => {
       expect(calledUrl).toContain('keyword=Test');
       expect(calledUrl).toContain('subdistrict=0');
       expect(calledUrl).toContain('page=1');
-      expect(calledUrl).toContain('page_size=10');
+      expect(calledUrl).toContain('page_size=20');
     });
 
     it('propagates fetchDistrictByAdcode errors', async () => {

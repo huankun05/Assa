@@ -1,17 +1,17 @@
 /**
  * nativeCapture.ts
  *
- * 截图引擎可插拔。当前策略（2026-09-03 调整）：默认走 Xiyue 内置 Electron 截图窗
+ * 截图引擎可插拔。当前策略（2026-09-03 调整）：默认走 Assa 内置 Electron 截图窗
  * （capture.js 全屏暗蒙版 + 选区原位高亮 + 工具栏，即仿 Snipaste 的 UI），不再自动
  * 发现/唤起 userData/native-capture/ 下的原生 exe。
  *
- * 只有当用户显式设置环境变量 XIYUE_NATIVE_CAPTURE_EXE 指向原生 exe 时，截图热键
+ * 只有当用户显式设置环境变量 ASSA_NATIVE_CAPTURE_EXE 指向原生 exe 时，截图热键
  * 才改为唤起该工具（体验等同 Snipaste 原生框选，无 Electron 透明窗在 Win11 下的
  * 「闪黑 / 放大镜黑块」问题）。
  *
  * 启用方式：
- *   XIYUE_NATIVE_CAPTURE_EXE=<exe 绝对路径>   （如指向自研 native_shot.exe，见下）
- *   XIYUE_NATIVE_CAPTURE_ARGS=...             （可选，覆盖默认启动参数）
+ *   ASSA_NATIVE_CAPTURE_EXE=<exe 绝对路径>   （如指向自研 native_shot.exe，见下）
+ *   ASSA_NATIVE_CAPTURE_ARGS=...             （可选，覆盖默认启动参数）
  * 启动参数（可选）：
  *   - 文件名含 "native_shot" → 无需参数（截完写临时 PNG + 选区元数据 + 剪贴板即退）
  *   - 文件名含 "screencapture"（xland）→ 自动用 "--auto-quit=true"
@@ -20,10 +20,10 @@
 
 import { spawn } from 'node:child_process';
 
-const EXE_ENV = 'XIYUE_NATIVE_CAPTURE_EXE';
-const ARGS_ENV = 'XIYUE_NATIVE_CAPTURE_ARGS';
+const EXE_ENV = 'ASSA_NATIVE_CAPTURE_EXE';
+const ARGS_ENV = 'ASSA_NATIVE_CAPTURE_ARGS';
 
-/** 按 exe 名推断默认启动参数；可通过 XIYUE_NATIVE_CAPTURE_ARGS 覆盖。 */
+/** 按 exe 名推断默认启动参数；可通过 ASSA_NATIVE_CAPTURE_ARGS 覆盖。 */
 function defaultArgsFor(exe: string): string[] {
   const base = exe.toLowerCase().replace(/\\/g, '/');
   // 自研 native_shot：截完写临时 PNG + 剪贴板即退，无需参数

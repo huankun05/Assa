@@ -1,11 +1,11 @@
 """汐月 Python sidecar 服务（Phase 0 精简实现）。
 
-HTTP 127.0.0.1:8765（XIYUE_AGENT_PORT 可覆盖），由 Electron 主进程
-（src/main/services/xiyueAgentService.ts）拉起、健康巡检并自动重启。
+HTTP 127.0.0.1:8765（ASSA_AGENT_PORT 可覆盖），由 Electron 主进程
+（src/main/services/assaAgentService.ts）拉起、健康巡检并自动重启。
 
 端点：
 - GET  /health      -> {"ok": true, "model": ...}
-- GET  /identity    -> 身份信息（XiyueIdentityReader）
+- GET  /identity    -> 身份信息（AssaIdentityReader）
 - GET  /emotion     -> {"state", "enabled"}
 - POST /chat        -> 文本对话 {"text"}，返回 {"user","reply","audio","audio_b64"}
 - POST /chat/stream -> SSE：think → tool_call_request* → chunk* → final | error
@@ -15,7 +15,7 @@ HTTP 127.0.0.1:8765（XIYUE_AGENT_PORT 可覆盖），由 Electron 主进程
 - POST /voice       -> 已废弃（410），主路径是渲染层录音 → /transcribe
 
 双闸门：本模块只做 gate/policy.py 预检并发出 tool_call_request；
-执行与终审（xiyueFinalCheck）在 Electron 主进程，侧车不直接执行工具。
+执行与终审（assaFinalCheck）在 Electron 主进程，侧车不直接执行工具。
 
 管线：
 - STT：faster-whisper（voice/stt.py，默认 CPU int8）
@@ -56,13 +56,13 @@ from agent.identity import (  # noqa: E402
     get_trust_level,
 )
 
-PORT = int(os.environ.get("XIYUE_AGENT_PORT", "8765"))
+PORT = int(os.environ.get("ASSA_AGENT_PORT", "8765"))
 DATA_DIR = resolve_data_dir()
 TTS_DIR = DATA_DIR / "tts"
 TMP_DIR = DATA_DIR / "tmp"
 # None → 用 voice/stt.py 的 DEFAULT_MODEL（仓库内 data/models/faster-whisper-base，免联网）
-WHISPER_MODEL = os.environ.get("XIYUE_WHISPER_MODEL") or None
-LLM_MODEL = os.environ.get("XIYUE_LLM_MODEL") or ""
+WHISPER_MODEL = os.environ.get("ASSA_WHISPER_MODEL") or None
+LLM_MODEL = os.environ.get("ASSA_LLM_MODEL") or ""
 
 # ---- 身份 / 配置读取（从 identity.py 引入，失败回退）----
 def _load_model_default() -> str:
@@ -84,8 +84,8 @@ _PERSONA = ""
 # 工具结果队列：requestId -> queue.Queue；渲染层经 POST /tool-result 投递
 _tool_queues: dict[str, queue.Queue] = {}
 _tool_queues_lock = threading.Lock()
-_TOOL_RESULT_TIMEOUT_S = float(os.environ.get("XIYUE_TOOL_TIMEOUT", "60"))
-_MAX_TOOL_ROUNDS = int(os.environ.get("XIYUE_TOOL_ROUNDS", "8"))
+_TOOL_RESULT_TIMEOUT_S = float(os.environ.get("ASSA_TOOL_TIMEOUT", "60"))
+_MAX_TOOL_ROUNDS = int(os.environ.get("ASSA_TOOL_ROUNDS", "8"))
 
 
 # ---- hermes_core 换脑：记忆 / PAD 情绪（懒加载）----
@@ -109,9 +109,9 @@ def _get_memory_service():
 
             _init_tables()
             _memory_svc = _gm()
-            print("[xiyue-agent] hermes MemoryService 就绪", flush=True)
+            print("[assa-agent] hermes MemoryService 就绪", flush=True)
         except Exception as e:
-            print(f"[xiyue-agent] hermes 记忆初始化失败，降级为空: {e}", flush=True)
+            print(f"[assa-agent] hermes 记忆初始化失败，降级为空: {e}", flush=True)
             _memory_svc = None
         _memory_ready = True
     return _memory_svc
@@ -130,7 +130,7 @@ def _get_emotion_state():
 
             _emotion_state = EmotionState()
         except Exception as e:
-            print(f"[xiyue-agent] hermes 情绪初始化失败: {e}", flush=True)
+            print(f"[assa-agent] hermes 情绪初始化失败: {e}", flush=True)
             _emotion_state = None
     return _emotion_state
 
@@ -142,7 +142,7 @@ def _memory_injection_block(query: str = "") -> str:
     try:
         return (svc.build_injection_prompt(query) or "").strip()
     except Exception as e:
-        print(f"[xiyue-agent] 记忆注入失败: {e}", flush=True)
+        print(f"[assa-agent] 记忆注入失败: {e}", flush=True)
         return ""
 
 
@@ -177,9 +177,9 @@ def _memory_store_turn(user_text: str, assistant_text: str) -> None:
         try:
             svc.maybe_autogenerate(new_count=len(items or []))
         except Exception as e:
-            print(f"[xiyue-agent] 记忆自学习失败: {e}", flush=True)
+            print(f"[assa-agent] 记忆自学习失败: {e}", flush=True)
     except Exception as e:
-        print(f"[xiyue-agent] 记忆写入失败: {e}", flush=True)
+        print(f"[assa-agent] 记忆写入失败: {e}", flush=True)
         try:
             _extract_and_store_facts(user_text, assistant_text)
         except Exception:
@@ -288,9 +288,9 @@ def _emotion_tts_speed() -> float:
         return 1.0
 
 
-# ---- 工具定义（同源 schemas/xiyue_tools.json，与主进程 xiyueToolSchema.ts 共用）----
+# ---- 工具定义（同源 schemas/assa_tools.json，与主进程 assaToolSchema.ts 共用）----
 def _load_tool_schema() -> dict:
-    p = ROOT / "schemas" / "xiyue_tools.json"
+    p = ROOT / "schemas" / "assa_tools.json"
     if not p.exists():
         raise FileNotFoundError(f"missing tool schema: {p}")
     return json.loads(p.read_text(encoding="utf-8"))
@@ -311,7 +311,7 @@ def _tool_def_from_schema(entry: dict) -> dict:
 
 
 def _browser_enabled() -> bool:
-    """浏览器自动化开关：默认关（xiyue.json browser.enabled）。"""
+    """浏览器自动化开关：默认关（assa.json browser.enabled）。"""
     try:
         return bool(_load_json().get("browser", {}).get("enabled", False))
     except Exception:
@@ -330,7 +330,7 @@ TOOL_DEFS = [_tool_def_from_schema(e) for e in _active_tool_entries()]
 # 工具 → 权限元数据（policy.py 裁决）；与主进程白名单同源
 _TOOL_POLICY: dict[str, tuple[str, list[str], bool]] = {}
 for _entry in _SCHEMA["tools"]:
-    _xy = _entry.get("xiyue") or {}
+    _xy = _entry.get("assa") or {}
     _name = _entry["name"]
     _risks = list(_xy.get("risks") or ["read"])
     _confirm = bool(_xy.get("confirm", False))
@@ -350,7 +350,7 @@ for _entry in _SCHEMA["tools"]:
 
 
 def _decide_tool(tool_name: str):
-    """policy.py 预检：返回 (authorizationRequired, denied)。信任等级读 xiyue.json security.trust_level。"""
+    """policy.py 预检：返回 (authorizationRequired, denied)。信任等级读 assa.json security.trust_level。"""
     from agent.gate.policy import Ctx, ToolMeta, decide
 
     if tool_name.startswith("browser.") and not _browser_enabled():
@@ -549,7 +549,7 @@ def _load_persona() -> str:
             from agent.identity import get_persona_text
             _PERSONA = get_persona_text() or ""
         except Exception:
-            p = ROOT / "agent" / "persona" / "xiyue.md"
+            p = ROOT / "agent" / "persona" / "assa.md"
             if p.exists():
                 _PERSONA = p.read_text(encoding="utf-8")
     return _PERSONA
@@ -649,7 +649,7 @@ def _extract_and_store_facts(user_text: str, reply: str) -> None:
 def _tts(text: str) -> Path | None:
     """已迁移至 voice.tts。默认内存合成不落盘；情绪轻微影响语速。"""
     speed = _emotion_tts_speed()
-    if os.environ.get("XIYUE_TTS_DISK", "").strip() in ("", "0", "false", "False"):
+    if os.environ.get("ASSA_TTS_DISK", "").strip() in ("", "0", "false", "False"):
         return _tts_module.speak(text, keep_file=False, speed=speed)
     return _tts_module.speak(text, keep_file=True, speed=speed)
 
@@ -676,8 +676,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send({"ok": True, "model": LLM_MODEL or _load_model_default()})
         elif self.path == "/identity":
             try:
-                from agent.identity import XiyueIdentityReader
-                self._send(XiyueIdentityReader().as_dict())
+                from agent.identity import AssaIdentityReader
+                self._send(AssaIdentityReader().as_dict())
             except Exception as e:
                 self._send({"error": str(e)}, 500)
         elif self.path == "/emotion":
@@ -778,7 +778,7 @@ class Handler(BaseHTTPRequestHandler):
                     path = TMP_DIR / f"in_{int(time.time()*1000)}.wav"
                     path.write_bytes(raw)
                     # 可选增强 VAD（默认关）：Silero 确认有语音再转写
-                    if os.environ.get("XIYUE_VAD", "").strip() in ("1", "true", "True"):
+                    if os.environ.get("ASSA_VAD", "").strip() in ("1", "true", "True"):
                         try:
                             from voice.vad import detect_speech
 
@@ -987,9 +987,9 @@ def main() -> None:
     try:
         removed = clear_expired()
         if removed:
-            print(f"[xiyue-agent] 清理过期工作记忆 {removed} 条", flush=True)
+            print(f"[assa-agent] 清理过期工作记忆 {removed} 条", flush=True)
     except Exception as e:
-        print(f"[xiyue-agent] 清理过期工作记忆失败: {e}", flush=True)
+        print(f"[assa-agent] 清理过期工作记忆失败: {e}", flush=True)
     # 预热 hermes 记忆 + L0 裁剪
     try:
         svc = _get_memory_service()
@@ -997,13 +997,13 @@ def main() -> None:
             try:
                 removed = svc.store.prune_old_l0(keep=200)
                 if removed:
-                    print(f"[xiyue-agent] L0 裁剪 {removed} 条", flush=True)
+                    print(f"[assa-agent] L0 裁剪 {removed} 条", flush=True)
             except Exception:
                 pass
     except Exception as e:
-        print(f"[xiyue-agent] hermes 记忆预热失败: {e}", flush=True)
+        print(f"[assa-agent] hermes 记忆预热失败: {e}", flush=True)
     resolved_model = LLM_MODEL or _load_model_default()
-    print(f"[xiyue-agent] listening on 127.0.0.1:{PORT} (llm={resolved_model}, "
+    print(f"[assa-agent] listening on 127.0.0.1:{PORT} (llm={resolved_model}, "
           f"stt={WHISPER_MODEL}, trust_level={get_trust_level()}, data={DATA_DIR})", flush=True)
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
 

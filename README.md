@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>汐月 Xiyue</h1>
+  <h1>汐月 Assa</h1>
   <p><strong>Windows 顶栏的本地 AI 工具箱 · Dynamic Island 形态</strong></p>
   <p>信息一眼可见，杂事一句话可办；模型跑在你的电脑上，文件不离开这台机器。</p>
   <p>Built with Electron + React + TypeScript · Python Agent sidecar</p>

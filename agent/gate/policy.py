@@ -4,10 +4,10 @@
 
 双闸门：
 - 本模块是**提议侧预检**——避免提出必被拒的请求、决定何时弹确认 UI（体验层）。
-- Electron 主进程在执行前做**终审**（src/main/services/xiyueToolSchema.ts `xiyueFinalCheck`，最终权威）。
-- 预检通过 ≠ 放行；两侧工具元数据**已同源**加载自 schemas/xiyue_tools.json
-  （server.py TOOL_DEFS/_TOOL_POLICY 与 xiyueToolSchema.ts 白名单）。
-- 当前信任等级来自 xiyue.json `security.trust_level`（identity.get_trust_level），默认 1。
+- Electron 主进程在执行前做**终审**（src/main/services/assaToolSchema.ts `assaFinalCheck`，最终权威）。
+- 预检通过 ≠ 放行；两侧工具元数据**已同源**加载自 schemas/assa_tools.json
+  （server.py TOOL_DEFS/_TOOL_POLICY 与 assaToolSchema.ts 白名单）。
+- 当前信任等级来自 assa.json `security.trust_level`（identity.get_trust_level），默认 1。
 
 裁决顺序（详见 README 权限闸部分）：
 1. 凭据风险且未声明确认 → 强制 CONFIRM

@@ -29,8 +29,8 @@ import { useTranslation } from 'react-i18next';
 import {
   resolveMihtnelisWebAccess,
 } from '../../../../../../api/ai/mihtnelisAgentStream';
-import { resolveXiyueLocalToolResult, rejectXiyueLocalTool } from '../../../../../../api/ai/xiyueLocalTool';
-import { streamXiyueAgent } from '../../../../../../api/ai/xiyueLocalAgent';
+import { resolveassaLocalToolResult, rejectassaLocalTool } from '../../../../../../api/ai/assaLocalTool';
+import { streamAssaAgent } from '../../../../../../api/ai/assaLocalAgent';
 import {
   setWebsiteAuthorizationPolicy,
   type SiteAuthorizationPolicy,
@@ -53,9 +53,9 @@ import {
 } from './useChatState';
 
 import {
-  getXiyueVisibleName,
-  getXiyueModelDefault,
-} from '../../../../../../utils/xiyueIdentity';
+  getAssaVisibleName,
+  getAssaModelDefault,
+} from '../../../../../../utils/assaIdentity';
 
 /** useChatSend Hook Props — 从 useChatState 解构出需要的状态与方法 */
 interface UseChatSendParams {
@@ -124,7 +124,7 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
   }): Promise<void> => {
     const executor = window.api?.executeAgentLocalTool;
     if (typeof executor !== 'function') {
-      await resolveXiyueLocalToolResult({
+      await resolveassaLocalToolResult({
         requestId: params.requestId,
         success: false,
         result: {},
@@ -154,7 +154,7 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
           : t('aiChat.messages.localToolExecuteFailed', { defaultValue: '本地工具执行失败' }),
       };
     }
-    await resolveXiyueLocalToolResult({
+    await resolveassaLocalToolResult({
       requestId: params.requestId,
       success: Boolean(execution?.success),
       result: execution?.result,
@@ -249,8 +249,8 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
     try {
       // ── 汐月 Hermes 本地 Agent（原三路由停用，分支体保留但不可达）──
       {
-        let receivedXiyueChunk = false;
-        await streamXiyueAgent({
+        let receivedAssaChunk = false;
+        await streamAssaAgent({
           message: text,
           signal: controller.signal,
           onEvent: (event) => {
@@ -282,7 +282,7 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
               const payload = event.payload as { text?: unknown } | undefined;
               const chunk = typeof payload?.text === 'string' ? payload.text : '';
               if (!chunk) return;
-              receivedXiyueChunk = true;
+              receivedAssaChunk = true;
               pushAssistant(prev => ({ ...prev, content: `${prev.content}${chunk}` }));
               return;
             }
@@ -334,11 +334,11 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
                 try {
                   const executor = window.api?.executeAgentLocalTool;
                   if (typeof executor !== 'function') {
-                    await resolveXiyueLocalToolResult({ requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
+                    await resolveassaLocalToolResult({ requestId, success: false, result: {}, error: 'LOCAL_RUNTIME_UNAVAILABLE' });
                     return;
                   }
                   const execution = await executor({ tool, arguments: argumentsPayload, workspaces: aiConfig.workspaces, requestId });
-                  await resolveXiyueLocalToolResult({
+                  await resolveassaLocalToolResult({
                     requestId,
                     success: Boolean(execution?.success),
                     result: execution?.result,
@@ -359,7 +359,7 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
                     return { ...prev, toolCalls };
                   });
                 } catch {
-                  await resolveXiyueLocalToolResult({ requestId, success: false, result: {}, error: '本地工具执行异常' });
+                  await resolveassaLocalToolResult({ requestId, success: false, result: {}, error: '本地工具执行异常' });
                 }
               })();
               return;
@@ -370,13 +370,13 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
             }
 
             if (event.type === 'final') {
-              pushAssistant(prev => ({ ...prev, finalized: true, model: '汐月' }));
+              pushAssistant(prev => ({ ...prev, finalized: true, model: 'Assa' }));
               return;
             }
 
             if (event.type === 'error') {
               const payload = event.payload as { message?: unknown } | undefined;
-              const msg = typeof payload?.message === 'string' ? payload.message : '汐月返回错误';
+              const msg = typeof payload?.message === 'string' ? payload.message : 'AI 返回错误';
               pushAssistant(prev => {
                 if (!prev.content) {
                   return { ...prev, content: `❌ ${msg}` };
@@ -386,12 +386,12 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
             }
           },
         });
-        if (!receivedXiyueChunk) {
+        if (!receivedAssaChunk) {
           updateTargetMessages(prev => {
             const copy = [...prev];
             const last = copy[copy.length - 1];
             if (last && last.role === 'assistant' && !last.content) {
-              copy[copy.length - 1] = { ...last, content: '⚠️ 汐月没有返回内容，请确认 Ollama 已启动。' };
+              copy[copy.length - 1] = { ...last, content: '⚠️ 没有返回内容，请确认 Ollama 已启动。' };
             }
             return copy;
           });
@@ -609,7 +609,7 @@ export function useChatSend({ state }: UseChatSendParams): UseChatSendResult {
     setAiLocalToolAccessResolveError('');
     try {
       if (!allow) {
-        await rejectXiyueLocalTool(aiLocalToolAccessPrompt.requestId, '用户拒绝执行工具');
+        await rejectassaLocalTool(aiLocalToolAccessPrompt.requestId, '用户拒绝执行工具');
         setAiLocalToolAccessPrompt(null);
         return;
       }

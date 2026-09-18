@@ -21,7 +21,7 @@ from agent import server  # noqa: E402
 
 @contextmanager
 def _config(**overrides):
-    """临时覆盖 xiyue.json 加载结果（identity 有模块级缓存 + mtime 重载）。"""
+    """临时覆盖 assa.json 加载结果（identity 有模块级缓存 + mtime 重载）。"""
     saved = identity._cached
     saved_mtime = identity._cached_mtime
     identity._cached = {**identity._DEFAULT, **overrides}

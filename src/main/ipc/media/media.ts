@@ -26,8 +26,8 @@
  */
 
 import { BrowserWindow, ipcMain } from 'electron';
-import { play, pause, next, previous, seek, getTimestamp } from '@xiyue/windows-smtc-helper';
-import { getMute, setMute } from '@xiyue/windows-volume-helper';
+import { play, pause, next, previous, seek, getTimestamp } from '@assa/windows-smtc-helper';
+import { getMuteAsync, setMuteAsync } from '@assa/windows-volume-helper';
 
 interface MediaSessionRuntimeEntry {
   payload: unknown;
@@ -128,14 +128,16 @@ export function registerMediaIpcHandlers(options: RegisterMediaIpcHandlersOption
     // SMTC 不支持应用级音量控制
   });
 
-  ipcMain.handle('media:get-muted', () => getMute());
+  // 异步 daemon 路径：同步 getMute/setMute 会 spawnSync .NET helper，
+  // 阻塞主进程消息循环 80–380ms（鼠标拖不动元凶）
+  ipcMain.handle('media:get-muted', async () => getMuteAsync());
 
-  ipcMain.handle('media:toggle-muted', () => {
-    const muted = getMute();
+  ipcMain.handle('media:toggle-muted', async () => {
+    const muted = await getMuteAsync();
     if (muted === null) return null;
 
     const nextMuted = !muted;
-    return setMute(nextMuted) ? nextMuted : null;
+    return await setMuteAsync(nextMuted) ? nextMuted : null;
   });
 
   ipcMain.handle('smtc:get-timestamp', () => {

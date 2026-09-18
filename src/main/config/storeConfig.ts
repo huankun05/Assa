@@ -27,7 +27,7 @@
 
 import { app } from 'electron';
 import { join } from 'path';
-import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync, statSync } from 'fs';
 import {
   normalizeClipboardUrlDetectMode,
   sanitizeClipboardUrlBlacklist,
@@ -339,14 +339,33 @@ function getStoreDir(): string {
   return join(app.getPath('userData'), 'eIsland_store');
 }
 
+/** storeConfig 读路径缓存：mtime+size 未变不重复同步读盘（启动热路径大量小 JSON 读） */
+const readJsonCache = new Map<string, { mtimeMs: number; size: number; value: unknown }>();
+
 function readJsonFile(storeKey: string): unknown | undefined {
   try {
     const filePath = join(getStoreDir(), `${storeKey}.json`);
     if (!existsSync(filePath)) return undefined;
-    return JSON.parse(readFileSync(filePath, 'utf-8'));
+    const st = statSync(filePath);
+    const cached = readJsonCache.get(filePath);
+    if (cached && cached.mtimeMs === st.mtimeMs && cached.size === st.size) {
+      return cached.value;
+    }
+    const value = JSON.parse(readFileSync(filePath, 'utf-8'));
+    readJsonCache.set(filePath, { mtimeMs: st.mtimeMs, size: st.size, value });
+    return value;
   } catch {
     return undefined;
   }
+}
+
+function invalidateReadJsonCache(storeKey?: string): void {
+  if (!storeKey) {
+    readJsonCache.clear();
+    return;
+  }
+  const filePath = join(getStoreDir(), `${storeKey}.json`);
+  readJsonCache.delete(filePath);
 }
 
 // ===== Sanitize =====
@@ -622,6 +641,7 @@ export function writeIslandPositionOffsetConfig(offset: IslandPositionOffset): b
     if (!existsSync(storeDir)) mkdirSync(storeDir, { recursive: true });
     const filePath = join(storeDir, `${ISLAND_POSITION_STORE_KEY}.json`);
     writeFileSync(filePath, JSON.stringify(offset, null, 2), 'utf-8');
+    invalidateReadJsonCache(ISLAND_POSITION_STORE_KEY);
     return true;
   } catch (err) {
     console.error('[IslandPosition] persist error:', err);
@@ -640,6 +660,7 @@ export function writeIslandDisplaySelectionConfig(selection: string): boolean {
     if (!existsSync(storeDir)) mkdirSync(storeDir, { recursive: true });
     const filePath = join(storeDir, `${ISLAND_DISPLAY_STORE_KEY}.json`);
     writeFileSync(filePath, JSON.stringify(sanitizeIslandDisplaySelection(selection), null, 2), 'utf-8');
+    invalidateReadJsonCache(ISLAND_DISPLAY_STORE_KEY);
     return true;
   } catch (err) {
     console.error('[IslandDisplay] persist error:', err);
@@ -668,6 +689,7 @@ export function writeIslandShapeModeConfig(mode: string): boolean {
     const valid = mode === 'notch' || mode === 'pill' ? mode : DEFAULT_ISLAND_SHAPE_MODE;
     const filePath = join(storeDir, `${ISLAND_SHAPE_MODE_STORE_KEY}.json`);
     writeFileSync(filePath, JSON.stringify(valid, null, 2), 'utf-8');
+    invalidateReadJsonCache(ISLAND_SHAPE_MODE_STORE_KEY);
     return true;
   } catch (err) {
     console.error('[IslandShapeMode] persist error:', err);
@@ -767,6 +789,7 @@ export function writeFirstLaunchConfig(): boolean {
     if (!existsSync(storeDir)) mkdirSync(storeDir, { recursive: true });
     const filePath = join(storeDir, `${FIRST_LAUNCH_STORE_KEY}.json`);
     writeFileSync(filePath, JSON.stringify(false, null, 2), 'utf-8');
+    invalidateReadJsonCache(FIRST_LAUNCH_STORE_KEY);
     return true;
   } catch (err) {
     console.error('[FirstLaunch] persist error:', err);

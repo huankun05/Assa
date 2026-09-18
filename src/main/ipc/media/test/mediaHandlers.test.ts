@@ -86,12 +86,12 @@ vi.mock('../../../utils/broadcast', () => ({
   broadcastSettingChange: broadcastSettingChangeMock,
 }));
 
-vi.mock('@xiyue/windows-volume-helper', () => ({
-  getMute: getMuteMock,
-  setMute: setMuteMock,
+vi.mock('@assa/windows-volume-helper', () => ({
+  getMuteAsync: getMuteMock,
+  setMuteAsync: setMuteMock,
 }));
 
-vi.mock('@xiyue/windows-smtc-helper', () => ({
+vi.mock('@assa/windows-smtc-helper', () => ({
   play: playMock,
   pause: pauseMock,
   next: nextMock,
@@ -170,15 +170,15 @@ describe('media ipc handlers', () => {
     expect(previousMock).not.toHaveBeenCalled();
   });
 
-  it('reads and toggles the default playback device mute state', () => {
+  it('reads and toggles the default playback device mute state', async () => {
     getMuteMock
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(null);
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(null);
     setMuteMock
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(false);
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
 
     registerMediaIpcHandlers({
       getMainWindow: () => null,
@@ -192,12 +192,12 @@ describe('media ipc handlers', () => {
       getSmtcSessionRuntime: () => new Map(),
     });
 
-    expect(handlers.get('media:get-muted')?.({})).toBe(false);
-    expect(handlers.get('media:toggle-muted')?.({})).toBe(true);
+    expect(await handlers.get('media:get-muted')?.({})).toBe(false);
+    expect(await handlers.get('media:toggle-muted')?.({})).toBe(true);
     expect(setMuteMock).toHaveBeenNthCalledWith(1, true);
-    expect(handlers.get('media:toggle-muted')?.({})).toBeNull();
+    expect(await handlers.get('media:toggle-muted')?.({})).toBeNull();
     expect(setMuteMock).toHaveBeenNthCalledWith(2, false);
-    expect(handlers.get('media:toggle-muted')?.({})).toBeNull();
+    expect(await handlers.get('media:toggle-muted')?.({})).toBeNull();
   });
 
   it('returns current info and applies source switch updates', () => {

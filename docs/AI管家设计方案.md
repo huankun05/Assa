@@ -8,8 +8,8 @@
 > 1. **裁决权定案：双闸门，Rust 为最终权威**（§3.2 / §5.2）——`policy.py` 为提议侧预检，Rust 执行前终审。
 > 2. 音频采集定案：Phase 0 以 Python `sounddevice` 过渡打通回路，Phase 1 移至 Rust（§3.1 / §11.2）。
 > 3. CosyVoice 集成定案：**HTTP 服务模式**（复用纳西妲 TTS 项目已有部署），模型生命周期解耦（§11.2）。
-> 4. 数据路径收口：统一 `resolve_data_dir()`，开发期可用 `XIYUE_DATA_DIR` 覆盖（§7.1）。
-> 5. 人格文件统一命名 `agent/persona/xiyue.md`。
+> 4. 数据路径收口：统一 `resolve_data_dir()`，开发期可用 `ASSA_DATA_DIR` 覆盖（§7.1）。
+> 5. 人格文件统一命名 `agent/persona/assa.md`。
 >
 > **v1.1 相对 v1.0 的关键变更**：
 > 1. **Part 4 由「嵌入 Hermes 核心」改为「自写精简 core + 借鉴其设计」**（实测 Hermes 不可干净剥离，详见 §9.3）。
@@ -77,9 +77,9 @@
 | L1 工具 | 文件管理（安全区）/ 应用控制 / 系统状态播报 / 提醒与日历 / **截图 OCR** |
 | L2 工具 | 命令行沙箱 / 浏览器自动化 / 代码辅助（项目内）/ 批量文件处理 / 代发消息（均临时提级 + 确认） |
 | 代发消息 | 确认后代发（二次确认 + 审计，绝不擅自发） |
-| 数据目录 | `%APPDATA%\xiyue\`（config / memory.db / audit.log / logs / models），详见 §7.1 |
+| 数据目录 | `%APPDATA%\assa\`（config / memory.db / audit.log / logs / models），详见 §7.1 |
 | Python 分发 | 开发期 venv；打包期 bundle **Python embeddable package** 作为 Tauri resource，详见 §7.2 |
-| 仓库 | `F:\Work\Create\Assa\xiyue`（monorepo：`src-tauri/` / `src/` / `agent/` / `voice/` / `schemas/` / `docs/`） |
+| 仓库 | `F:\Work\Create\Assa\assa`（monorepo：`src-tauri/` / `src/` / `agent/` / `voice/` / `schemas/` / `docs/`） |
 | Phase 0 | 最小语音回路：热键 → STT → Ollama → TTS 播报，**不含工具**，先验证延迟与体验 |
 | 已落地 | 仓库骨架 + `schemas/tool_schema.json` + `agent/gate/policy.py` + `agent/persona/soyue.md` + `agent/emotion.py` |
 
@@ -171,7 +171,7 @@ flowchart TD
   > **注意**：原定的 `Ctrl+Win+Space` 在 Windows 上会被系统/输入法占用（`Win+Space` 是语言切换），
   > 注册失败会导致启动崩溃。现改为候选列表依次尝试
   > （`Ctrl+Alt+Space` → `Ctrl+Shift+Alt+Space` → `Alt+Shift+Space`），
-  > 全部被占时**不 panic**，改为发 `hotkey:failed` 事件通知前端；可用环境变量 `XIYUE_HOTKEY` 指定。
+  > 全部被占时**不 panic**，改为发 `hotkey:failed` 事件通知前端；可用环境变量 `ASSA_HOTKEY` 指定。
 - **可选：唤醒词**（本地 KWS，自训中文模型）——需常驻监听麦克风，默认关闭。
 - **托盘图标**右键菜单也可唤起。
 
@@ -253,10 +253,10 @@ flowchart TD
 ## 7. 数据目录与运行时分发
 
 ### 7.1 数据目录（v1.1 新增）
-使用 Tauri 的 `app_data_dir()`，Windows 下为 `%APPDATA%\xiyue\`。**路径收口（v1.2）**：代码统一经 `agent.paths.resolve_data_dir()` 获取；开发期可用环境变量 `XIYUE_DATA_DIR` 覆盖（指向 repo 内 `data/` 便于调试）：
+使用 Tauri 的 `app_data_dir()`，Windows 下为 `%APPDATA%\assa\`。**路径收口（v1.2）**：代码统一经 `agent.paths.resolve_data_dir()` 获取；开发期可用环境变量 `ASSA_DATA_DIR` 覆盖（指向 repo 内 `data/` 便于调试）：
 
 ```
-%APPDATA%\xiyue\
+%APPDATA%\assa\
 ├── config.toml        # 信任等级 / 安全区白名单 / 热键 / 云端兜底开关
 ├── memory.db          # 记忆库（L0–L3 分层 + 向量）
 ├── audit.log          # 审计日志（Rust 独占 append-only）
@@ -443,7 +443,7 @@ flowchart TD
 - **v1 不做图 RAG**：不引入 Neo4j，仅留 `relations` 扩展点。
 
 ### 11.7 Part 7 · 人格/情绪 ✅
-- **SOUL**：`agent/persona/xiyue.md`（v1.2 已由 `soyue.md` 统一重命名）。含身份 / 性格 / 语气 / 硬边界 / 能力边界 / 记忆使用；运行时由 prompt_builder 注入。
+- **SOUL**：`agent/persona/assa.md`（v1.2 已由 `soyue.md` 统一重命名）。含身份 / 性格 / 语气 / 硬边界 / 能力边界 / 记忆使用；运行时由 prompt_builder 注入。
 - **情绪状态机**：`agent/emotion.py`，六态 {平静/愉悦/专注/疲惫/担忧/俏皮} + `EMOTION_COLOR` RGB 映射（已验证）。
 - **铁律**：情绪只改表达，不碰 `policy.py`；SOUL 可改，汐月可提议微调但须用户确认。
 - **待实现**：**短时衰减**（当前 `compute_emotion(ctx, prev)` 的 `prev` 参数未使用，docstring 标注"后续补全"）→ Phase 1 用 `prev` 实现滞回，避免情绪在信号边界高频跳变。
@@ -458,7 +458,7 @@ flowchart TD
 ## 12. 已落地产物（仓库现状）
 
 ```
-xiyue/
+assa/
 ├── README.md / .gitignore / package.json（@tauri-apps/cli devDep）
 ├── docs/
 │   ├── AI管家设计方案.md          ← 本文件（v1.2 单一事实源）
@@ -482,7 +482,7 @@ xiyue/
     ├── memory/
     │   └── store.py              ← 记忆存储骨架
     ├── persona/
-    │   └── xiyue.md               ← 汐月 SOUL ✅（v1.2 统一命名）
+    │   └── assa.md               ← 汐月 SOUL ✅（v1.2 统一命名）
     └── tools/
         └── __init__.py           ← 工具注册入口
 ```
@@ -508,7 +508,7 @@ xiyue/
 
 1. **Python 版本**：`kokoro` 钉死 `numpy==1.26.4`，该版本无 cp313 wheel，3.13 下退化为源码编译并被 meson + GBK 编码错误打断 → 必须用 **Python 3.12**。
 2. **HF 模型下载**：国内 `huggingface_hub` 的 HEAD 请求失败（`LocalEntryNotFoundError`），`HF_ENDPOINT=hf-mirror` / `HF_HUB_DISABLE_XET=1` 均无效 → `curl -L` 从 hf-mirror 手动下载：whisper 放 `data/models/faster-whisper-base/`（注意词表是 `vocabulary.txt` 不是 `.json`）；kokoro 放入 HF 缓存 `hub/models--hexgrad--Kokoro-82M/snapshots/<sha>/` 并写 `refs/main`。之后 `HF_HUB_OFFLINE=1` 可离线运行。另需 `ordered_set` + `misaki[zh]`（中文 G2P）。
-3. **ctranslate2 的 GPU 依赖延迟暴露**：CUDA 缺 `cublas64_12.dll` 时，**加载成功但首次推理才报错** → `stt.py` 默认 CPU（`XIYUE_STT_DEVICE=cuda` 可切），并在 `transcribe` 内做 GPU→CPU 降级重试。
+3. **ctranslate2 的 GPU 依赖延迟暴露**：CUDA 缺 `cublas64_12.dll` 时，**加载成功但首次推理才报错** → `stt.py` 默认 CPU（`ASSA_STT_DEVICE=cuda` 可切），并在 `transcribe` 内做 GPU→CPU 降级重试。
 4. **沙箱内的 cargo 锁**：WorkBuddy 沙箱会持续持有 `target*/debug/.cargo-build-lock`，导致 `cargo build` 报"拒绝访问"（无 cargo 进程、无法改名/删除）。**用户自己的终端无此问题。**
 
 ### 13.3 原始清单（存档）

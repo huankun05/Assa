@@ -40,12 +40,12 @@ async function getDesktopSource() {
   }
 }
 
-// —— 试验开关：XIYUE_CAPTURE_NO_HOVER=1 时禁用「IDLE 悬停窗口自动开洞摘蒙版」——
+// —— 试验开关：ASSA_CAPTURE_NO_HOVER=1 时禁用「IDLE 悬停窗口自动开洞摘蒙版」——
 // 用途：用户反馈「进截图后蒙版消失变亮」。最可疑路径 = IDLE 下鼠标悬停在某个可见窗口上时，
 // capture.js 会把该窗口区域的蒙版整块摘除（窗口恢复原亮度；若鼠标停在全屏应用上 → 视觉≈蒙版没了）。
 // 设 1 后 IDLE 永远保持整屏 is-full 均匀蒙版，只有显式拖框才开洞。
 // 二分定位法：设 1 复测 —— 若"变亮"消失 → 元凶就是 hover；若仍在 → 是 captureMask 合成层问题（看 [cap] 快照日志）。
-const CAPTURE_NO_HOVER = process.env.XIYUE_CAPTURE_NO_HOVER === '1';
+const CAPTURE_NO_HOVER = process.env.ASSA_CAPTURE_NO_HOVER === '1';
 
 // —— 崩溃留痕：任何未捕获 JS 异常/拒绝都上报主进程日志（经 'capture-log' 打到主进程 stdout）。
 //    此前「进截图一动就卡退」类问题无法复现时只能盲猜，这里保证下次必留下堆栈。
@@ -4591,7 +4591,7 @@ function lsDetachKeyDown() {
   document.removeEventListener('keydown', lsOnKeyDown, true);
 }
 
-/** 调试转储：把被拒帧落盘（temp/xiyue-ls-debug/），离线肉眼取证帧内容异常 */
+/** 调试转储：把被拒帧落盘（temp/assa-ls-debug/），离线肉眼取证帧内容异常 */
 function lsDebugDump(frame, tag) {
   try {
     if (lsDebugDumps >= 24 || !frame || !frame.toDataURL) return;

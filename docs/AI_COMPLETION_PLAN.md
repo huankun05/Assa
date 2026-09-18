@@ -1,7 +1,7 @@
 # AI / 语音 / 权限 · 半成品与未做完善方案
 
 > 状态：**2026-09-12 已实施 M-A1 / M-A2 / M-A3 / M-A5**（见 §6）  
-> 依据：源码盘点 + `汐月Electron版现状.md` + `Xiyue_设计与改进建议_v1.0.md`  
+> 依据：源码盘点 + `汐月Electron版现状.md` + `Assa_设计与改进建议_v1.0.md`  
 > 配套：`DESIGN_SYSTEM.md` §11  
 > 原则：本地优先；安全人在环；能闭环再扩面
 
@@ -27,9 +27,9 @@
 
 | 项 | 内容 |
 |---|---|
-| 现状 | `src/renderer/utils/security/permissionCards.ts` 有 L0–L3 说明；**无设置入口**；只能手改 `agent/persona/xiyue.json` 的 `security.trust_level` |
+| 现状 | `src/renderer/utils/security/permissionCards.ts` 有 L0–L3 说明；**无设置入口**；只能手改 `agent/persona/assa.json` 的 `security.trust_level` |
 | 目标 | 设置页可读写信任等级；展示「这个档位允许/需要确认什么」 |
-| 方案 | ① 设置新增「AI · 信任与权限」卡：单选 L0–L3 + 卡片文案（复用 `TRUST_LEVEL_CARDS`）② 写回：IPC 或 store 文件 `xiyue.json`（或等价 store）③ 只读展示当前终审策略摘要 |
+| 方案 | ① 设置新增「AI · 信任与权限」卡：单选 L0–L3 + 卡片文案（复用 `TRUST_LEVEL_CARDS`）② 写回：IPC 或 store 文件 `assa.json`（或等价 store）③ 只读展示当前终审策略摘要 |
 | 验收 | 改档位后对话工具高风险项行为变化；json 与 UI 一致 |
 | 估工作量 | 中（1 个设置页 + 1 条 IPC） |
 
@@ -91,7 +91,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 现状 | 审计已写 `userData/logs/xiyue-tools.log`；无查看 UI；通行证未做 |
+| 现状 | 审计已写 `userData/logs/assa-tools.log`；无查看 UI；通行证未做 |
 | 方案 | ① 先做 **审计只读列表**（最近工具调用、结果、是否用户确认）② 通行证（会话级自动允许）作 P2，依赖 1.1 信任等级 |
 | 验收 | 设置里能看到最近工具日志 |
 | 估工作量 | 审计列表中；通行证大 |
@@ -194,7 +194,7 @@
 | 本文件 | SSOT：半成品/未做与方案 |
 | `DESIGN_SYSTEM.md` §11 | 链到本文件 |
 | `EXECUTION_ISSUES.md` | 记入「AI 侧完善计划」 |
-| `Xiyue_设计与改进建议_v1.0.md` | 作历史；以本文件为准（可选加指针） |
+| `Assa_设计与改进建议_v1.0.md` | 作历史；以本文件为准（可选加指针） |
 
 ---
 
@@ -202,14 +202,14 @@
 
 | 里程碑 | 状态 | 落地 |
 |---|---|---|
-| **M-A1** | ✅ | 设置「隐私与安全 · AI 信任与审计」：L0–L3 卡片可写 `xiyue.json`；工具审计只读列表；identity mtime 热重载 |
+| **M-A1** | ✅ | 设置「隐私与安全 · AI 信任与审计」：L0–L3 卡片可写 `assa.json`；工具审计只读列表；identity mtime 热重载 |
 | **M-A2** | ✅ | Kokoro `speed` 接 `_emotion_tts_speed`；`/emotion` 返回 mood；final 带 emotionMood；hover 在 happy 时按情绪微调 calm/confuse（不覆盖 agent 工作态） |
 | **M-A3** | ✅ | `GET /memory/list` + 设置页只读记忆列表 |
-| **M-A4** | ✅ 部分 | barge-in：开麦/abort 停 TTS；Silero 为 `XIYUE_VAD=1` 可选二次确认（默认关） |
+| **M-A4** | ✅ 部分 | barge-in：开麦/abort 停 TTS；Silero 为 `ASSA_VAD=1` 可选二次确认（默认关） |
 | **M-A5** | ✅ | `browser.enabled` 默认 false + 设置开关；会话通行证（非 delete/cmd）；_decide_tool deny |
-| **M-A6 附加** | ✅ | 记忆删除/清空 API+UI；CosyVoice HTTP 可选（`XIYUE_COSYVOICE_URL`） |
+| **M-A6 附加** | ✅ | 记忆删除/清空 API+UI；CosyVoice HTTP 可选（`ASSA_COSYVOICE_URL`） |
 | **唤醒词** | ❌ 仍缺 | 需 openwakeword 模型与常驻麦克风，本机未装依赖，强行半成品更伤体验 |
 
-**相关文件**：`xiyueSecurityIpc.ts`、`SecuritySettingsSection.tsx`、`identity.py`、`server.py`、`tts.py`、`xiyue.json`。
+**相关文件**：`assaSecurityIpc.ts`、`SecuritySettingsSection.tsx`、`identity.py`、`server.py`、`tts.py`、`assa.json`。
 
 **自测**：`test_p0a_security.py` 7/7；`test_router_rules.py` 9/9；vitest island/toolSchema/security/agent 相关通过。

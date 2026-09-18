@@ -34,14 +34,14 @@ import { createHash } from 'crypto';
 import os from 'os';
 import { clearLogsCacheFiles, ensureLogsDir } from '../../log/mainLog';
 import { openStandaloneWindow, openStandaloneWindowWithTab, closeStandaloneWindow } from '../../window/standaloneWindow';
-import { openSettingsWindow } from '../../window/settingsWindow';
+import { openSettingsWindow, preloadSettingsWindow } from '../../window/settingsWindow';
+import { searchWithEverything } from '../../services/everythingSearch';
 import { registerAgentIpcHandlers } from '../agent';
-import { xiyueExecuteTool } from '../../services/xiyueToolSchema';
-import { restartApp } from '../../services/appRestart';
+import { assaExecuteTool } from '../../services/assaToolSchema';
+import { restartApp, quitAppFast } from '../../services/appRestart';
 import { queryOpenWindowsWithIcons, type RunningWindowInfo } from '../../system/runningProcesses';
 import { broadcastSettingChange } from '../../utils/broadcast';
 import { getSmtcNowPlaying } from '../../music/smtcAccessor';
-import { getIconByPath, getIconByShortcutPath } from '@xiyue/windows-application-icon-helper';
 import type { LocalFileSearchItem, LocalFileSearchOptions, AgentLocalToolRequest } from './types';
 import {
   MAX_LOCAL_FILE_READ_BYTES,
@@ -78,6 +78,65 @@ function assertWorkspaceBoundary(targetPath: string, workspaces: string[], toolN
   }
   if (!isInsideWorkspaces(targetPath, workspaces)) {
     throw new Error(`${toolName}: 路径 ${targetPath} 不在工作区范围内`);
+  }
+}
+
+/* ========== 文件图标：LRU 缓存 + 并发限流（FFI 同步，需让出事件循环） ========== */
+
+const FILE_ICON_CACHE_MAX = 300;
+const FILE_ICON_INFLIGHT_MAX = 2;
+const fileIconCache = new Map<string, string | null>();
+let fileIconInflight = 0;
+const fileIconWaiters: Array<() => void> = [];
+
+function rememberFileIcon(key: string, value: string | null): void {
+  if (!fileIconCache.has(key) && fileIconCache.size >= FILE_ICON_CACHE_MAX) {
+    const oldest = fileIconCache.keys().next().value;
+    if (typeof oldest === 'string') fileIconCache.delete(oldest);
+  }
+  fileIconCache.set(key, value);
+}
+
+function acquireFileIconSlot(): Promise<void> {
+  if (fileIconInflight < FILE_ICON_INFLIGHT_MAX) {
+    fileIconInflight += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    fileIconWaiters.push(() => {
+      fileIconInflight += 1;
+      resolve();
+    });
+  });
+}
+
+function releaseFileIconSlot(): void {
+  fileIconInflight -= 1;
+  const next = fileIconWaiters.shift();
+  if (next) next();
+}
+
+/** 异步取图标：命中缓存直接返回；否则限流执行同步 FFI，避免主线程被上百次图标提取打满 */
+async function getFileIconDataUrlAsync(filePath: string): Promise<string | null> {
+  const key = filePath.toLowerCase();
+  if (fileIconCache.has(key)) return fileIconCache.get(key) ?? null;
+
+  await acquireFileIconSlot();
+  try {
+    if (fileIconCache.has(key)) return fileIconCache.get(key) ?? null;
+    /** 让出一帧事件循环，避免连续 FFI 饿死 IPC/渲染 */
+    await new Promise<void>((resolve) => { setImmediate(resolve); });
+    const { getIconByPath, getIconByShortcutPath } = require('@assa/windows-application-icon-helper') as {
+      getIconByPath: (p: string) => { data: Buffer } | null;
+      getIconByShortcutPath: (p: string) => { data: Buffer } | null;
+    };
+    const isLnk = key.endsWith('.lnk');
+    const result = isLnk ? getIconByShortcutPath(filePath) : getIconByPath(filePath);
+    const value = result ? result.data.toString('base64') : null;
+    rememberFileIcon(key, value);
+    return value;
+  } finally {
+    releaseFileIconSlot();
   }
 }
 
@@ -368,7 +427,7 @@ async function executeLocalWebSearch(args: Record<string, unknown>): Promise<{
 }
 
 /**
- * 汐月本地工具执行入口：终审 + 审计统一由 xiyueExecuteTool 收口，
+ * 汐月本地工具执行入口：终审 + 审计统一由 assaExecuteTool 收口，
  * 本函数只是把纯实现 executeAgentLocalToolImpl 挂到闸门后面。
  * 渲染层 IPC 与主进程 Ollama/自定义编排器都经此入口，不允许直接调用 Impl。
  */
@@ -378,7 +437,7 @@ async function executeAgentLocalTool(request: AgentLocalToolRequest): Promise<{
   error: string;
   durationMs: number;
 }> {
-  return xiyueExecuteTool(request, executeAgentLocalToolImpl, { source: 'main-executor' });
+  return assaExecuteTool(request, executeAgentLocalToolImpl, { source: 'main-executor' });
 }
 
 /** 纯工具实现：只负责"怎么做"；"能不能做"（白名单/工作区/用户确认）已在闸门判定 */
@@ -1279,7 +1338,7 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
 
     if (tool === 'notification.send') {
       const { Notification: ElectronNotification } = await import('electron');
-      const title = getStringArg(args, 'title') || '汐月 Agent';
+      const title = getStringArg(args, 'title') || 'Assa Agent';
       const body = getStringArg(args, 'body');
       if (!body) throw new Error('notification.send 需要 body');
       new ElectronNotification({ title, body }).show();
@@ -1500,7 +1559,7 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
 
     if (tool === 'media.play_pause') {
       // 系统媒体键切换播放/暂停（不依赖当前 SMTC 会话状态）
-      const psScript = `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class XiyueMediaKey { [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo); }'; [XiyueMediaKey]::keybd_event(0xB3,0,0,[UIntPtr]::Zero); [XiyueMediaKey]::keybd_event(0xB3,0,2,[UIntPtr]::Zero)`;
+      const psScript = `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class AssaMediaKey { [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo); }'; [AssaMediaKey]::keybd_event(0xB3,0,0,[UIntPtr]::Zero); [AssaMediaKey]::keybd_event(0xB3,0,2,[UIntPtr]::Zero)`;
       await new Promise<void>((res, rej) => {
         execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', psScript],
           { windowsHide: true, timeout: 5000, maxBuffer: 16 * 1024 },
@@ -1510,7 +1569,7 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
     }
 
     if (tool === 'media.next' || tool === 'media.prev') {
-      const smtc = await import('@xiyue/windows-smtc-helper');
+      const smtc = await import('@assa/windows-smtc-helper');
       if (tool === 'media.next') {
         smtc.next();
         return { success: true, result: { action: 'next' }, error: '', durationMs: Date.now() - startedAt };
@@ -1537,8 +1596,8 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
       const action = tool.split('.')[1];
       let cmd: string;
       if (action === 'sleep') cmd = 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0';
-      else if (action === 'shutdown') cmd = 'shutdown /s /t 5 /c "汐月 Agent 关机"';
-      else cmd = 'shutdown /r /t 5 /c "汐月 Agent 重启"';
+      else if (action === 'shutdown') cmd = 'shutdown /s /t 5 /c "Assa Agent 关机"';
+      else cmd = 'shutdown /r /t 5 /c "Assa Agent 重启"';
       await new Promise<void>((res, rej) => {
         execFile('cmd.exe', ['/c', cmd], { windowsHide: true, timeout: 10000 },
           (err) => { if (err) rej(new Error(err.message)); else res(); });
@@ -2226,7 +2285,7 @@ async function executeAgentLocalToolImpl(request: AgentLocalToolRequest): Promis
 }
 
 async function callPythonBrowserTool(tool: string, args: Record<string, unknown>): Promise<any> {
-  const port = Number(process.env.XIYUE_AGENT_PORT) || 8765;
+  const port = Number(process.env.ASSA_AGENT_PORT) || 8765;
   const url = `http://127.0.0.1:${port}/browser`;
   const body = JSON.stringify({ tool, arguments: args });
   
@@ -2250,7 +2309,7 @@ async function callPythonBrowserTool(tool: string, args: Record<string, unknown>
  */
 export function registerAppIpcHandlers(): void {
   ipcMain.on('app:quit', () => {
-    app.quit();
+    quitAppFast();
   });
 
   ipcMain.handle('app:pick-local-search-directory', async (event) => {
@@ -2314,7 +2373,7 @@ export function registerAppIpcHandlers(): void {
       const content = typeof data.content === 'string' ? data.content : '';
       const defaultPath = typeof data.defaultPath === 'string' && data.defaultPath.trim()
         ? data.defaultPath.trim()
-        : 'xiyue-export.txt';
+        : 'assa-export.txt';
       const filters = Array.isArray(data.filters)
         ? data.filters
           .map((filter) => {
@@ -2360,11 +2419,29 @@ export function registerAppIpcHandlers(): void {
     options?: number | LocalFileSearchOptions,
   ) => {
     try {
-      const searchOptions = typeof options === 'number' ? { limit: options } : options;
-      return await searchLocalFiles(rootDir, keyword, searchOptions);
+      const searchOptions = typeof options === 'number' ? { limit: options } : (options ?? {});
+      const preferEverything = searchOptions.preferEverything !== false;
+      const keywordText = typeof keyword === 'string' ? keyword.trim() : '';
+      if (preferEverything && keywordText) {
+        const everything = await searchWithEverything(keywordText, searchOptions.limit ?? 80);
+        if (everything) return everything.items;
+      }
+      // Everything 不可用或未启用：回退原目录遍历（需 rootDir）
+      const items = await searchLocalFiles(rootDir, keyword, searchOptions);
+      return items;
     } catch (err) {
       console.error('[App] search local files error:', err);
       return [];
+    }
+  });
+
+  /** 探测 Everything CLI 是否可用（UI 徽标用） */
+  ipcMain.handle('app:everything-available', async () => {
+    try {
+      const probe = await searchWithEverything('explorer', 1);
+      return Boolean(probe);
+    } catch {
+      return false;
     }
   });
 
@@ -2452,11 +2529,10 @@ export function registerAppIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle('app:get-file-icon', (_event, filePath: string) => {
+  ipcMain.handle('app:get-file-icon', async (_event, filePath: string) => {
     try {
-      const isLnk = filePath.toLowerCase().endsWith('.lnk');
-      const result = isLnk ? getIconByShortcutPath(filePath) : getIconByPath(filePath);
-      return result ? result.data.toString('base64') : null;
+      if (!filePath || typeof filePath !== 'string') return null;
+      return await getFileIconDataUrlAsync(filePath);
     } catch (err) {
       console.error('[App] get-file-icon error:', err);
       return null;
@@ -2554,6 +2630,17 @@ export function registerAppIpcHandlers(): void {
       return true;
     } catch (err) {
       console.error('[App] open-settings-window error:', err);
+      return false;
+    }
+  });
+
+  /** 后台预热设置窗（进控制中心时调用，不显示窗口） */
+  ipcMain.handle('app:preload-settings-window', () => {
+    try {
+      preloadSettingsWindow();
+      return true;
+    } catch (err) {
+      console.error('[App] preload-settings-window error:', err);
       return false;
     }
   });

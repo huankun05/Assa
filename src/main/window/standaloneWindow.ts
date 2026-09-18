@@ -1,4 +1,4 @@
-﻿/*
+/*
  * eIsland - A sleek, Apple Dynamic Island inspired floating widget for Windows, built with Electron.
  * https://github.com/JNTMTMTM/eIsland
  *
@@ -37,27 +37,35 @@ let standaloneWindowAutoShow = false;
 /** 独立窗口活动标签页存储键，需与 renderer 侧 ACTIVE_TAB_STORE_KEY 保持一致 */
 const ACTIVE_TAB_STORE_KEY = 'standalone-window-active-tab';
 
-/**
- * 打开独立窗口（若已打开则聚焦）
- */
+const WINDOW_DEFAULT = {
+  width: 1120,
+  height: 700,
+  minWidth: 720,
+  minHeight: 480,
+} as const;
+
 /**
  * 创建独立窗口
  * @param autoShow - ready-to-show 时是否自动显示（预创建隐藏窗口时传 false）
  */
 function createStandaloneWindow(autoShow: boolean): BrowserWindow {
   const win = new BrowserWindow({
-    width: 1155,
-    height: 640,
-    minWidth: 1155,
-    minHeight: 640,
+    width: WINDOW_DEFAULT.width,
+    height: WINDOW_DEFAULT.height,
+    minWidth: WINDOW_DEFAULT.minWidth,
+    minHeight: WINDOW_DEFAULT.minHeight,
     show: false,
     frame: false,
     transparent: false,
-    backgroundColor: '#000000',
+    backgroundColor: '#f4f6fa',
     resizable: true,
+    maximizable: true,
+    minimizable: true,
+    fullscreenable: true,
+    thickFrame: true,
     icon: is.dev
-      ? join(__dirname, '../../resources/icon/xiyue_256x256.ico')
-      : join(process.resourcesPath, 'icon/xiyue_256x256.ico'),
+      ? join(__dirname, '../../resources/icon/assa_256x256.ico')
+      : join(process.resourcesPath, 'icon/assa_256x256.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -67,22 +75,34 @@ function createStandaloneWindow(autoShow: boolean): BrowserWindow {
     },
   });
 
+  // 无边框窗在部分 Windows 配置下 resizable 会被重置，创建后强制再设一次
+  try {
+    win.setResizable(true);
+    win.setMinimumSize(WINDOW_DEFAULT.minWidth, WINDOW_DEFAULT.minHeight);
+  } catch {
+    // ignore
+  }
+
   standaloneWindowAutoShow = autoShow;
 
   win.on('ready-to-show', () => {
+    try {
+      win.setResizable(true);
+      win.setMinimumSize(WINDOW_DEFAULT.minWidth, WINDOW_DEFAULT.minHeight);
+    } catch {
+      // ignore
+    }
     if (standaloneWindowAutoShow) win.show();
   });
 
-  // 关闭即隐藏而非销毁：拦截 'close' 事件（含窗口 X 按钮、Alt+F4、closeStandaloneWindow），
-  // 保留渲染进程常驻，下次打开无需重建窗口与重新 loadURL，实现秒开。
-  // 内存代价仅在「首次打开过」之后产生（常驻一个窗口），启动阶段零额外占用。
+  // 关闭即隐藏而非销毁：拦截 'close'（含窗口 X、Alt+F4），保留渲染进程，下次打开秒开。
   win.on('close', (event) => {
     event.preventDefault();
     win.hide();
   });
 
   win.on('closed', () => {
-    standaloneWindow = null;
+    if (standaloneWindow === win) standaloneWindow = null;
   });
 
   win.webContents.setWindowOpenHandler((details) => {
@@ -99,12 +119,33 @@ function createStandaloneWindow(autoShow: boolean): BrowserWindow {
   return win;
 }
 
+/** 销毁旧窗（绕过 hide），用于打开时强制用新 BrowserWindow 参数重建 */
+function destroyStandaloneWindowNow(): void {
+  const win = standaloneWindow;
+  standaloneWindow = null;
+  if (!win || win.isDestroyed()) return;
+  win.removeAllListeners('close');
+  win.destroy();
+}
+
 /**
- * 打开独立窗口（若已打开则直接显示，否则创建并自动显示）
+ * 打开独立窗口
+ * @description 若旧窗不可缩放则重建，保证 resizable/minSize 生效。
  */
 function openStandaloneWindow(): void {
   if (standaloneWindow && !standaloneWindow.isDestroyed()) {
-    // 保活模式：窗口仍驻留（只是被隐藏），直接重新显示即可，无需重建 → 秒开、省去 loadURL 开销
+    try {
+      standaloneWindow.setResizable(true);
+      standaloneWindow.setMinimumSize(WINDOW_DEFAULT.minWidth, WINDOW_DEFAULT.minHeight);
+    } catch {
+      // ignore
+    }
+    if (!standaloneWindow.isResizable()) {
+      destroyStandaloneWindowNow();
+    }
+  }
+
+  if (standaloneWindow && !standaloneWindow.isDestroyed()) {
     if (standaloneWindow.isVisible()) {
       standaloneWindow.focus();
     } else {
@@ -117,18 +158,13 @@ function openStandaloneWindow(): void {
 }
 
 /**
- * 启动空闲后预创建隐藏窗口：把「首次打开」的建窗 + loadURL + 首屏渲染成本前移，
- * 使第一次打开也秒开。仅创建一个窗口（所有 tab 共用），代价是启动即常驻一个窗口内存（~50–150MB）。
+ * 启动空闲后预创建隐藏窗口
  */
 export function precreateStandaloneWindow(): void {
   if (standaloneWindow && !standaloneWindow.isDestroyed()) return;
   standaloneWindow = createStandaloneWindow(false);
 }
 
-/**
- * 持久化独立窗口活动标签页（主进程直接同步写入 store 文件）
- * @param tab - 目标标签页
- */
 function persistStandaloneActiveTab(tab: string): void {
   try {
     const storeDir = join(app.getPath('userData'), 'eIsland_store');
@@ -145,9 +181,6 @@ function persistStandaloneActiveTab(tab: string): void {
 
 /**
  * 打开独立窗口并先切到指定标签页
- * @description 同步持久化目标标签 + 广播 + 打开窗口，保证窗口显示时渲染进程
- *   能立即读到正确标签，避免「先显示旧标签再切换」的竞态与一次多余的 IPC 往返。
- * @param tab - 目标标签页
  */
 function openStandaloneWindowWithTab(tab: string): void {
   persistStandaloneActiveTab(tab);
@@ -155,18 +188,12 @@ function openStandaloneWindowWithTab(tab: string): void {
   openStandaloneWindow();
 }
 
-/**
- * 关闭独立窗口
- */
 function closeStandaloneWindow(): void {
   if (standaloneWindow && !standaloneWindow.isDestroyed()) {
     standaloneWindow.close();
   }
 }
 
-/**
- * 获取独立窗口实例
- */
 function getStandaloneWindow(): BrowserWindow | null {
   return standaloneWindow;
 }

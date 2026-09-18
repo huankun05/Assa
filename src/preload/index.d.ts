@@ -104,18 +104,39 @@ declare global {
       collapseWindow: (delayMs?: number) => void;
       hideWindow: () => void;
       hideWindowTemporarily: (durationMs?: number) => void;
-      xiyueTrustLevelGet: () => Promise<number>;
-      xiyueTrustLevelSet: (level: number) => Promise<number>;
-      xiyueAuditLogList: (limit?: number) => Promise<unknown[]>;
-      xiyueMemoryList: () => Promise<{ items?: unknown[]; error?: string }>;
-      xiyueEmotionGet: () => Promise<{ state?: string; mood?: string } | null>;
-      xiyueMemoryDelete: (id: number) => Promise<unknown>;
-      xiyueMemoryClear: () => Promise<unknown>;
-      xiyueBrowserEnabledGet: () => Promise<boolean>;
-      xiyueBrowserEnabledSet: (enabled: boolean) => Promise<boolean>;
-      xiyueSessionPassGet: () => Promise<boolean>;
-      xiyueSessionPassSet: (enabled: boolean) => Promise<boolean>;
-      showWindow: () => void;
+      assaTrustLevelGet: () => Promise<number>;
+      assaTrustLevelSet: (level: number) => Promise<number>;
+      assaVisibleNameGet: () => Promise<string>;
+      assaVisibleNameSet: (name: string) => Promise<string>;
+      assaAuditLogList: (limit?: number) => Promise<unknown[]>;
+      assaMemoryList: () => Promise<{ items?: unknown[]; error?: string }>;
+      assaEmotionGet: () => Promise<{ state?: string; mood?: string } | null>;
+      assaMemoryDelete: (id: number) => Promise<unknown>;
+      assaMemoryClear: () => Promise<unknown>;
+      assaBrowserEnabledGet: () => Promise<boolean>;
+      assaBrowserEnabledSet: (enabled: boolean) => Promise<boolean>;
+      assaSessionPassGet: () => Promise<boolean>;
+      assaSessionPassSet: (enabled: boolean) => Promise<boolean>;
+      assaIdentity: () => Promise<{
+        name: string;
+        visible_name: string;
+        english_name: string;
+        role: string;
+        model_default: string;
+        system_identifier: string;
+        greeting: string;
+        language_default: string;
+        local_first: boolean;
+        cloud_fallback_default_off: boolean;
+        data_never_leave_machine: boolean;
+        emotion_enabled: boolean;
+        emotion_default_state: string;
+        memory_enabled: boolean;
+        max_history_turns: number;
+        tools_enabled: boolean;
+        max_tool_rounds: number;
+      } | null>;
+      assaHealth: () => Promise<{ ok: boolean; model?: string; error?: string }>;\r\n      showWindow: () => void;
       moveWindowDelta: (dx: number, dy: number) => void;
       getMousePosition: () => Promise<Point>;
       getMouseWindowState?: () => Promise<{ mousePosition: Point; bounds: Bounds } | null>;
@@ -140,6 +161,7 @@ declare global {
         keyword: string,
         options?: SearchLocalFilesOptions,
       ) => Promise<SearchLocalFileResult[]>;
+      everythingAvailable: () => Promise<boolean>;
       executeAgentLocalTool: (request: ExecuteAgentLocalToolRequest) => Promise<ExecuteAgentLocalToolResult>;
       ollamaPing: (baseUrl?: string) => Promise<boolean>;
       ollamaModels: (baseUrl?: string) => Promise<string[]>;
@@ -153,14 +175,14 @@ declare global {
         sessionId: string,
         callback: (event: ChatEvent) => void,
       ) => () => void;
-      xiyueHealth: () => Promise<{ ok: boolean; model?: string; error?: string }>;
-      xiyueChat: (text: string) => Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }>;
-      xiyueVoice: () => Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }>;
-      xiyueTranscribe: (audioB64: string) => Promise<{ text: string }>;
-      xiyueStreamChatStart: (sessionId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
-      xiyueStreamAbort: (sessionId: string) => Promise<{ ok: boolean }>;
-      xiyueToolResult: (requestId: string, result: unknown) => Promise<{ ok: boolean }>;
-      onXiyueStreamEvent: (
+      assaHealth: () => Promise<{ ok: boolean; model?: string; error?: string }>;
+      assaChat: (text: string) => Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }>;
+      assaVoice: () => Promise<{ user: string; reply: string; audio?: string; audio_b64?: string }>;
+      assaTranscribe: (audioB64: string) => Promise<{ text: string }>;
+      assaStreamChatStart: (sessionId: string, text: string) => Promise<{ ok: boolean; error?: string }>;
+      assaStreamAbort: (sessionId: string) => Promise<{ ok: boolean }>;
+      assaToolResult: (requestId: string, result: unknown) => Promise<{ ok: boolean }>;
+      onAssaStreamEvent: (
         sessionId: string,
         callback: (event: { type: string; payload?: Record<string, unknown> }) => void,
       ) => () => void;
@@ -179,6 +201,7 @@ declare global {
       windowClose: () => void;
       openStandaloneWindow: (tab?: string) => Promise<boolean>;
       openSettingsWindow: () => Promise<boolean>;
+      preloadSettingsWindow: () => Promise<boolean>;
       resetGuide: () => Promise<boolean>;
       closeStandaloneWindow: () => Promise<boolean>;
       mediaPlayPause: () => Promise<void>;
@@ -219,7 +242,6 @@ declare global {
       openFontDialog: () => Promise<{ path: string; data: string; ext: string; name: string } | null>;
       readFontFile: (filePath: string) => Promise<{ path: string; data: string; ext: string; name: string } | null>;
       loadWallpaperFile: (filePath: string) => Promise<string | null>;
-      loadAlbumThumbnail: (filePath: string) => Promise<string | null>;
       clearWallpaperCache: () => Promise<void>;
       setSystemDesktopWallpaper: (payload: SetWallpaperPayload) => Promise<boolean>;
       wallpaperVideoCover: (sourcePath: string) => Promise<string | null>;

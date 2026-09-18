@@ -1,12 +1,19 @@
-# Xiyue（汐月）文档索引
+# Assa（汐月）文档索引
 
-> 最后整理：2026-09-10 | 整理范围：docs/ 全部文档
+> 最后整理：2026-09-13 | 整理范围：docs/ 全部文档 + 工作日志
 > 当前技术栈：**Electron + React + Python 侧车**（2026-08-30 从 Tauri2+Rust 战略转向，fork 自 eIsland）
 > 2026-09-10 完成全项目全面调查 + 垃圾清理（释放 ~1.35 GB），新增 4 份调查报告，详见"调查报告"分类
+> 2026-09-13 完成性能优化第一批（启动卡顿 + 鼠标走不动），详见工作日志
 
 ---
 
 ## 一、文档分类总览
+
+### 工作日志（按日期记录实际改动）
+
+| 文档 | 大小 | 一句话要点 |
+|---|---|---|
+| [工作日志_性能优化_2026-09-13.md](./工作日志_性能优化_2026-09-13.md) | — | **性能优化第一批**：spawnSync 消除、selector 订阅、启动错峰、Codex 异步化；根因与设计要点 |
 
 ### 已实现（描述的功能已在当前代码中落地）
 
@@ -20,17 +27,17 @@
 | 文档 | 大小 | 一句话要点 |
 |---|---|---|
 | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | 11 KB | 数据目录统一收口 + desk-pet hermes_core 记忆/情绪/人格模块移植（"换脑"），v1.0 草案待评审 |
-| [Xiyue_设计与改进建议_v1.0.md](./Xiyue_设计与改进建议_v1.0.md) | 约 12 KB | 技术债优先级 + 二次元形象 brief + UI 范式建议（许可卡片/状态反馈）+ 落地顺序，与全面调查报告互补 |
+| [Assa_设计与改进建议_v1.0.md](./Assa_设计与改进建议_v1.0.md) | 约 12 KB | 技术债优先级 + 二次元形象 brief + UI 范式建议（许可卡片/状态反馈）+ 落地顺序，与全面调查报告互补 |
 | [AI_COMPLETION_PLAN.md](./AI_COMPLETION_PLAN.md) | 约 8 KB | **AI/语音/权限 半成品与未做完善方案（2026-09-12）**：信任等级 UI、审计、情绪接线、记忆可见、VAD、浏览器收口里程碑 |
 
 ### 调查报告（2026-09-10 全面调查产出）
 
 | 文档 | 大小 | 一句话要点 |
 |---|---|---|
-| [Xiyue_全面调查报告_v1.0.md](./Xiyue_全面调查报告_v1.0.md) | 33 KB | **全项目三层综合报告**（现状-目标-方法），含技术债务汇总与下一步建议，调查的首选入口 |
-| [Xiyue_Electron_Source_Audit.md](./Xiyue_Electron_Source_Audit.md) | 53 KB | Electron 应用层源码调查（main/preload/renderer/plugins，~180 IPC channel、13 状态机、14 插件） |
-| [Xiyue_Agent_Voice_Source_Audit.md](./Xiyue_Agent_Voice_Source_Audit.md) | 36 KB | Agent 侧车与语音链路源码调查（10 API 端点、5 高优先级技术债务、Ollama/STT/TTS 全链路） |
-| [Xiyue_Cleanup_Report_2026-09-10.md](./Xiyue_Cleanup_Report_2026-09-10.md) | 21 KB | 项目垃圾清理清单（~1.36 GB 可释放，62 项逐项可追溯），**清理已于 2026-09-10 执行完成** |
+| [Assa_全面调查报告_v1.0.md](./Assa_全面调查报告_v1.0.md) | 33 KB | **全项目三层综合报告**（现状-目标-方法），含技术债务汇总与下一步建议，调查的首选入口 |
+| [Assa_Electron_Source_Audit.md](./Assa_Electron_Source_Audit.md) | 53 KB | Electron 应用层源码调查（main/preload/renderer/plugins，~180 IPC channel、13 状态机、14 插件） |
+| [Assa_Agent_Voice_Source_Audit.md](./Assa_Agent_Voice_Source_Audit.md) | 36 KB | Agent 侧车与语音链路源码调查（10 API 端点、5 高优先级技术债务、Ollama/STT/TTS 全链路） |
+| [Assa_Cleanup_Report_2026-09-10.md](./Assa_Cleanup_Report_2026-09-10.md) | 21 KB | 项目垃圾清理清单（~1.36 GB 可释放，62 项逐项可追溯），**清理已于 2026-09-10 执行完成** |
 
 ### 参考 / 规范（持续性参考，不随版本过期）
 
@@ -39,7 +46,7 @@
 | [FRONTEND_STANDARDS.md](./FRONTEND_STANDARDS.md) | 39 KB | HTML/CSS/JS/TS/React/Next.js 全栈前端编码规范（eIsland 原作者 JNTMTMTM 制定） |
 | [COMMENT_STANDARDS.md](./COMMENT_STANDARDS.md) | 6.6 KB | JSDoc 注释规范 + GPL-3.0 版权声明模板 |
 | [ICON_ENUM.md](./ICON_ENUM.md) | 15 KB | 天气图标枚举（UAPI + WMO 双标准，约 400+ 天气/预警代码） |
-| [design/DESIGN_STYLE_GUIDE.md](./design/DESIGN_STYLE_GUIDE.md) | 16 KB | Xiyue UI 设计风格指南（颜色/字体/圆角/动画/组件范式 + Code Review 清单） |
+| [design/DESIGN_STYLE_GUIDE.md](./design/DESIGN_STYLE_GUIDE.md) | 16 KB | Assa UI 设计风格指南（颜色/字体/圆角/动画/组件范式 + Code Review 清单） |
 | [LEGAL/PRIVACY_POLICY.md](./LEGAL/PRIVACY_POLICY.md) | 3 KB | 隐私政策（中英双语，2026-04-23） |
 | [LEGAL/TERMS_OF_SERVICE.md](./LEGAL/TERMS_OF_SERVICE.md) | 2.6 KB | 服务条款（中英双语，2026-04-23） |
 | [LEGAL/BILLING_REFUND_POLICY.md](./LEGAL/BILLING_REFUND_POLICY.md) | 2 KB | 计费与退款政策（中英双语，2026-04-23） |
@@ -66,16 +73,17 @@
 
 | 你想了解… | 首选文档 | 辅助参考 |
 |---|---|---|
-| **当前代码架构是什么样** | [汐月Electron版现状.md](./汐月Electron版现状.md) | [Xiyue_全面调查报告_v1.0.md](./Xiyue_全面调查报告_v1.0.md) |
-| **项目整体现状/目标/方法** | [Xiyue_全面调查报告_v1.0.md](./Xiyue_全面调查报告_v1.0.md) | [Xiyue_Electron_Source_Audit.md](./Xiyue_Electron_Source_Audit.md) / [Xiyue_Agent_Voice_Source_Audit.md](./Xiyue_Agent_Voice_Source_Audit.md) |
+| **当前代码架构是什么样** | [汐月Electron版现状.md](./汐月Electron版现状.md) | [Assa_全面调查报告_v1.0.md](./Assa_全面调查报告_v1.0.md) |
+| **启动卡顿/鼠标走不动怎么改的** | [工作日志_性能优化_2026-09-13.md](./工作日志_性能优化_2026-09-13.md) | [Assa_全面调查报告_v1.0.md](./Assa_全面调查报告_v1.0.md) |
+| **项目整体现状/目标/方法** | [Assa_全面调查报告_v1.0.md](./Assa_全面调查报告_v1.0.md) | [Assa_Electron_Source_Audit.md](./Assa_Electron_Source_Audit.md) / [Assa_Agent_Voice_Source_Audit.md](./Assa_Agent_Voice_Source_Audit.md) |
 | **灵动岛各档位装什么、怎么交互** | [灵动岛分档改造计划书.md](./灵动岛分档改造计划书.md) | [design/DESIGN_STYLE_GUIDE.md](./design/DESIGN_STYLE_GUIDE.md) |
 | **UI 设计规范（颜色/圆角/动画）** | [design/DESIGN_STYLE_GUIDE.md](./design/DESIGN_STYLE_GUIDE.md) | [FRONTEND_STANDARDS.md](./FRONTEND_STANDARDS.md) |
-| **技术债优先级 / 形象 brief / UI 范式建议** | [Xiyue_设计与改进建议_v1.0.md](./Xiyue_设计与改进建议_v1.0.md) | [Xiyue_全面调查报告_v1.0.md](./Xiyue_全面调查报告_v1.0.md) |
+| **技术债优先级 / 形象 brief / UI 范式建议** | [Assa_设计与改进建议_v1.0.md](./Assa_设计与改进建议_v1.0.md) | [Assa_全面调查报告_v1.0.md](./Assa_全面调查报告_v1.0.md) |
 | **前端代码怎么写** | [FRONTEND_STANDARDS.md](./FRONTEND_STANDARDS.md) | [COMMENT_STANDARDS.md](./COMMENT_STANDARDS.md) |
-| **数据存在哪、怎么清理** | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | [Xiyue_Cleanup_Report_2026-09-10.md](./Xiyue_Cleanup_Report_2026-09-10.md)（已执行） |
-| **Agent 侧车"换脑"（hermes_core 移植）** | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | [Xiyue_Agent_Voice_Source_Audit.md](./Xiyue_Agent_Voice_Source_Audit.md) |
-| **Agent 侧车与语音链路实现细节** | [Xiyue_Agent_Voice_Source_Audit.md](./Xiyue_Agent_Voice_Source_Audit.md) | — |
-| **Electron 主进程/渲染层/插件实现细节** | [Xiyue_Electron_Source_Audit.md](./Xiyue_Electron_Source_Audit.md) | — |
+| **数据存在哪、怎么清理** | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | [Assa_Cleanup_Report_2026-09-10.md](./Assa_Cleanup_Report_2026-09-10.md)（已执行） |
+| **Agent 侧车"换脑"（hermes_core 移植）** | [方案_存储与移植规划_v1.0.md](./方案_存储与移植规划_v1.0.md) | [Assa_Agent_Voice_Source_Audit.md](./Assa_Agent_Voice_Source_Audit.md) |
+| **Agent 侧车与语音链路实现细节** | [Assa_Agent_Voice_Source_Audit.md](./Assa_Agent_Voice_Source_Audit.md) | — |
+| **Electron 主进程/渲染层/插件实现细节** | [Assa_Electron_Source_Audit.md](./Assa_Electron_Source_Audit.md) | — |
 | **长截图功能原理与已知问题** | [长截图问题排查记录.md](./长截图问题排查记录.md) | — |
 | **版本更新了什么** | [announcement/](./announcement/)（V26.6.5 起中英双语） | [CHANGE_LOG.md](./CHANGE_LOG.md)（git 提交级） |
 | **项目最初的设计意图** | [AI管家设计方案.md](./AI管家设计方案.md) ⚠️ | 仅作历史参考，架构已变 |
@@ -109,19 +117,19 @@
   - **V26.5.x**：CLI 控制台、活动热力图、外部代理检测、翻译工具
   - **V26.6.x**：CLI 实时控制台、URL 收藏夹管理、问卷系统、壁纸市场
   - **V26.7.x**：网易云音乐登录/喜欢同步、歌词精确匹配、问卷奖励、汐月 AI 集成深化
-- **注意**：公告为 eIsland 上游 + Xiyue fork 混合历史，V26.7.x 后期公告仓库链接已指向 `huankun05/Assa`（Xiyue fork）
+- **注意**：公告为 eIsland 上游 + Assa fork 混合历史，V26.7.x 后期公告仓库链接已指向 `huankun05/Assa`（Assa fork）
 
 ### design/ — 设计原型与风格指南
 - **DESIGN_STYLE_GUIDE.md**：当前有效的 UI 设计规范（必读）
+- **DESIGN_SYSTEM.md / CHARACTER_ASSET_CHECKLIST.md / AVATAR 出图说明**：UI 与角色资产 SSOT
 - **dynamic-island-ai-redesign.png/svg**：AI 灵动岛重设计稿（矢量+位图）
-- **xiyue-tab-preview.html / .png**（v1~v6）：汐月 AI Tab 的 UI 预览原型迭代，v6 为最终 4 方案对比
-- **xiyue-tab-verify.html / .png**：用项目真实 CSS 验证 Tab 渲染效果
-- **xiyue-dot-verify.html / .png**：状态点（4 种状态）渲染验证
-- **用途**：均为开发期设计验证原型，HTML 引用项目真实样式文件，可直接在浏览器打开对照
+- **assa-tab-preview-v6.html / .png**：汐月 AI Tab UI 预览最终 4 方案对比（v1–v5 已移入 `archive/`）
+- **assa-tab-verify / assa-dot-verify**：用项目真实 CSS 验证 Tab / 状态点渲染
+- **archive/**：历史设计迭代存档（开发期预览，不作为实现依据）
 
 ### LEGAL/ — 法律文档
 - 三份文档均为中英双语，最后更新 2026-04-23
-- 联系邮箱为 `*@mail.shicthrs.com`（eIsland 上游），Xiyue fork 后如需正式发布应评估是否更新
+- 联系邮箱为 `*@mail.shicthrs.com`（eIsland 上游），Assa fork 后如需正式发布应评估是否更新
 - 内容覆盖：隐私政策、服务条款、计费与退款政策
 
 ---

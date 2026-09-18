@@ -119,12 +119,27 @@ export function useIslandTimerAndAlarm(options: UseIslandTimerAndAlarmOptions): 
   }, [timerData?.state, timerData?.remainingSeconds, setTimerData, language, setNotificationRef, t]);
 
   useEffect(() => {
+    let soundEnabledCache = true;
+    let notificationEnabledCache = true;
+    let configCacheAt = 0;
+
+    const refreshConfigCache = async (): Promise<void> => {
+      const now = Date.now();
+      if (now - configCacheAt < 30_000) return;
+      configCacheAt = now;
+      soundEnabledCache = (await window.api?.storeRead(ALARM_SOUND_ENABLED_STORE_KEY).catch(() => true)) !== false;
+      notificationEnabledCache = (await window.api?.storeRead(ALARM_NOTIFICATION_STORE_KEY).catch(() => true)) !== false;
+    };
+
     const check = async (): Promise<void> => {
       try {
         const data = await window.api?.storeRead(ALARM_STORE_KEY);
-        if (!Array.isArray(data) || data.length === 0) return;
-        const soundEnabled = (await window.api?.storeRead(ALARM_SOUND_ENABLED_STORE_KEY).catch(() => true)) !== false;
-        const notificationEnabled = (await window.api?.storeRead(ALARM_NOTIFICATION_STORE_KEY).catch(() => true)) !== false;
+        if (!Array.isArray(data) || data.length === 0) {
+          return;
+        }
+        await refreshConfigCache();
+        const soundEnabled = soundEnabledCache;
+        const notificationEnabled = notificationEnabledCache;
         const now = new Date();
         const h = now.getHours();
         const m = now.getMinutes();

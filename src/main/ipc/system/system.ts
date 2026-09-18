@@ -28,19 +28,26 @@
 import { ipcMain } from 'electron';
 import { spawn } from 'child_process';
 import os from 'os';
-import * as si from 'systeminformation';
 import {
   getBrightnessAsync,
   setBrightnessAsync,
   onBrightnessChanged,
   stopDaemon as stopBrightnessDaemon,
-} from '@xiyue/windows-brightness-helper';
+} from '@assa/windows-brightness-helper';
 import {
   getVolumeAsync,
   setVolumeAsync,
   onVolumeChanged,
   stopDaemon as stopVolumeDaemon,
-} from '@xiyue/windows-volume-helper';
+} from '@assa/windows-volume-helper';
+
+/** systeminformation 体积大，仅性能快照用到 → 惰性 import，避免启动路径解析 */
+type SiModule = typeof import('systeminformation');
+let siPromise: Promise<SiModule> | null = null;
+function loadSi(): Promise<SiModule> {
+  if (!siPromise) siPromise = import('systeminformation');
+  return siPromise;
+}
 
 interface PerformanceSnapshot {
   timestamp: number;
@@ -208,11 +215,26 @@ const CPU_TEMPERATURE_TTL_MS = 15000;
 const FS_SIZE_TTL_MS = 10000;
 const DISK_LAYOUT_TTL_MS = 60000;
 
-const cpuStaticCache = createThrottledCache<si.Systeminformation.CpuData | null>(() => si.cpu().catch(() => null), STATIC_TTL_MS);
-const graphicsCache = createThrottledCache<si.Systeminformation.GraphicsData | null>(() => si.graphics().catch(() => null), GRAPHICS_TTL_MS);
-const cpuTemperatureCache = createThrottledCache<si.Systeminformation.CpuTemperatureData | null>(() => si.cpuTemperature().catch(() => null), CPU_TEMPERATURE_TTL_MS);
-const fsSizeCache = createThrottledCache<si.Systeminformation.FsSizeData[]>(() => si.fsSize().catch(() => []), FS_SIZE_TTL_MS);
-const diskLayoutCache = createThrottledCache<si.Systeminformation.DiskLayoutData[]>(() => si.diskLayout().catch(() => []), DISK_LAYOUT_TTL_MS);
+const cpuStaticCache = createThrottledCache<Awaited<ReturnType<SiModule['cpu']>> | null>(
+  async () => (await loadSi()).cpu().catch(() => null),
+  STATIC_TTL_MS,
+);
+const graphicsCache = createThrottledCache<Awaited<ReturnType<SiModule['graphics']>> | null>(
+  async () => (await loadSi()).graphics().catch(() => null),
+  GRAPHICS_TTL_MS,
+);
+const cpuTemperatureCache = createThrottledCache<Awaited<ReturnType<SiModule['cpuTemperature']>> | null>(
+  async () => (await loadSi()).cpuTemperature().catch(() => null),
+  CPU_TEMPERATURE_TTL_MS,
+);
+const fsSizeCache = createThrottledCache<Awaited<ReturnType<SiModule['fsSize']>>>(
+  async () => (await loadSi()).fsSize().catch(() => []),
+  FS_SIZE_TTL_MS,
+);
+const diskLayoutCache = createThrottledCache<Awaited<ReturnType<SiModule['diskLayout']>>>(
+  async () => (await loadSi()).diskLayout().catch(() => []),
+  DISK_LAYOUT_TTL_MS,
+);
 
 /**
  * 重置性能快照缓存
@@ -240,9 +262,9 @@ async function collectPerformanceSnapshot(
     diskLayouts,
   ] = await Promise.all([
     cpuStaticCache.get(),
-    si.currentLoad().catch(() => null),
+    loadSi().then((si) => si.currentLoad()).catch(() => null),
     cpuTemperatureCache.get(),
-    si.mem().catch(() => null),
+    loadSi().then((si) => si.mem()).catch(() => null),
     graphicsCache.get(),
     fsSizeCache.get(),
     diskLayoutCache.get(),

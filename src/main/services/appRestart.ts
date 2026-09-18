@@ -41,7 +41,7 @@ import { join, resolve } from 'path';
 function safeLog(...args: unknown[]): void {
   try {
     const msg = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-    appendFileSync(join(app.getPath('temp'), 'xiyue-dev-restart.log'), `[app] ${msg}\n`);
+    appendFileSync(join(app.getPath('temp'), 'assa-dev-restart.log'), `[app] ${msg}\n`);
   } catch {
     // ignore
   }
@@ -155,7 +155,7 @@ function softRestartFlagPath(): string {
     const root = realpathSync(app.getAppPath());
     return join(root, 'data', 'soft-restart.flag');
   } catch {
-    return join(app.getPath('temp'), 'xiyue-soft-restart.flag');
+    return join(app.getPath('temp'), 'assa-soft-restart.flag');
   }
 }
 
@@ -229,7 +229,7 @@ export function restartApp(): void {
 function scheduleExternalForceKill(pid: number, delayMs: number): void {
   try {
     const tempDir = app.getPath('temp');
-    const vbsPath = join(tempDir, `xiyue-force-kill-${pid}.vbs`);
+    const vbsPath = join(tempDir, `assa-force-kill-${pid}.vbs`);
     const vbs = [
       'On Error Resume Next',
       'Set sh = CreateObject("WScript.Shell")',
@@ -263,7 +263,7 @@ function showRestartToast(): void {
   try {
     if (!Notification.isSupported()) return;
     const toast = new Notification({
-      title: '汐月正在重新启动',
+      title: 'Assa 正在重新启动',
       body: '应用将关闭以完成重启，结束后会自动重新打开。'
     });
     toast.show();
@@ -291,10 +291,10 @@ function spawnDevSessionRestarter(): void {
   }
 
   const tempDir = app.getPath('temp');
-  const logFile = join(tempDir, 'xiyue-dev-restart.log');
-  const configFile = join(tempDir, `xiyue-dev-restart-${pid}.json`);
-  const scriptPath = join(tempDir, `xiyue-dev-restart-${pid}.js`);
-  const vbsPath = join(tempDir, `xiyue-dev-restart-${pid}.vbs`);
+  const logFile = join(tempDir, 'assa-dev-restart.log');
+  const configFile = join(tempDir, `assa-dev-restart-${pid}.json`);
+  const scriptPath = join(tempDir, `assa-dev-restart-${pid}.js`);
+  const vbsPath = join(tempDir, `assa-dev-restart-${pid}.vbs`);
   const systemNode = 'E:/software/Nodejs/node.exe';
   const npmCli = 'E:/software/Nodejs/node_modules/npm/bin/npm-cli.js';
   const maxMs = RESTARTER_MAX_TRIES * 1000;
@@ -310,7 +310,7 @@ function spawnDevSessionRestarter(): void {
   };
   writeFileSync(configFile, JSON.stringify(restartConfig, null, 2), 'utf-8');
 
-  const script = `/* xiyue dev restarter — config: ${configFile} */
+  const script = `/* assa dev restarter — config: ${configFile} */
 const { spawn } = require('child_process');
 const fs = require('fs');
 const net = require('net');

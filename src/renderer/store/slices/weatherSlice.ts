@@ -123,40 +123,49 @@ export const createWeatherSlice: StateCreator<
           return customLocation;
         };
 
-        const order = locationConfig.priority === 'custom'
-          ? ['custom', 'ip'] as const
-          : ['ip', 'custom'] as const;
-
-        location = await order.reduce<Promise<typeof location>>(async (prevPromise, source) => {
-          const prev = await prevPromise;
-          if (prev) return prev;
-
-          if (source === 'custom') {
-            return resolveByCustom();
+        // 自定义优先：只走自定义，**不回退 IP**（避免 VPN/隐私误定位）；仅缓存可兜底
+        // IP 优先：先 IP，失败再自定义
+        if (locationConfig.priority === 'custom') {
+          location = resolveByCustom();
+          if (location) {
+            saveLocationToStorage(location);
+            set({ location });
+            logger.info('[Weather] 位置信息已写入缓存');
+          } else {
+            if (forceRefresh) {
+              logger.warn('[Weather] 强制刷新：自定义位置不可用，跳过天气获取');
+              return;
+            }
+            const cachedLocation = loadLocationFromStorage();
+            logger.warn('[Weather] 自定义位置不可用，回退使用缓存位置');
+            location = cachedLocation;
           }
-
+        } else {
           try {
-            return await resolveByIp();
+            location = await resolveByIp();
           } catch (locError) {
             logger.warn('[Weather] IP 定位失败:', locError);
-            return null;
+            location = null;
           }
-        }, Promise.resolve(null));
-
-        if (location) {
-          saveLocationToStorage(location);
-          set({ location });
-          logger.info('[Weather] 位置信息已写入缓存');
-        }
-
-        if (!location) {
-          if (forceRefresh) {
-            logger.warn('[Weather] 强制刷新：定位失败，跳过天气获取');
-            return;
+          if (!location) {
+            location = resolveByCustom();
           }
-          const cachedLocation = loadLocationFromStorage();
-          logger.warn('[Weather] 定位失败，回退使用缓存位置');
-          location = cachedLocation;
+
+          if (location) {
+            saveLocationToStorage(location);
+            set({ location });
+            logger.info('[Weather] 位置信息已写入缓存');
+          }
+
+          if (!location) {
+            if (forceRefresh) {
+              logger.warn('[Weather] 强制刷新：定位失败，跳过天气获取');
+              return;
+            }
+            const cachedLocation = loadLocationFromStorage();
+            logger.warn('[Weather] 定位失败，回退使用缓存位置');
+            location = cachedLocation;
+          }
         }
       }
 

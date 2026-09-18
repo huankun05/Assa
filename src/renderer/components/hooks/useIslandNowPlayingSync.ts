@@ -329,11 +329,13 @@ export function useIslandNowPlayingSync(options: UseIslandNowPlayingSyncOptions)
 
           if (progressRafRef.current === null) {
             let lastProgressWrite = 0;
+            /** ~4Hz 写 store 足够歌词扫光；15Hz 会把整棵树 re-render 拖垮 */
+            const PROGRESS_WRITE_INTERVAL_MS = 250;
             const tick = () => {
               const now = Date.now();
               const base = progressBaseRef.current;
               const elapsed = now - base.timestamp;
-              if (now - lastProgressWrite >= 66) {
+              if (now - lastProgressWrite >= PROGRESS_WRITE_INTERVAL_MS) {
                 lastProgressWrite = now;
                 updateProgressRef.current(base.positionMs + elapsed);
               }

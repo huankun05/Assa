@@ -2,7 +2,7 @@
 
 用法：
   python scripts/migrate_memory.py                  # 默认复制到 ./data_backup
-  python scripts/migrate_memory.py D:\\backup\\xiyue # 指定目标目录
+  python scripts/migrate_memory.py D:\\backup\\assa # 指定目标目录
 """
 
 from __future__ import annotations

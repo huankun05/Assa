@@ -1,6 +1,6 @@
 """浏览器自动化客户端（Playwright，Chromium）。
 
-域名白名单：所有入口先经 `_check_url()`，规则读 xiyue.json `browser.allowed_domains`
+域名白名单：所有入口先经 `_check_url()`，规则读 assa.json `browser.allowed_domains`
 （缺失 / 留空 / 含 "*" 表示不限制；匹配主机名本身或其子域）。
 每次调用独立上下文，不保留登录态。
 """
@@ -48,7 +48,7 @@ def _check_url(url: str) -> str | None:
             continue
         if host == d or host.endswith("." + d):
             return None
-    return f"browser: 域名 {host} 不在白名单内（xiyue.json browser.allowed_domains）"
+    return f"browser: 域名 {host} 不在白名单内（assa.json browser.allowed_domains）"
 
 
 def _with_browser(fn, **launch_kwargs):

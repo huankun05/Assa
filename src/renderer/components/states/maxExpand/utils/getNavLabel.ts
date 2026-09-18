@@ -31,7 +31,6 @@ const NAV_LABEL_MAP: Record<string, string> = {
   expanded: '返回',
   todo: '待办',
   urlFavorites: 'URL 收藏',
-  album: '相册',
   mail: '邮箱',
   localFileSearch: '文件查找',
   clipboardHistory: '剪贴板',
@@ -40,8 +39,6 @@ const NAV_LABEL_MAP: Record<string, string> = {
   countdown: '倒数日',
   alarm: '闹钟',
   toolbox: '工具箱',
-  miniGame: '小游戏',
-  stock: '股票行情',
 };
 
 /**

@@ -24,11 +24,11 @@
  * @author 鸡哥
  */
 
-import { Tray, Menu, nativeImage, BrowserWindow, app, shell } from 'electron';
+import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import { openSettingsWindow } from './window/settingsWindow';
-import { restartApp } from './services/appRestart';
+import { restartApp, quitAppFast } from './services/appRestart';
 
 let tray: Tray | null = null;
 let getMainWindowRef: (() => BrowserWindow | null) | null = null;
@@ -37,12 +37,12 @@ let cachedVisibleName: string | null = null;
 async function getTrayTooltip(): Promise<string> {
   if (!cachedVisibleName) {
     try {
-      const data = await window.api?.xiyueIdentity?.();
+      const data = await window.api?.assaIdentity?.();
       if (data?.visible_name) cachedVisibleName = String(data.visible_name);
     } catch {
       // ignore
     }
-    cachedVisibleName = cachedVisibleName || '汐月';
+    cachedVisibleName = cachedVisibleName || 'Assa';
   }
   return cachedVisibleName;
 }
@@ -64,8 +64,8 @@ async function refreshTrayIdentity(): Promise<void> {
  * @description 开发环境从项目根目录加载，生产环境从 extraResources 打包目录加载
  */
 const TRAY_ICON_PATH = is.dev
-  ? join(__dirname, '../../resources/icon/xiyue_16x16.ico')
-  : join(process.resourcesPath, 'icon/xiyue_16x16.ico');
+  ? join(__dirname, '../../resources/icon/assa_16x16.ico')
+  : join(process.resourcesPath, 'icon/assa_16x16.ico');
 
 /**
  * 创建系统托盘
@@ -129,7 +129,8 @@ function createTray(mainWindowGetter: () => BrowserWindow | null): Tray {
     {
       label: '退出',
       click: () => {
-        app.quit();
+        // 强制退出：app.quit 会被设置窗口 close preventDefault 卡住
+        quitAppFast();
       }
     }
   );
@@ -172,9 +173,8 @@ function toggleTray(): void {
     tray.destroy();
     tray = null;
     getMainWindowRef = null;
-  } else {
-    const getter = typeof mainWindow === 'function' ? (mainWindow as () => BrowserWindow | null) : () => mainWindow;
-    createTray(getter);
+  } else if (getMainWindowRef) {
+    createTray(getMainWindowRef);
   }
 }
 

@@ -61,6 +61,8 @@ export interface WeatherCustomLocationConfig {
   latitude: number;
   longitude: number;
   city?: string;
+  /** 行政区编码（级联/联想选中时保存，便于精确回填） */
+  adcode?: string;
 }
 
 export interface WeatherLocationConfig {
@@ -85,6 +87,7 @@ function normalizeWeatherCustomLocation(value: unknown): WeatherCustomLocationCo
     latitude?: unknown;
     longitude?: unknown;
     city?: unknown;
+    adcode?: unknown;
   };
   const latitude = toFiniteNumber(row.latitude);
   const longitude = toFiniteNumber(row.longitude);
@@ -95,6 +98,7 @@ function normalizeWeatherCustomLocation(value: unknown): WeatherCustomLocationCo
     latitude,
     longitude,
     city: typeof row.city === 'string' ? row.city : '',
+    adcode: typeof row.adcode === 'string' && row.adcode ? row.adcode : undefined,
   };
 }
 

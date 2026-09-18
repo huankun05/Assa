@@ -451,9 +451,9 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
     // 真正首次点击 OCR/翻译时会重试并给出明确错误。
     // 延迟到 1.2s 再拉起：Python 冷启动/模型导入瞬间 CPU 冲高，太早启动会挤占
     // 「全屏 PNG 解码 + 首帧合成」关键路径——这是"打开截图变慢"的主因之一。
-    // 调试开关：XIYUE_DISABLE_OCR_PREWARM=1 可临时关掉预热（排查「拖选区卡退」是否由
+    // 调试开关：ASSA_DISABLE_OCR_PREWARM=1 可临时关掉预热（排查「拖选区卡退」是否由
     // Paddle 初始化抢 GPU/CPU 引起，无需改代码）。
-    if (process.env.XIYUE_DISABLE_OCR_PREWARM !== '1') {
+    if (process.env.ASSA_DISABLE_OCR_PREWARM !== '1') {
       setTimeout(() => {
         void ensureLocalOcrMtService().catch(() => {
           /* 预热失败静默，不打断截图 */
@@ -699,8 +699,8 @@ export function createCaptureWindowService(options: CreateCaptureWindowServiceOp
         // 并把裁剪图复制进剪贴板。交给 Electron 编辑面板时连同选区 rect 一起传，
         // 让 capture.js 以「全屏 + 选区原位高亮 + 四周暗化」的方式接管（与内置 UI 一致）。
         try {
-          const tmp = join(app.getPath('temp'), 'xiyue_native_capture.png');
-          const metaPath = join(app.getPath('temp'), 'xiyue_native_capture_meta.json');
+          const tmp = join(app.getPath('temp'), 'assa_native_capture.png');
+          const metaPath = join(app.getPath('temp'), 'assa_native_capture_meta.json');
           if (existsSync(tmp)) {
             const buf = readFileSync(tmp);
             let external: { rect: { x: number; y: number; w: number; h: number }; scaleFactor?: number } | undefined;

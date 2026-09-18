@@ -41,6 +41,10 @@ vi.mock('electron', () => ({
   },
 }));
 
+vi.mock('../appRestart', () => ({
+  quitAppFast: appQuitMock,
+}));
+
 import { createHotkeyService } from '../hotkeyService';
 
 describe('createHotkeyService', () => {
@@ -110,7 +114,7 @@ describe('createHotkeyService', () => {
     expect(hide).not.toHaveBeenCalled();
   });
 
-  it('registers quit hotkey and calls app.quit', () => {
+  it('registers quit hotkey and calls quitAppFast', () => {
     const service = createHotkeyService(options);
     expect(service.registerQuitHotkey('Ctrl+Shift+Q')).toBe(true);
 

@@ -97,6 +97,7 @@ describe('normalizeExpandNavLayoutConfig', () => {
       'tools',
       'translation',
       'performanceMonitor',
+      'overview',
     ]);
   });
 
@@ -248,36 +249,35 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
   it('preserves ordering from input', () => {
     const input = [
       { id: 'todo', visible: true },
-      { id: 'album', visible: true },
       { id: 'urlFavorites', visible: true },
       { id: 'mail', visible: true },
     ];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
-    expect(result.map((i) => i.id).slice(0, 4)).toEqual(['todo', 'album', 'urlFavorites', 'mail']);
+    expect(result.map((i) => i.id).slice(0, 4)).toEqual(['todo', 'urlFavorites', 'mail', 'localFileSearch']);
   });
 
   it('allows tabs to be hidden', () => {
     const input = [
       { id: 'todo', visible: false },
-      { id: 'album', visible: false },
+      { id: 'urlFavorites', visible: false },
       { id: 'mail', visible: true },
     ];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
-    expect(result.find((i) => i.id === 'album')?.visible).toBe(false);
+    expect(result.find((i) => i.id === 'urlFavorites')?.visible).toBe(false);
     expect(result.find((i) => i.id === 'mail')?.visible).toBe(true);
   });
 
   it('respects visible=false when at least one page remains visible', () => {
     const input = [
       { id: 'todo', visible: false },
-      { id: 'album', visible: false },
+      { id: 'urlFavorites', visible: false },
       { id: 'mail', visible: false },
       { id: 'toolbox', visible: true },
     ];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
-    expect(result.find((i) => i.id === 'album')?.visible).toBe(false);
+    expect(result.find((i) => i.id === 'urlFavorites')?.visible).toBe(false);
     expect(result.find((i) => i.id === 'mail')?.visible).toBe(false);
   });
 
@@ -292,7 +292,6 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
     expect(result.find((i) => i.id === 'urlFavorites')?.visible).toBe(true);
-    expect(result.find((i) => i.id === 'album')?.visible).toBe(true);
     expect(result.find((i) => i.id === 'mail')?.visible).toBe(true);
     expect(result.find((i) => i.id === 'localFileSearch')?.visible).toBe(true);
     expect(result.find((i) => i.id === 'clipboardHistory')?.visible).toBe(true);
@@ -318,7 +317,7 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
   });
 
   it('skips non-object items in the array', () => {
-    const input = [null, undefined, 'string', 42, { id: 'todo', visible: false }, { id: 'album', visible: true }];
+    const input = [null, undefined, 'string', 42, { id: 'todo', visible: false }, { id: 'mail', visible: true }];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.find((i) => i.id === 'todo')?.visible).toBe(false);
   });
@@ -344,7 +343,7 @@ describe('normalizeMaxExpandNavLayoutConfig', () => {
   });
 
   it('always returns all configurable tabs', () => {
-    const input = [{ id: 'todo', visible: false }, { id: 'album', visible: true }];
+    const input = [{ id: 'todo', visible: false }, { id: 'mail', visible: true }];
     const result = mod.normalizeMaxExpandNavLayoutConfig(input);
     expect(result.length).toBe(mod.MAXEXPAND_CONFIGURABLE_TABS.length);
     mod.MAXEXPAND_CONFIGURABLE_TABS.forEach((tab) => {

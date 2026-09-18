@@ -82,9 +82,9 @@ function getWin32FocusApi(): Win32FocusApi | null {
  * 截图窗本身 click-through + blur 还不够：Windows 滚轮事件默认发给前台窗口，
  * 截图窗若仍是前台，滚轮不会到下面的页面。用 WindowFromPoint 命中测试跳过
  * click-through 的截图窗，直接拿到底层窗口并 SetForegroundWindow。 */
-/** 获取 Xiyue 所有可见 BrowserWindow 的 HWND 十六进制集合（用于焦点让渡时排除，
- * 避免把系统前台又交回 Xiyue 自己，导致用户看到"主窗口弹出来挡住截图"）。 */
-function getXiyueWindowHandles(): Set<string> {
+/** 获取 Assa 所有可见 BrowserWindow 的 HWND 十六进制集合（用于焦点让渡时排除，
+ * 避免把系统前台又交回 Assa 自己，导致用户看到"主窗口弹出来挡住截图"）。 */
+function getAssaWindowHandles(): Set<string> {
   const handles = new Set<string>();
   for (const w of BrowserWindow.getAllWindows()) {
     if (!w || w.isDestroyed()) continue;
@@ -150,8 +150,8 @@ function lsFindRenderChild(api: Win32FocusApi, root: bigint, depth: number): big
   return found;
 }
 
-/** 按句柄 hex 反查 Xiyue 的 BrowserWindow（解析目标时若命中自己，临时透传后重试命中） */
-function lsFindXiyueWindowByHex(hex: string): BrowserWindow | null {
+/** 按句柄 hex 反查 Assa 的 BrowserWindow（解析目标时若命中自己，临时透传后重试命中） */
+function lsFindAssaWindowByHex(hex: string): BrowserWindow | null {
   for (const w of BrowserWindow.getAllWindows()) {
     if (!w || w.isDestroyed()) continue;
     try {
@@ -183,7 +183,7 @@ function lsHoleCenterPhys(): { x: number; y: number } | null {
 }
 
 /** 解析选区中心正下方的滚轮目标窗口（Chromium → render 子窗口；普通 App → 命中窗口本身）。
- *  命中 Xiyue 截图窗（未处于透传态，WindowFromPoint 被它挡住）时：临时 setIgnoreMouseEvents(true)
+ *  命中 Assa 截图窗（未处于透传态，WindowFromPoint 被它挡住）时：临时 setIgnoreMouseEvents(true)
  *  让命中跳过截图窗，解析完恢复为可点击并同步轮询闭包的透传状态标记（30ms 轮询会按光标
  *  位置立即纠正回正确状态）。返回 true=成功缓存 lsWheelTarget。 */
 function lsResolveWheelTarget(): boolean {
@@ -195,11 +195,11 @@ function lsResolveWheelTarget(): boolean {
     let hit = api.WindowFromPoint({ x: cx, y: cy });
     if (!hit) { console.error('[LS-MAIN] resolve-wheel: WindowFromPoint null'); return false; }
     let root = BigInt(api.GetAncestor(hit, 3) || hit);
-    const xiyue = getXiyueWindowHandles();
+    const assa = getAssaWindowHandles();
     const rootHex = root.toString(16);
-    if (xiyue.has(rootHex)) {
+    if (assa.has(rootHex)) {
       // 命中自己：临时整窗透传，让命中测试跳过截图窗拿到真正的底层窗口
-      const cap = lsFindXiyueWindowByHex(rootHex);
+      const cap = lsFindAssaWindowByHex(rootHex);
       if (cap) {
         try { cap.setIgnoreMouseEvents(true); } catch { /* ignore */ }
         hit = api.WindowFromPoint({ x: cx, y: cy });
@@ -208,7 +208,7 @@ function lsResolveWheelTarget(): boolean {
       }
       if (!hit) { console.error('[LS-MAIN] resolve-wheel: retry hit null'); return false; }
       root = BigInt(api.GetAncestor(hit, 3) || hit);
-      if (xiyue.has(root.toString(16))) {
+      if (assa.has(root.toString(16))) {
         console.error('[LS-MAIN] resolve-wheel: still self after passthrough');
         return false;
       }
@@ -288,7 +288,7 @@ function lsWheel(delta: number): boolean {
 function transferFocusTo(x: number, y: number): void {
   const api = getWin32FocusApi();
   if (!api) return;
-  const exclude = getXiyueWindowHandles();
+  const exclude = getAssaWindowHandles();
   try {
     // x/y 是逻辑(DIP)屏幕坐标；WindowFromPoint 需物理像素（主进程 DPI-aware）
     let px = x, py = y;
@@ -303,7 +303,7 @@ function transferFocusTo(x: number, y: number): void {
     // HWND 是 number|bigint（uint64_t 收发），统一转 BigInt 取 hex，与 getNativeWindowHandle 的 Buffer 地址一致可比
     const rootHex = BigInt(hRoot).toString(16);
     if (exclude.has(rootHex)) {
-      console.error(`[LS-MAIN] focus transfer skipped: hit Xiyue window ${rootHex}`);
+      console.error(`[LS-MAIN] focus transfer skipped: hit Assa window ${rootHex}`);
       return;
     }
     // Windows 前台锁（ForegroundLockTimeout）可能让 SetForegroundWindow 静默失败 → 滚轮翻不动底层窗口。
@@ -412,7 +412,7 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
 
   /**
    * 长截图：取桌面源原生分辨率 thumbnail 并按选区矩形裁剪，返回裁剪区 dataURL。
-   * ⚠️ 2026-09-06 起 Xiyue 长截图走「主屏截图」路线（零 WebRTC 视频编码，清晰度=单张截图）：
+   * ⚠️ 2026-09-06 起 Assa 长截图走「主屏截图」路线（零 WebRTC 视频编码，清晰度=单张截图）：
    * 渲染端 desktopCapturer 已被移除，必须由主进程代取；thumbnailSize 需传物理分辨率
    * （screen 逻辑尺寸 × dpr），默认 150×150 的 thumbnail 不能用于拼接。
    */
@@ -539,7 +539,7 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
   // 长截图调试转储：把被拒帧/关键帧落盘，供离线取证（帧内容异常时肉眼可查）
   ipcMain.on('capture-ls-debug', (_event, p: { name: string; dataURL: string }) => {
     try {
-      const dir = join(app.getPath('temp'), 'xiyue-ls-debug');
+      const dir = join(app.getPath('temp'), 'assa-ls-debug');
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, p.name), Buffer.from(p.dataURL.split(',')[1], 'base64'));
     } catch (err) {
@@ -801,7 +801,7 @@ export function registerCaptureIpcHandlers(options: RegisterCaptureIpcHandlersOp
     try {
       // 洞内透传：窗口不参与命中测试 → 滚轮/点击直达底层应用；
       // 洞外恢复：截图窗恢复接收事件，工具栏按钮可点（含「再点长截图按钮结束」）。
-      // ⚠️ 保持 setFocusable(true)：setFocusable(false) 会让 Electron 把前台交回 Xiyue 主窗口，
+      // ⚠️ 保持 setFocusable(true)：setFocusable(false) 会让 Electron 把前台交回 Assa 主窗口，
       // 用户会看到主窗口弹出来挡住截图（即"出现错误应用模板"）。我们只通过 blur()+Win32
       // SetForegroundWindow 把焦点让给选区正下方的底层窗口。
       captureWindow.setIgnoreMouseEvents(on);

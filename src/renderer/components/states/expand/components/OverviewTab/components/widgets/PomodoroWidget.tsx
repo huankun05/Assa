@@ -99,16 +99,22 @@ useIslandStore.subscribe((state) => {
 /** 番茄钟小组件，支持工作/休息计时、轮次进度与控制操作。 */
 export function PomodoroWidget(): React.ReactElement {
   const { t } = useTranslation();
-  const {
-    pomodoroPhase: phase,
-    pomodoroRemaining: remaining,
-    pomodoroRunning: running,
-    pomodoroCompletedCount: completedCount,
-    setPomodoroPhase: setPhase,
-    setPomodoroRemaining: setRemaining,
-    setPomodoroRunning: setRunning,
-    setPomodoroCompletedCount: setCompletedCount,
-  } = useIslandStore();
+  const pomodoroPhase = useIslandStore((s) => s.pomodoroPhase);
+  const pomodoroRemaining = useIslandStore((s) => s.pomodoroRemaining);
+  const pomodoroRunning = useIslandStore((s) => s.pomodoroRunning);
+  const pomodoroCompletedCount = useIslandStore((s) => s.pomodoroCompletedCount);
+  const setPomodoroPhase = useIslandStore((s) => s.setPomodoroPhase);
+  const setPomodoroRemaining = useIslandStore((s) => s.setPomodoroRemaining);
+  const setPomodoroRunning = useIslandStore((s) => s.setPomodoroRunning);
+  const setPomodoroCompletedCount = useIslandStore((s) => s.setPomodoroCompletedCount);
+  const phase = pomodoroPhase;
+  const remaining = pomodoroRemaining;
+  const running = pomodoroRunning;
+  const completedCount = pomodoroCompletedCount;
+  const setPhase = setPomodoroPhase;
+  const setRemaining = setPomodoroRemaining;
+  const setRunning = setPomodoroRunning;
+  const setCompletedCount = setPomodoroCompletedCount;
 
   useEffect(() => {
     if (pomodoroInitialized) return;

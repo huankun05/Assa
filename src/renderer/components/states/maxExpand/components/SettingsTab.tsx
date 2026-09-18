@@ -136,6 +136,7 @@ import { MusicSettingsSection } from './setting/components/music/MusicSettingsSe
 import { AboutSettingsSection } from './setting/components/about/AboutSettingsSection';
 import { OverviewPreview } from './setting/components/app/preview/OverviewPreview';
 import { WallpaperMarketSection } from './setting/components/pluginMarket/WallpaperMarketSection';
+import { WallpaperLocalSection } from './setting/components/pluginMarket/WallpaperLocalSection';
 import { WallpaperContributionSection } from './setting/components/pluginMarket/WallpaperContributionSection';
 import { WallpaperEditSection } from './setting/components/pluginMarket/WallpaperEditSection';
 import { SettingsPageNavigation, SettingsPageNavigationToggle } from './setting/components/SettingsPageNavigation';
@@ -148,7 +149,7 @@ import {
   type SettingsCategoryDest,
 } from './setting/config/settingsCategories';
 
-import { resolveDistrictLocationByKeyword } from '../../../../api/weather/adcodeApi';
+import { resolveDistrictLocationByKeyword, resolveLocationByAdcode } from '../../../../api/weather/adcodeApi';
 import { request as requestUserAccountApi } from '../../../../api/user/userAccountApi.client';
 
 import { setThemeMode as applyThemeMode, getThemeMode, type ThemeMode } from '../../../../utils/theme';
@@ -382,6 +383,7 @@ export function SettingsTab(): ReactElement {
   const [weatherPrimaryProvider, setWeatherPrimaryProvider] = useState<WeatherProvider>(DEFAULT_WEATHER_PRIMARY_PROVIDER);
   const [weatherLocationPriority, setWeatherLocationPriority] = useState<WeatherLocationPriority>(DEFAULT_WEATHER_LOCATION_PRIORITY);
   const [weatherCustomCityInput, setWeatherCustomCityInput] = useState<string>('');
+  const [weatherCustomAdcode, setWeatherCustomAdcode] = useState<string>('');
   const [weatherAlertEnabled, setWeatherAlertEnabled] = useState<boolean>(true);
   const [weatherLocationConfigMessage, setWeatherLocationConfigMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [weatherCustomLocationTesting, setWeatherCustomLocationTesting] = useState(false);
@@ -725,6 +727,7 @@ export function SettingsTab(): ReactElement {
     const cfg = loadWeatherLocationConfig();
     setWeatherLocationPriority(cfg.priority);
     setWeatherCustomCityInput(cfg.customLocation?.city || '');
+    setWeatherCustomAdcode(cfg.customLocation?.adcode || '');
   }, []);
 
   useEffect(() => {
@@ -914,6 +917,10 @@ export function SettingsTab(): ReactElement {
       if (value === 'expand-layout') {
         setActiveTab('app');
         openAppPage('expand-layout');
+      }
+      if (value === 'control-center') {
+        setActiveTab('app');
+        openAppPage('control-center');
       }
       if (value) {
         window.api.storeWrite(SETTINGS_OPEN_TAB_STORE_KEY, null).catch(() => {});
@@ -1433,11 +1440,14 @@ export function SettingsTab(): ReactElement {
       let customLocation = existing;
 
       if (city) {
-        const resolved = await resolveDistrictLocationByKeyword(city);
+        const resolved = weatherCustomAdcode
+          ? await resolveLocationByAdcode(weatherCustomAdcode)
+          : await resolveDistrictLocationByKeyword(city);
         customLocation = {
           latitude: resolved.latitude,
           longitude: resolved.longitude,
           city: resolved.city,
+          adcode: resolved.adcode,
         };
       }
 
@@ -1481,13 +1491,16 @@ export function SettingsTab(): ReactElement {
     }
 
     try {
-      let customLocation: { latitude: number; longitude: number; city: string } | null = null;
+      let customLocation: { latitude: number; longitude: number; city: string; adcode?: string } | null = null;
       if (city) {
-        const resolved = await resolveDistrictLocationByKeyword(city);
+        const resolved = weatherCustomAdcode
+          ? await resolveLocationByAdcode(weatherCustomAdcode)
+          : await resolveDistrictLocationByKeyword(city);
         customLocation = {
           latitude: resolved.latitude,
           longitude: resolved.longitude,
           city: resolved.city,
+          adcode: resolved.adcode,
         };
       }
 
@@ -1535,7 +1548,9 @@ export function SettingsTab(): ReactElement {
 
     let custom: { latitude: number; longitude: number; city: string };
     try {
-      custom = await resolveDistrictLocationByKeyword(city);
+      custom = weatherCustomAdcode
+        ? await resolveLocationByAdcode(weatherCustomAdcode)
+        : await resolveDistrictLocationByKeyword(city);
     } catch (error) {
       setWeatherCustomLocationTesting(false);
       setWeatherCustomLocationTestMessage({
@@ -2421,6 +2436,8 @@ export function SettingsTab(): ReactElement {
               setWeatherLocationConfigMessage={setWeatherLocationConfigMessage}
               weatherCustomCityInput={weatherCustomCityInput}
               setWeatherCustomCityInput={setWeatherCustomCityInput}
+              weatherCustomAdcode={weatherCustomAdcode}
+              setWeatherCustomAdcode={setWeatherCustomAdcode}
               testWeatherCustomLocation={testWeatherCustomLocation}
               setWeatherCustomLocationTesting={setWeatherCustomLocationTesting}
               setWeatherCustomLocationTestMessage={setWeatherCustomLocationTestMessage}
@@ -2620,7 +2637,7 @@ export function SettingsTab(): ReactElement {
           {activeTab === 'pluginMarket' && (
             <div className="max-expand-settings-section">
               <div className="max-expand-settings-title settings-app-title-line">
-                <span>{t('settings.labels.pluginMarket', { defaultValue: '壁纸市场' })}</span>
+                <span>{t('settings.labels.pluginMarket', { defaultValue: '壁纸' })}</span>
                 <span className="settings-app-title-sub">- {currentPluginMarketPageLabel}</span>
                 {(pluginMarketPage === 'wallpaper' || pluginMarketPage === 'edit') && (
                   <>
@@ -2657,13 +2674,24 @@ export function SettingsTab(): ReactElement {
               <div className="settings-app-pages-layout" style={{ marginTop: 0 }}>
                 <div className="settings-app-page-main">
                   {pluginMarketPage === 'wallpaper' && (
-                    <WallpaperMarketSection
-                      key={wallpaperMarketRefreshKey}
-                      onApplyBackground={handleApplyMarketplaceWallpaper}
-                      searchExpanded={wallpaperSearchExpanded}
-                      onSearchExpandedChange={setWallpaperSearchExpanded}
-                      onDetailOpenChange={setWallpaperDetailOpen}
-                    />
+                    <>
+                      <WallpaperLocalSection
+                        bgMediaType={bgMediaType}
+                        bgMediaPreviewUrl={bgMediaPreviewUrl}
+                        onSelectBuiltin={handleSelectBuiltinBgImage}
+                        onSelectImage={handleSelectBgImage}
+                        onSelectVideo={handleSelectBgVideo}
+                        onClear={handleClearBgImage}
+                        onApplyUrl={(url, type) => handleApplyMarketplaceWallpaper(url, { type })}
+                      />
+                      <WallpaperMarketSection
+                        key={wallpaperMarketRefreshKey}
+                        onApplyBackground={handleApplyMarketplaceWallpaper}
+                        searchExpanded={wallpaperSearchExpanded}
+                        onSearchExpandedChange={setWallpaperSearchExpanded}
+                        onDetailOpenChange={setWallpaperDetailOpen}
+                      />
+                    </>
                   )}
                   {pluginMarketPage === 'contribution' && (
                     <WallpaperContributionSection />

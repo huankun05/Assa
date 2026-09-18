@@ -126,7 +126,7 @@ function queryRunningProcessNames(): Promise<string[]> {
       (err, stdout) => {
         if (err) {
           console.warn('[Process] tasklist failed, fallback to PowerShell Get-Process');
-          resolve(queryRunningProcessNamesViaPowerShell());
+          void queryRunningProcessNamesViaPowerShell().then(resolve);
           return;
         }
         resolve(parseTaskListProcessNames(stdout));
@@ -135,31 +135,33 @@ function queryRunningProcessNames(): Promise<string[]> {
   });
 }
 
-function queryRunningProcessNamesViaPowerShell(): string[] {
-  const cmd =
-    'powershell.exe -NoProfile -NonInteractive -Command "Get-Process | Select-Object -ExpandProperty ProcessName"';
+function queryRunningProcessNamesViaPowerShell(): Promise<string[]> {
+  return new Promise((resolve) => {
+    const cmd =
+      'powershell.exe -NoProfile -NonInteractive -Command "Get-Process | Select-Object -ExpandProperty ProcessName"';
 
-  try {
-    const { execSync } = require('child_process');
-    const stdout = execSync(cmd, {
-      windowsHide: true,
-      timeout: PROCESS_QUERY_TIMEOUT_MS,
-      maxBuffer: 1024 * 1024,
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    if (typeof stdout !== 'string') return [];
-    const names = new Set<string>();
-    stdout.split(/[\r\n]+/).forEach((line) => {
-      const name = line.trim();
-      if (name) names.add(name);
-    });
-    return [...names].sort((a, b) => a.localeCompare(b, 'zh-CN'));
-  } catch (err) {
-    console.error('[Process] PowerShell fallback failed:', err);
-    return [];
-  }
+    exec(
+      cmd,
+      {
+        windowsHide: true,
+        timeout: PROCESS_QUERY_TIMEOUT_MS,
+        maxBuffer: 1024 * 1024,
+      },
+      (err, stdout) => {
+        if (err) {
+          console.error('[Process] PowerShell fallback failed:', err);
+          resolve([]);
+          return;
+        }
+        const names = new Set<string>();
+        stdout.split(/[\r\n]+/).forEach((line) => {
+          const name = line.trim();
+          if (name) names.add(name);
+        });
+        resolve([...names].sort((a, b) => a.localeCompare(b, 'zh-CN')));
+      },
+    );
+  });
 }
 
 /**

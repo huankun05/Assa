@@ -32,13 +32,30 @@ import type { LocalFileSearchHeaderProps } from '../types/localFileSearchTypes';
  * 本地文件搜索标题栏
  * @description 显示标题和结果数量
  */
-export function LocalFileSearchHeader({ countText }: LocalFileSearchHeaderProps): ReactElement {
+export function LocalFileSearchHeader({
+  countText,
+  everythingAvailable,
+  searchEngine,
+}: LocalFileSearchHeaderProps): ReactElement {
   const { t } = useTranslation();
+  const engineLabel = searchEngine === 'everything'
+    ? t('maxExpand.localFileSearch.engineEverything', { defaultValue: 'Everything' })
+    : searchEngine === 'directory'
+      ? t('maxExpand.localFileSearch.engineDirectory', { defaultValue: '目录扫描' })
+      : null;
 
   return (
     <div className="local-file-search-header">
       <span className="local-file-search-title">{t('maxExpand.localFileSearch.title', { defaultValue: '本地文件查找' })}</span>
-      <span className="local-file-search-count">{countText}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        {everythingAvailable && (
+          <span className="local-file-search-engine" title={t('maxExpand.localFileSearch.engineEverythingHint', { defaultValue: '检测到 Everything，搜索将优先走全盘索引' })}>
+            {t('maxExpand.localFileSearch.everythingReady', { defaultValue: 'Everything 就绪' })}
+          </span>
+        )}
+        {engineLabel && <span className="local-file-search-count">{engineLabel}</span>}
+        <span className="local-file-search-count">{countText}</span>
+      </span>
     </div>
   );
 }

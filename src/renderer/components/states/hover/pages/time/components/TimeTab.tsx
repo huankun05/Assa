@@ -30,7 +30,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SvgIcon } from '../../../../../../utils/SvgIcon';
 import { openStandaloneTab } from '../../../../../../components/config/standaloneWindowKeys';
-import { DEFAULT_CONTROL_CENTER_BUTTONS } from '../../../../../../components/config/controlCenterButtons';
+import { DEFAULT_CONTROL_CENTER_BUTTONS, getVisibleControlCenterButtons } from '../../../../../../components/config/controlCenterButtons';
 import useIslandStore from '../../../../../../store/slices';
 import type { ControlCenterButtonId } from '../../../../../../store/types';
 import { ControlCenterPopover } from './ControlCenterPopover';
@@ -101,6 +101,7 @@ export function TimeTab({
     toolbox: { icon: SvgIcon.PLUGIN, labelKey: 'hover.tools.toolbox', defaultLabel: '工具箱', onClick: () => openStandaloneTab('toolbox') },
     calculator: { icon: SvgIcon.CALCULATOR, labelKey: 'hover.tools.calculator', defaultLabel: '计算器', onClick: () => window.api.openCalculator() },
     translate: { icon: SvgIcon.LANGUAGE, labelKey: 'hover.tools.translate', defaultLabel: '翻译', onClick: () => openStandaloneTab('translate') },
+    fileSearch: { icon: SvgIcon.SEARCH, labelKey: 'hover.tools.fileSearch', defaultLabel: '文件查找', onClick: () => openStandaloneTab('localFileSearch') },
     managePages: { icon: SvgIcon.MANAGE_PAGES, labelKey: 'hover.nav.managePages', defaultLabel: '管理页面', onClick: () => openStandaloneTab('customPages') },
     settings: { icon: SvgIcon.SETTING, labelKey: 'hover.nav.settings', defaultLabel: '设置', onClick: () => void window.api?.openSettingsWindow?.().catch(() => {}) },
   }), [handleHide, handleQuit, handleScreenshot, handleTaskManager, togglePanel, openStandaloneTab]);
@@ -118,8 +119,7 @@ export function TimeTab({
           className="control-center-bar"
           style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}
         >
-          {(controlCenterButtons ?? DEFAULT_CONTROL_CENTER_BUTTONS)
-            .filter((c) => c.visible)
+          {getVisibleControlCenterButtons(controlCenterButtons ?? DEFAULT_CONTROL_CENTER_BUTTONS)
             .map((c) => {
               const def = buttonRegistry[c.id];
               if (!def) return null;

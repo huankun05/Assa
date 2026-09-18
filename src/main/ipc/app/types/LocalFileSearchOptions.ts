@@ -46,4 +46,8 @@ export interface LocalFileSearchOptions {
   extensions?: string[];
   /** 排除目录 */
   excludeDirs?: string[];
+  /** 优先使用 Everything 全盘搜索（默认 true）；未安装则回退目录遍历 */
+  preferEverything?: boolean;
+  /** 实际使用的引擎（响应侧回填） */
+  engine?: 'everything' | 'directory';
 }

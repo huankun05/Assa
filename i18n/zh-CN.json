@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "汐月",
+    "appName": "Assa",
     "errors": {
       "rootMountNotFound": "未找到 #root 挂载节点"
     }
@@ -14,7 +14,6 @@
       "todo": "待办事项",
       "countdown": "倒数日",
       "urlFavorites": "URL 收藏",
-      "album": "相册",
       "mail": "邮箱",
       "localFileSearch": "文件查找",
       "clipboardHistory": "剪贴板历史",
@@ -132,7 +131,7 @@
     },
     "github": {
       "title": "开源信息",
-      "subtitle": "汐月是一个开源项目",
+      "subtitle": "Assa 是一个开源项目",
       "links": {
         "repo": "GitHub",
         "website": "官网",
@@ -147,7 +146,7 @@
       "subtitle": "感谢赞助商的支持"
     },
     "welcome": {
-      "title": "欢迎使用汐月",
+      "title": "欢迎使用 Assa",
       "subtitle": "配置完成，开始体验灵动岛吧",
       "desc": "一款灵感来自 Apple 灵动岛的 Windows 桌面浮窗与 AI 管家，\\n让你的桌面更灵动、更高效。"
     },
@@ -396,10 +395,10 @@
       "lyrics": "歌曲",
       "weather": "天气",
       "expand": "展开",
-      "xiyue": "汐月 AI",
+      "assa": "汐月 AI",
       "switchToPage": "切换到{{label}}页面"
     },
-    "xiyue": {
+    "assa": {
       "openChat": "打开汐月 AI 对话",
       "hint": "点击进入对话，或语音交谈",
       "voice": "语音对话"
@@ -412,7 +411,9 @@
     },
     "tools": {
       "screenshot": "截图",
-      "taskManager": "任务管理器"
+      "taskManager": "任务管理器",
+      "fileSearch": "文件查找",
+      "editControlCenter": "编辑控制中心按钮"
     },
     "media": {
       "brightness": "亮度",
@@ -467,7 +468,9 @@
         "dayAfterTomorrow": "后"
       },
       "rainPrefix": "雨",
-      "windPrefix": "风"
+      "windPrefix": "风",
+      "sunrise": "日出",
+      "sunset": "日落"
     },
     "custom": {
       "missing": "页面不存在或已删除",
@@ -709,18 +712,6 @@
       "mute": "静音",
       "unmute": "取消静音",
       "empty": "暂无播放中的歌曲"
-    },
-    "album": {
-      "title": "相册轮播",
-      "count": "{{count}} 项",
-      "empty": "相册暂无媒体",
-      "open": "点击进入相册",
-      "prev": "上一张",
-      "next": "下一张",
-      "pause": "暂停轮播",
-      "play": "继续轮播",
-      "position": "{{index}} / {{total}}",
-      "videoTag": "视频"
     },
     "countdown": {
       "title": "倒数日",
@@ -1113,127 +1104,6 @@
       "olderThan30Days": "30 天前"
     }
   },
-  "albumTab": {
-    "title": "相册",
-    "count": "{{count}} 项",
-    "dropHint": "释放鼠标即可导入媒体文件",
-    "empty": {
-      "title": "还没有媒体内容",
-      "desc": "拖拽图片/视频到这里，或点击“添加媒体”",
-      "filteredTitle": "当前筛选下没有内容",
-      "filteredDesc": "切换为全部/图片/视频查看"
-    },
-    "actions": {
-      "add": "添加媒体",
-      "remove": "移除",
-      "removeAria": "移除媒体 {{name}}",
-      "selectAllVisible": "全选当前",
-      "unselectAllVisible": "取消全选",
-      "clearSelection": "取消选择",
-      "removeSelected": "删除已选",
-      "select": "选择",
-      "cancelSelect": "取消选择"
-    },
-    "selection": {
-      "selectedCount": "已选 {{count}} 项",
-      "toggle": "选择媒体 {{name}}",
-      "hint": "点击图片进行选择"
-    },
-    "sort": {
-      "label": "排序",
-      "addedDesc": "最近添加优先",
-      "addedAsc": "最早添加优先",
-      "nameAsc": "文件名升序",
-      "nameDesc": "文件名降序",
-      "durationDesc": "时长从长到短",
-      "durationAsc": "时长从短到长"
-    },
-    "filter": {
-      "label": "媒体筛选",
-      "all": "全部",
-      "image": "仅图片",
-      "video": "仅视频"
-    },
-    "group": {
-      "label": "浏览方式",
-      "none": "全部",
-      "folder": "按文件夹",
-      "date": "按日期",
-      "all": "全部媒体",
-      "count": "{{count}} 项",
-      "unknownFolder": "未知文件夹",
-      "unknownDate": "未知日期"
-    },
-    "columns": {
-      "aria": "调整每行列数",
-      "smaller": "减少列数",
-      "larger": "增加列数"
-    },
-    "thumb": {
-      "loading": "加载中…",
-      "failed": "加载失败"
-    },
-    "viewer": {
-      "back": "返回总览",
-      "prev": "上一张",
-      "next": "下一张",
-      "zoomIn": "放大",
-      "zoomOut": "缩小",
-      "zoomOne": "实际大小（1:1）",
-      "zoomFit": "适应窗口",
-      "fit": "适应",
-      "play": "播放",
-      "pause": "暂停",
-      "mute": "静音",
-      "unmute": "取消静音",
-      "hideControls": "隐藏控制条",
-      "showControls": "显示控制条",
-      "seek": "进度",
-      "volume": "音量",
-      "openInExplorer": "在资源管理器中打开",
-      "saveAs": "另存为",
-      "loading": "媒体加载中…",
-      "failed": "媒体加载失败"
-    },
-    "meta": {
-      "title": "媒体信息",
-      "name": "文件名",
-      "format": "格式",
-      "resolution": "分辨率",
-      "duration": "时长",
-      "size": "文件大小",
-      "addedAt": "添加时间",
-      "path": "完整路径",
-      "mediaType": "媒体类型",
-      "mediaTypeImage": "图片",
-      "mediaTypeVideo": "视频",
-      "codec": "编码",
-      "fps": "帧率",
-      "setAsIslandBackground": "设为灵动岛背景",
-      "exifTitle": "EXIF 信息",
-      "exifEmpty": "未读取到 EXIF 信息",
-      "make": "厂商",
-      "model": "机型",
-      "dateTimeOriginal": "拍摄时间",
-      "exposure": "曝光时间",
-      "fNumber": "光圈",
-      "iso": "ISO",
-      "focalLength": "焦距"
-    },
-    "status": {
-      "added": "已添加 {{count}} 个媒体文件",
-      "allDuplicated": "媒体文件已存在，未重复添加",
-      "unsupportedOnly": "未识别到受支持的图片/视频格式",
-      "zoomReset": "已恢复到实际大小",
-      "openInExplorerFailed": "无法定位 {{name}}，文件可能已被移动或删除",
-      "saveAsSuccess": "已保存 {{name}}",
-      "saveAsCanceled": "已取消保存",
-      "saveAsFailed": "保存 {{name}} 失败，请稍后重试",
-      "removedSelected": "已删除 {{count}} 个媒体文件",
-      "setIslandBackgroundSuccess": "已将 {{name}} 设为灵动岛背景",
-      "setIslandBackgroundFailed": "设置灵动岛背景失败，请稍后重试"
-    }
-  },
   "sliderCaptcha": {
     "title": "滑块验证",
     "subtitle": "由 Pyisland Server & eIsland 提供质询服务",
@@ -1245,181 +1115,6 @@
     "actions": {
       "cancel": "取消",
       "confirm": "确认"
-    }
-  },
-  "miniGameTab": {
-    "sidebar": {
-      "index": "快速导航"
-    },
-    "index": {
-      "title": "快速导航",
-      "reset": "恢复默认",
-      "edit": "编辑",
-      "done": "完成",
-      "searchPlaceholder": "搜索游戏项...",
-      "searchClear": "清空搜索",
-      "searchEmpty": "没有找到匹配的游戏项",
-      "hintEdit": "拖拽卡片可调整排列顺序，点击「完成」保存。",
-      "hintView": "点击卡片可快速跳转到对应游戏。",
-      "ariaNav": "小游戏快速导航",
-      "removeCard": "删除 {{label}}",
-      "ariaAddPanel": "可添加导航卡片",
-      "addableTitle": "可添加卡片",
-      "emptyAddable": "当前没有可添加的卡片"
-    },
-    "nav": {
-      "game-2048": {
-        "label": "2048",
-        "desc": "经典数字合并小游戏，支持成绩与排行榜。"
-      },
-      "game-gomoku": {
-        "label": "五子棋",
-        "desc": "本地双人五子棋对战，先连成五子获胜。"
-      }
-    },
-    "games": {
-      "2048": "2048",
-      "gomoku": "五子棋"
-    },
-    "comingSoon": "即将上线",
-    "unknownUser": "未知用户",
-    "loginRequired": "请先登录以查看成绩与排行榜",
-    "loading": "加载中...",
-    "loadError": "数据加载失败",
-    "retry": "重试",
-    "refresh": "刷新",
-    "myBest": "个人最高分",
-    "highScore": "最高分",
-    "duration": "用时",
-    "moves": "步数",
-    "plays": "游玩次数",
-    "noRecord": "暂无记录",
-    "leaderboard": "排行榜",
-    "myRank": "您的排名",
-    "leaderboardRestartHint": "重启后进行的对局成绩不会计入排行榜，请保持当前会话完成游戏。",
-    "rankUnavailable": "未上榜",
-    "lbUser": "用户",
-    "lbScore": "分数",
-    "lbEmpty": "暂无排行数据",
-    "auth": {
-      "entryTitle": "登录后查看排行榜与个人成绩",
-      "gotoLogin": "前往登录",
-      "gotoRegister": "前往注册",
-      "hint": "登录后可同步游戏成绩、查看排行榜并与其他玩家竞争。"
-    },
-    "game2048": {
-      "score": "分数",
-      "best": "最高",
-      "newGame": "新游戏",
-      "gameOver": "游戏结束",
-      "tryAgain": "再来一局",
-      "hint": "使用方向键或 WASD 滑动方块"
-    },
-    "gomoku": {
-      "hint": "黑白双方轮流落子，先连成五子者获胜。",
-      "mode": "对战模式",
-      "modePve": "人机对战",
-      "modePvp": "人人对战",
-      "difficulty": "选择对局难度",
-      "difficultyNovice": "新手",
-      "difficultyEasy": "简单",
-      "difficultyHard": "困难",
-      "difficultyExpert": "专家",
-      "difficultyMaster": "大师",
-      "status": "当前状态",
-      "thinking": "正在思考",
-      "turnBlack": "黑棋回合",
-      "turnWhite": "白棋回合",
-      "winnerBlack": "黑棋获胜",
-      "winnerWhite": "白棋获胜",
-      "victory": "胜利",
-      "defeat": "失败",
-      "draw": "平局",
-      "restart": "重新开始",
-      "highlightLastMove": "高亮上一手",
-      "unrankedHint": "五子棋暂不接入在线排行榜。",
-      "boardAria": "五子棋棋盘",
-      "cellAria": "第 {{row}} 行第 {{col}} 列"
-    }
-  },
-  "stockTab": {
-    "title": "股票行情",
-    "subtitle": "搜索股票代码并查看实时价格、涨跌幅和专业 K 线。",
-    "autoRefresh": "每 30 秒自动刷新",
-    "sidebar": {
-      "toggle": "展开/收起侧边栏",
-      "deleteFavorite": "删除自选",
-      "favorites": "自选",
-      "search": "搜索",
-      "favoritesHint": "管理您的自选股列表",
-      "searchHint": "按名称或代码搜索股票",
-      "favoriteSearchLabel": "搜索自选",
-      "favoriteSearchPlaceholder": "输入自选名称或代码",
-      "selectedCount": "已选 {{count}} 项",
-      "deleteSelected": "删除",
-      "noFavoriteMatches": "未找到匹配的自选股",
-      "noFavorites": "暂无自选股"
-    },
-    "empty": {
-      "name": "未选择股票",
-      "chart": "暂无 K 线数据"
-    },
-    "loading": {
-      "chart": "正在加载 K 线..."
-    },
-    "period": {
-      "day": "日 K 线",
-      "week": "周 K 线",
-      "month": "月 K 线",
-      "short": {
-        "day": "日",
-        "week": "周",
-        "month": "月"
-      }
-    },
-    "actions": {
-      "search": "搜索",
-      "searching": "搜索中...",
-      "clear": "清除",
-      "addFavorite": "添加",
-      "addFavoriteWithName": "添加 {{name}} 到自选",
-      "removeFavorite": "移除 {{name}} 自选",
-      "refresh": "刷新行情"
-    },
-    "search": {
-      "aria": "股票搜索与筛选",
-      "keywordLabel": "搜索股票",
-      "keywordPlaceholder": "输入名称或代码"
-    },
-    "metrics": {
-      "aria": "股票关键指标",
-      "updatedAt": "更新于 {{time}}",
-      "previousClose": "昨收",
-      "high": "最高",
-      "low": "最低",
-      "volume": "成交量",
-      "amount": "成交额",
-      "source": "数据源"
-    },
-    "chart": {
-      "aria": "股票 K 线图",
-      "title": "股票 K 线",
-      "candlestick": "K 线",
-      "volume": "成交量",
-      "priceAxis": "价格",
-      "volumeAxis": "成交量",
-      "exportMenu": "图表导出菜单",
-      "range": {
-        "1m": "1月",
-        "3m": "3月",
-        "6m": "6月",
-        "1y": "1年",
-        "all": "全部"
-      }
-    },
-    "error": {
-      "default": "行情加载失败，请稍后重试。",
-      "symbolFormat": "请输入带市场前缀的股票代码，例如 SH600519、SZ000651、HK00700 或 USMSFT。"
     }
   },
   "stt": {
@@ -1471,7 +1166,6 @@
       "expanded": "返回",
       "todo": "待办",
       "urlFavorites": "URL 收藏",
-      "album": "相册",
       "mail": "邮箱",
       "localFileSearch": "文件查找",
       "clipboardHistory": "剪贴板",
@@ -1935,7 +1629,11 @@
       "loading": "正在检索本地文件…",
       "empty": "暂无结果，试试更换关键词或目录。",
       "rootPlaceholder": "选择或输入搜索目录，例如 C:\\Users",
-      "keywordPlaceholder": "输入文件名关键词，例如 report、.pdf"
+      "keywordPlaceholder": "输入文件名关键词，例如 report、.pdf",
+      "everythingReady": "Everything 就绪",
+      "engineEverything": "Everything",
+      "engineDirectory": "目录扫描",
+      "engineEverythingHint": "检测到 Everything，搜索将优先走全盘索引"
     },
     "memo": {
       "search": "搜索标题、正文或标签…",
@@ -2033,7 +1731,6 @@
       "layout-preview": "布局预览",
       "expand-layout": "展开布局",
       "maxexpand-layout": "全展开布局",
-      "album": "相册配置",
       "hide-process-list": "隐藏窗口管理",
       "position": "位置校准",
       "theme": "主题外观",
@@ -2065,7 +1762,7 @@
       "shortcut": "快捷键",
       "user": "用户中心",
       "update": "更新设置",
-      "pluginMarket": "壁纸市场",
+      "pluginMarket": "壁纸",
       "about": "关于软件"
     },
     "mail": {
@@ -2312,14 +2009,22 @@
       },
       "controlCenter": {
         "title": "控制中心按钮",
-        "hint": "勾选要在 Hover 控制中心（时间页）显示的按钮，拖拽或上下调整顺序。当前显示 {{count}} / {{total}} 个按钮。",
+        "hint": "拖动图标调整顺序；点击图标从条上移除（设置/页面管理固定）。最多 {{max}} 个，当前 {{count}}。",
         "moveUp": "上移",
         "moveDown": "下移",
         "hideBtn": "隐藏此按钮",
         "showBtn": "显示此按钮",
         "shownLabel": "显示",
         "hiddenLabel": "隐藏",
-        "resetDefault": "恢复默认"
+        "resetDefault": "恢复默认",
+        "alwaysVisible": "必须显示，无法隐藏",
+        "fixedLabel": "固定",
+        "previewBar": "控制中心预览（可拖拽）",
+        "clickHide": "点击从条上移除",
+        "clickShow": "点击加入控制中心",
+        "emptyBar": "条上无按钮，请从下方添加",
+        "poolHint": "未显示（点击加入）：最多同时显示 {{max}} 个",
+        "allShown": "全部按钮已在控制中心显示"
       },
       "notifications": {
         "configChanged": {
@@ -2366,7 +2071,6 @@
           "countdown": "倒数日",
           "pomodoro": "番茄钟",
           "urlFavorites": "URL 收藏",
-          "album": "相册轮播",
           "mokugyo": "电子木鱼",
           "breakReminder": "休息提醒"
         },
@@ -2382,7 +2086,6 @@
           "songArtist": "示例艺术家",
           "songAlbum": "示例专辑",
           "samplePreview": "示例预览",
-          "albumFile": "示例图片.jpg",
           "urlNoteGithub": "代码托管",
           "urlNoteStackOverflow": "技术问答",
           "breakSedentary": "站起来活动",
@@ -2430,7 +2133,6 @@
         "tabLabels": {
           "todo": "待办事项",
           "urlFavorites": "URL 收藏",
-          "album": "相册",
           "mail": "邮箱",
           "localFileSearch": "文件查找",
           "clipboardHistory": "剪贴板",
@@ -2607,31 +2309,6 @@
         "resetDefault": "恢复默认",
         "previewPlay": "预览",
         "previewStop": "停止"
-      },
-      "album": {
-        "carouselTitle": "相册轮播方式",
-        "carouselHint": "配置总览相册卡片的轮播顺序、频率、展示内容与点击行为",
-        "intervalLabel": "轮播间隔",
-        "interval3s": "3 秒",
-        "interval5s": "5 秒",
-        "interval8s": "8 秒",
-        "orderLabel": "轮播顺序",
-        "orderSequential": "顺序轮播",
-        "orderRandom": "随机轮播",
-        "filterLabel": "展示资源",
-        "filterHint": "选择总览相册卡片参与轮播的资源类型",
-        "filterAll": "全部",
-        "filterImage": "仅图片",
-        "filterVideo": "仅视频",
-        "clickBehaviorLabel": "点击卡片行为",
-        "clickBehaviorHint": "配置点击总览相册卡片后的行为",
-        "clickBehaviorOpen": "打开相册页",
-        "clickBehaviorNone": "无动作",
-        "playbackTitle": "自动播放与视频行为",
-        "playbackHint": "仅影响总览相册轮播卡片，不影响相册主页面。",
-        "autoRotateToggle": "启用自动轮播",
-        "videoAutoPlayToggle": "视频自动播放",
-        "videoMutedToggle": "视频静音播放"
       },
       "urlParser": {
         "title": "剪贴板 URL 监听",
@@ -2835,9 +2512,19 @@
         "hint": "选择天气定位优先使用 IP 自动定位或自定义位置"
       },
       "customCityTitle": "自定义城市",
-      "customCityHint": "仅在“自定义位置优先”生效，可先测试再保存；支持中文 / 拼音 / 英文。",
-      "cityName": "城市名称",
-      "cityPlaceholder": "例如：杭州 / Tokyo / New York",
+      "customCityHint": "仅在“自定义位置优先”生效。可关键字联想（海淀区），也可省→市→区级联下拉。",
+      "locationMode": {
+        "search": "关键字搜索",
+        "cascade": "省市县级联"
+      },
+      "cascade": {
+        "province": "省 / 直辖市",
+        "city": "市",
+        "district": "区 / 县"
+      },
+      "cityName": "城市 / 区县",
+      "cityPlaceholder": "例如：海淀区 / 杭州 / Tokyo",
+      "districtSearching": "搜索中…",
       "testing": "测试中...",
       "testCustomLocation": "测试自定义位置（多接口）",
       "saveLocation": "保存定位配置",
@@ -3422,7 +3109,7 @@
         "register": "注册",
         "loginBtn": "登录",
         "registerBtn": "注册并登录",
-        "hint": "登录注册服务由汐月服务器提供",
+        "hint": "登录注册服务由 Assa 服务器提供",
         "entryTitle": "登录后可管理头像、资料与账号安全设置",
         "gotoLogin": "前往登录",
         "gotoRegister": "前往注册",
@@ -3836,10 +3523,6 @@
         "label": "全展开布局",
         "desc": "调整页面顺序与显示开关。"
       },
-      "album": {
-        "label": "相册配置",
-        "desc": "相册轮播与相册入口相关配置。"
-      },
       "hide-process-list": {
         "label": "隐藏窗口管理",
         "desc": "管理隐藏窗口名单与自动隐藏规则。"
@@ -3958,9 +3641,16 @@
       },
       "backToCategory": "返回"
     },
+    "aiName": {
+      "title": "AI 名字",
+      "hint": "设置 AI 助手的显示名，修改后即时生效。留空则恢复默认“汐月”。",
+      "placeholder": "例如：汐月",
+      "save": "保存",
+      "saving": "保存中…"
+    },
     "aiSecurity": {
       "trustTitle": "AI 信任等级",
-      "trustHint": "决定汐月自动执行工具与读取数据的范围。改动立即生效，无需重启。"
+      "trustHint": "决定 Assa 自动执行工具与读取数据的范围。改动立即生效，无需重启。"
     },
     "audit": {
       "title": "工具审计记录",
@@ -3969,7 +3659,7 @@
       "empty": "暂无工具调用记录"
     },
     "memory": {
-      "title": "汐月记忆（只读）",
+      "title": "Assa 记忆（只读）",
       "hint": "对话中自动沉淀的工作记忆摘要；完整删除能力后续提供。",
       "empty": "暂无记忆。多聊几句后会出现在这里。",
       "clear": "清空记忆",
@@ -3990,6 +3680,56 @@
       "desc": "搜索配置项，或按分类进入。",
       "searchPlaceholder": "搜索设置…",
       "hot": "常用设置"
+    },
+    "customPages": {
+      "title": "页面管理",
+      "desc": "管理灵动岛自定义页（内嵌网页 / 空白容器）。此处管「有哪些页」；顺序与显隐在设置 · 交互布局中调。",
+      "addTitle": "添加页面",
+      "addHint": "标题必填；内嵌网页需填写 https 地址",
+      "titleLabel": "页面标题",
+      "titlePlaceholder": "例如：文档 / B站",
+      "templateUrl": "内嵌网页",
+      "templateBlank": "空白容器",
+      "urlLabel": "网址",
+      "urlPlaceholder": "https://...",
+      "addButton": "添加页面",
+      "listTitle": "已有页面",
+      "listHint": "出现在 Hover 导航点；ESC 可关闭本窗口",
+      "empty": "暂无自定义页面",
+      "noUrl": "未配置网址",
+      "blankTag": "空白容器",
+      "editUrlPrompt": "修改网址",
+      "editUrl": "改网址",
+      "delete": "删除",
+      "confirmDelete": "确定删除页面「{{title}}」？",
+      "messages": {
+        "titleRequired": "请先填写页面标题",
+        "added": "已添加，可在控制中心「管理页面」中调整"
+      },
+      "ccHint": "编辑 Hover 控制中心条上显示哪些按钮、顺序与显隐（最多同时显示若干个）。",
+      "hubDesc": "收纳「显示什么」：窗口 Tab、控制中心、岛布局与自定义页。点击分组展开。",
+      "expandLayoutHint": "控制展开态（第二档）显示哪些页面与顺序。",
+      "maxExpandLayoutHint": "控制最大展开态页面顺序与可见性。",
+      "customPagesTitle": "岛自定义页",
+      "customPagesHint": "内嵌网页 / 空白容器，出现在岛 Hover 导航点"
+    },
+    "wallpaper": {
+      "local": {
+        "title": "本地壁纸",
+        "hint": "内置预设 + 我的壁纸。导入或应用后可保存，快速切换。",
+        "builtin": "预设壁纸",
+        "import": "导入 / 当前",
+        "importImage": "导入图片",
+        "importVideo": "导入视频",
+        "saveCurrent": "保存到我的壁纸",
+        "clear": "清除背景",
+        "mine": "我的壁纸（{{count}}）",
+        "empty": "暂无保存的壁纸；使用预设或导入后可点「保存到我的壁纸」",
+        "remove": "删除",
+        "untitled": "自定义壁纸",
+        "currentImage": "当前：图片背景",
+        "currentVideo": "当前：视频背景（可在主题外观调播放参数）"
+      }
     }
   },
   "idle": {

@@ -36,6 +36,7 @@ export interface SearchLocalFilesOptions {
   matchScope?: 'name' | 'path';
   extensions?: string[];
   excludeDirs?: string[];
+  preferEverything?: boolean;
 }
 
 /** 本地文件搜索结果项 */

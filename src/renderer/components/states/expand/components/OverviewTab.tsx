@@ -29,7 +29,6 @@ import { useTranslation } from 'react-i18next';
 import useIslandStore from '../../../../store/slices';
 import { getDayName, getDayJi, getDayYi, getLunarDate } from '../../../../utils/timeUtils';
 import {
-  AlbumCarouselWidget,
   BreakReminderWidget,
   CountdownWidget,
   MokugyoWidget,
@@ -49,17 +48,16 @@ import {
 } from './OverviewTab/utils/overviewUtils';
 
 /** 总览控件类型 */
-export type OverviewWidgetType = 'shortcuts' | 'todo' | 'song' | 'countdown' | 'pomodoro' | 'urlFavorites' | 'album' | 'mokugyo' | 'breakReminder';
+export type OverviewWidgetType = 'shortcuts' | 'todo' | 'song' | 'countdown' | 'pomodoro' | 'urlFavorites' | 'mokugyo' | 'breakReminder';
 
 /** 中间时钟样式类型 */
 export type OverviewClockStyle = 'classic' | 'gradient' | 'minimal';
 
-/** 控件选项列表 */
+/** 控件选项列表（本地相册已下线，不再出现在负一屏） */
 export const OVERVIEW_WIDGET_OPTIONS: { value: OverviewWidgetType }[] = [
   { value: 'shortcuts' },
   { value: 'todo' },
   { value: 'song' },
-  { value: 'album' },
   { value: 'countdown' },
   { value: 'pomodoro' },
   { value: 'mokugyo' },
@@ -146,13 +144,63 @@ export function normalizeOverviewLayoutConfig(raw: unknown): OverviewLayoutConfi
 }
 
 /**
+ * 中区时钟：自带 1s tick，避免 Overview 整页每秒 re-render 所有 widgets。
+ */
+function OverviewClock({ clockStyle, gradientColors }: {
+  clockStyle: OverviewClockStyle;
+  gradientColors: OverviewGradientColors;
+}): React.ReactElement {
+  const { t } = useTranslation();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const hh = now.getHours().toString().padStart(2, '0');
+  const mm = now.getMinutes().toString().padStart(2, '0');
+  const ss = now.getSeconds().toString().padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const dayName = t(`overview.time.weekdays.${now.getDay()}`, { defaultValue: getDayName(now) });
+  const gradientClockVars = (clockStyle === 'gradient' || clockStyle === 'minimal')
+    ? {
+      '--ov-clock-gradient-start': gradientColors.start,
+      '--ov-clock-gradient-middle': gradientColors.middle,
+      '--ov-clock-gradient-end': gradientColors.end,
+    } as React.CSSProperties
+    : undefined;
+
+  return (
+    <div className={`ov-dash-time ov-dash-time--${clockStyle}`} style={gradientClockVars}>
+      <span className="ov-dash-date">{t('overview.time.date', { defaultValue: '{{yyyy}}年{{month}}月{{day}}日 {{dayName}}', yyyy, month, day, dayName })}</span>
+      <span className="ov-dash-clock">{clockStyle === 'minimal' ? `${hh}:${mm}` : `${hh}:${mm}:${ss}`}</span>
+      <span className="ov-dash-lunar">{getLunarDate(now)}</span>
+      {clockStyle !== 'minimal' && (
+        <div className="ov-dash-yiji">
+          <div className="ov-dash-yiji-row">
+            <span className="ov-dash-yiji-label yi">{t('overview.time.yi', { defaultValue: '宜' })}</span>
+            <span className="ov-dash-yiji-items">{getDayYi(now).slice(0, 3).join(' · ')}</span>
+          </div>
+          <div className="ov-dash-yiji-row">
+            <span className="ov-dash-yiji-label ji">{t('overview.time.ji', { defaultValue: '忌' })}</span>
+            <span className="ov-dash-yiji-items">{getDayJi(now).slice(0, 3).join(' · ')}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * 总览 Tab
  * @description 展开状态下仪表盘式概览面板
  */
 export function OverviewTab(): React.ReactElement {
-  const { t } = useTranslation();
-  const { setMaxExpand, setMaxExpandTab } = useIslandStore();
-  const [now, setNow] = useState(new Date());
+  const setMaxExpand = useIslandStore((s) => s.setMaxExpand);
+  const setMaxExpandTab = useIslandStore((s) => s.setMaxExpandTab);
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [apps, setApps] = useState<AppShortcut[]>([]);
@@ -174,11 +222,6 @@ export function OverviewTab(): React.ReactElement {
       setMaxExpand();
     });
   }, [setMaxExpand, setMaxExpandTab]);
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
 
   /** 加载布局配置 */
   useEffect(() => {
@@ -287,22 +330,6 @@ export function OverviewTab(): React.ReactElement {
     };
   }, []);
 
-  const hh = now.getHours().toString().padStart(2, '0');
-  const mm = now.getMinutes().toString().padStart(2, '0');
-  const ss = now.getSeconds().toString().padStart(2, '0');
-  const gradientClockVars = (layoutConfig.clockStyle === 'gradient' || layoutConfig.clockStyle === 'minimal')
-    ? {
-      '--ov-clock-gradient-start': layoutConfig.gradientColors.start,
-      '--ov-clock-gradient-middle': layoutConfig.gradientColors.middle,
-      '--ov-clock-gradient-end': layoutConfig.gradientColors.end,
-    } as React.CSSProperties
-    : undefined;
-
-  const yyyy = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const day = now.getDate().toString().padStart(2, '0');
-  const dayName = t(`overview.time.weekdays.${now.getDay()}`, { defaultValue: getDayName(now) });
-
   const toggleExpand = (id: number): void => {
     setExpandedId(prev => prev === id ? null : id);
   };
@@ -371,8 +398,6 @@ export function OverviewTab(): React.ReactElement {
         );
       case 'song':
         return <SongWidget />;
-      case 'album':
-        return <AlbumCarouselWidget openAlbumPage={() => openTargetPage('album')} />;
       case 'countdown':
         return <CountdownWidget openTargetPage={openTargetPage} />;
       case 'pomodoro':
@@ -395,24 +420,11 @@ export function OverviewTab(): React.ReactElement {
         {renderWidget(layoutConfig.left)}
       </div>
 
-      {/* ========== 中区：时间（始终居中） ========== */}
-      <div className={`ov-dash-time ov-dash-time--${layoutConfig.clockStyle}`} style={gradientClockVars}>
-        <span className="ov-dash-date">{t('overview.time.date', { defaultValue: '{{yyyy}}年{{month}}月{{day}}日 {{dayName}}', yyyy, month, day, dayName })}</span>
-        <span className="ov-dash-clock">{layoutConfig.clockStyle === 'minimal' ? `${hh}:${mm}` : `${hh}:${mm}:${ss}`}</span>
-        <span className="ov-dash-lunar">{getLunarDate(now)}</span>
-        {layoutConfig.clockStyle !== 'minimal' && (
-          <div className="ov-dash-yiji">
-            <div className="ov-dash-yiji-row">
-              <span className="ov-dash-yiji-label yi">{t('overview.time.yi', { defaultValue: '宜' })}</span>
-              <span className="ov-dash-yiji-items">{getDayYi(now).slice(0, 3).join(' · ')}</span>
-            </div>
-            <div className="ov-dash-yiji-row">
-              <span className="ov-dash-yiji-label ji">{t('overview.time.ji', { defaultValue: '忌' })}</span>
-              <span className="ov-dash-yiji-items">{getDayJi(now).slice(0, 3).join(' · ')}</span>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* ========== 中区：时间（始终居中，独立 tick 组件） ========== */}
+      <OverviewClock
+        clockStyle={layoutConfig.clockStyle}
+        gradientColors={layoutConfig.gradientColors}
+      />
 
       {/* ========== 右区 ========== */}
       <div className="ov-dash-slot ov-dash-slot-right">

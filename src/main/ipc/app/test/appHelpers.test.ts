@@ -67,9 +67,9 @@ const { existsSyncMock, readFileSyncRealMock } = vi.hoisted(() => {
   return {
     existsSyncMock: vi.fn(() => true),
     readFileSyncRealMock: vi.fn((p: string, enc?: string) => {
-      if (String(p).includes('xiyue_tools.json')) {
+      if (String(p).includes('assa_tools.json')) {
         return nodeFs.readFileSync(
-          nodePath.join(process.cwd(), 'schemas', 'xiyue_tools.json'),
+          nodePath.join(process.cwd(), 'schemas', 'assa_tools.json'),
           (enc ?? 'utf-8') as BufferEncoding,
         );
       }
@@ -114,7 +114,7 @@ const { getSmtcNowPlayingMock } = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({
   ipcMain: { handle: handleMock, on: onMock },
-  app: { quit: appQuitMock, relaunch: appRelaunchMock, exit: appExitMock, getPath: appGetPathMock },
+  app: { quit: appQuitMock, relaunch: appRelaunchMock, exit: appExitMock, getPath: appGetPathMock, getAppPath: appGetPathMock },
   BrowserWindow: Object.assign(
     vi.fn().mockImplementation(() => ({
       isDestroyed: () => false,
@@ -178,6 +178,7 @@ vi.mock('../../../window/standaloneWindow', () => ({
 
 vi.mock('../../../window/settingsWindow', () => ({
   openSettingsWindow: vi.fn(),
+  preloadSettingsWindow: vi.fn(),
   closeSettingsWindow: vi.fn(),
 }));
 
@@ -197,7 +198,16 @@ vi.mock('../../../music/smtcAccessor', () => ({
   getSmtcNowPlaying: getSmtcNowPlayingMock,
 }));
 
-vi.mock('@xiyue/windows-application-icon-helper', () => ({
+// Everything CLI 未被 mock 会比真实 execFile/spawn 更早短路 search-local-files，
+// 且 child_process mock 未提供 spawn → 抛错被 handler 吞掉返回 []。
+// 这里模拟「未安装 Everything（返回 null）」，让 handler 走目录遍历回退路径（本组用例的目标）。
+vi.mock('../../../services/everythingSearch', () => ({
+  searchWithEverything: vi.fn().mockResolvedValue(null),
+  resolveEsExecutable: vi.fn().mockReturnValue(null),
+  resetEsExecutableCache: vi.fn(),
+}));
+
+vi.mock('@assa/windows-application-icon-helper', () => ({
   getIconByPath: vi.fn().mockResolvedValue(null),
   getIconByShortcutPath: vi.fn().mockResolvedValue(null),
 }));
@@ -295,7 +305,7 @@ describe('app.ts pure helpers (via executeAgentLocalTool)', () => {
 
   // ──────────────────────────────────────────────
   // normalizeWebUrl / HTML 解析（原经 web.search）
-  // web.search 已不在 XIYUE_TOOL_ALLOWLIST，P0a-2a 终审会拒绝；
+  // web.search 已不在 ASSA_TOOL_ALLOWLIST，P0a-2a 终审会拒绝；
   // 纯函数逻辑暂无法经 executeAgentLocalTool 触达，待 schema 重建后再补直接导出测试。
   // ──────────────────────────────────────────────
 

@@ -78,7 +78,6 @@ export const SvgIcon = {
   UNMUTE: './svg/UNMUTE.svg',
   VISIBLE: './svg/VISIBLE.svg',
   INVISIBLE: './svg/INVISIBLE.svg',
-  PHOTO_ALBUM: './svg/PHOTO_ALBUM.svg',
   MOKUGYO: './svg/MOKUGYO.svg',
   DEEPSEEK: './svg/DEEPSEEK.svg',
   EXPAND: './svg/EXPAND.svg',

@@ -2,7 +2,7 @@
 
 职责：
 - 提供程序化身份读取接口，供侧车/前端/托盘/语音统一引用
-- xiyue.json 为事实源，xiyue.md 为完整人设文本
+- assa.json 为事实源，assa.md 为完整人设文本
 - 情绪不影响权限（铁律），此处只读身份信息
 """
 
@@ -16,18 +16,18 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
-PERSONA_JSON = ROOT / "agent" / "persona" / "xiyue.json"
-PERSONA_MD = ROOT / "agent" / "persona" / "xiyue.md"
+PERSONA_JSON = ROOT / "agent" / "persona" / "assa.json"
+PERSONA_MD = ROOT / "agent" / "persona" / "assa.md"
 
-# 默认配置（若 xiyue.json 缺失时回退）
+# 默认配置（若 assa.json 缺失时回退）
 _DEFAULT: dict[str, Any] = {
     "name": "汐月",
     "visible_name": "汐月",
     "english_name": "Xiyue",
     "role": "本地常驻 AI 管家",
     "model_default": "qwen3-4b-32k",
-    "system_identifier": "xiyue-local-agent",
-    "persona_file": "agent/persona/xiyue.md",
+    "system_identifier": "assa-local-agent",
+    "persona_file": "agent/persona/assa.md",
     "greeting": "我在，怎么了？",
     "language_default": "zh-CN",
     "privacy": {
@@ -61,7 +61,7 @@ _cached_mtime: float | None = None
 
 
 def _load_json() -> dict[str, Any]:
-    """加载 xiyue.json；mtime 变化时自动重载（设置页写入 trust_level 后无需重启）。
+    """加载 assa.json；mtime 变化时自动重载（设置页写入 trust_level 后无需重启）。
 
     测试可用 `_cached_mtime = -1.0` 强制使用内存覆盖、不读磁盘。
     """
@@ -76,7 +76,7 @@ def _load_json() -> dict[str, Any]:
             with open(PERSONA_JSON, "r", encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict):
-                raise ValueError("xiyue.json 根必须是对象")
+                raise ValueError("assa.json 根必须是对象")
             _cached = {**_DEFAULT, **data}
             _cached_mtime = mtime
             return _cached
@@ -115,12 +115,12 @@ def get_model_default() -> str:
 
 def get_system_identifier() -> str:
     """系统级标识（用于日志、审计、协议头）。"""
-    return str(_load_json().get("system_identifier", "xiyue-local-agent"))
+    return str(_load_json().get("system_identifier", "assa-local-agent"))
 
 
 def get_persona_file() -> Path:
     """完整人设文件路径（相对项目根）。"""
-    rel = str(_load_json().get("persona_file", "agent/persona/xiyue.md"))
+    rel = str(_load_json().get("persona_file", "agent/persona/assa.md"))
     p = ROOT / rel
     return p if p.exists() else PERSONA_MD
 
@@ -274,7 +274,7 @@ def build_system_prompt(extra_rules: str = "", emotion_state: str = "") -> str:
     return "\n\n".join(parts)
 
 
-class XiyueIdentityReader:
+class AssaIdentityReader:
     """身份读取器，提供结构化身份信息。"""
 
     def __init__(self) -> None:

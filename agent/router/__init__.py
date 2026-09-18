@@ -1,4 +1,4 @@
-"""Xiyue Router：闭集规则短路，不进 LLM。"""
+"""Assa Router：闭集规则短路，不进 LLM。"""
 from __future__ import annotations
 
 from typing import Any, Callable

@@ -28,7 +28,7 @@ import type { CustomPageDef, HoverTab } from '../../../../store/types';
 
 /**
  * Hover 导航布局配置（页面顺序 / 显隐可配置，原则 A 前半）。
- * 默认顺序：time / lyrics / weather / xiyue / pomodoro / expand
+ * 默认顺序：time / lyrics / weather / assa / pomodoro / expand
  * 其中 expand 为末位"进入大面板"动作点，始终可见，不计入可配置页面白名单。
  */
 
@@ -43,7 +43,7 @@ export const HOVER_NAV_LAYOUT_STORE_KEY = 'hover-nav-layout';
 export const HOVER_CUSTOM_PAGES_STORE_KEY = 'hover-custom-pages';
 
 /** 可配置页面白名单（expand 除外，它永远是末位动作点） */
-export const HOVER_CONFIGURABLE_TABS: HoverTab[] = ['time', 'lyrics', 'weather', 'xiyue', 'pomodoro'];
+export const HOVER_CONFIGURABLE_TABS: HoverTab[] = ['time', 'lyrics', 'weather', 'assa', 'pomodoro'];
 
 /** 始终可见的导航点（动作入口，不可隐藏） */
 export const HOVER_ALWAYS_VISIBLE_TABS = new Set<HoverTab>(['expand']);
@@ -52,7 +52,7 @@ export const HOVER_TAB_LABELS: Record<string, string> = {
   time: '工具',
   lyrics: '歌曲',
   weather: '天气',
-  xiyue: '汐月',
+  assa: '汐月',
   pomodoro: '番茄钟',
   expand: '展开',
 };

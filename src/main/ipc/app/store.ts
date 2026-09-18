@@ -26,7 +26,7 @@
  */
 
 import { ipcMain } from 'electron';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { broadcastSettingChange } from '../../utils/broadcast';
 import type { RegisterStoreIpcHandlersOptions } from './types';
@@ -34,6 +34,29 @@ import type { RegisterStoreIpcHandlersOptions } from './types';
 /** 合法的 store key：不含路径分隔符和 traversal 片段 */
 function isValidStoreKey(key: unknown): key is string {
   return typeof key === 'string' && key.length > 0 && !/[\\/]/.test(key) && !key.includes('..');
+}
+
+/**
+ * 进程内读缓存：mtime+size 未变则不重复 readFileSync+JSON.parse。
+ * store 配置是高频小 JSON 读；同步磁盘 IO 在启动/设置交互时会卡主进程。
+ */
+interface StoreCacheEntry {
+  mtimeMs: number;
+  size: number;
+  value: unknown;
+}
+const storeReadCache = new Map<string, StoreCacheEntry>();
+
+function readStoreCached(filePath: string): unknown | null {
+  const st = statSync(filePath);
+  const cached = storeReadCache.get(filePath);
+  if (cached && cached.mtimeMs === st.mtimeMs && cached.size === st.size) {
+    return cached.value;
+  }
+  const raw = readFileSync(filePath, 'utf-8');
+  const value = JSON.parse(raw);
+  storeReadCache.set(filePath, { mtimeMs: st.mtimeMs, size: st.size, value });
+  return value;
 }
 
 /**
@@ -47,8 +70,7 @@ export function registerStoreIpcHandlers(options: RegisterStoreIpcHandlersOption
       if (!isValidStoreKey(key)) return null;
       const filePath = join(options.storeDir, `${key}.json`);
       if (!existsSync(filePath)) return null;
-      const raw = readFileSync(filePath, 'utf-8');
-      return JSON.parse(raw);
+      return readStoreCached(filePath);
     } catch (err) {
       console.error(`[Store] read '${key}' error:`, err);
       return null;
@@ -60,6 +82,7 @@ export function registerStoreIpcHandlers(options: RegisterStoreIpcHandlersOption
       if (!isValidStoreKey(key)) return false;
       const filePath = join(options.storeDir, `${key}.json`);
       writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      storeReadCache.delete(filePath);
       broadcastSettingChange(event.sender.id, `store:${key}`, data);
       return true;
     } catch (err) {

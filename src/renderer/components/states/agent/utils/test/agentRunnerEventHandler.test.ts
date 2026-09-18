@@ -30,14 +30,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 /*  hoisted mocks                                                     */
 /* ------------------------------------------------------------------ */
 
-const { resolveXiyueLocalToolResultMock, isClientLocalToolNameMock, isHighRiskLocalToolNameMock } = vi.hoisted(() => ({
-  resolveXiyueLocalToolResultMock: vi.fn(async () => {}),
+const { resolveassaLocalToolResultMock, isClientLocalToolNameMock, isHighRiskLocalToolNameMock } = vi.hoisted(() => ({
+  resolveassaLocalToolResultMock: vi.fn(async () => {}),
   isClientLocalToolNameMock: vi.fn(() => false),
   isHighRiskLocalToolNameMock: vi.fn(() => false),
 }));
 
-vi.mock('../../../../../api/ai/xiyueLocalTool', () => ({
-  resolveXiyueLocalToolResult: resolveXiyueLocalToolResultMock,
+vi.mock('../../../../../api/ai/assaLocalTool', () => ({
+  resolveassaLocalToolResult: resolveassaLocalToolResultMock,
 }));
 
 vi.mock('../agentToolPolicy', () => ({
@@ -293,7 +293,7 @@ describe('createAgentStreamEventHandler', () => {
       expect(isClientLocalToolNameMock).toHaveBeenCalledWith('remote/api');
       // Should not reach setAuthPending or resolveMihtnelisLocalToolResult
       expect(opts.setAuthPending).not.toHaveBeenCalled();
-      expect(resolveXiyueLocalToolResultMock).not.toHaveBeenCalled();
+      expect(resolveassaLocalToolResultMock).not.toHaveBeenCalled();
     });
 
     it('returns early when tool is local but requestId is empty', async () => {
@@ -301,7 +301,7 @@ describe('createAgentStreamEventHandler', () => {
       const { handler, opts } = await loadHandler();
       handler(makeEvent('tool_call_request', { tool: 'local/fs_read', purpose: 'read', requestId: '' }));
       expect(opts.setAuthPending).not.toHaveBeenCalled();
-      expect(resolveXiyueLocalToolResultMock).not.toHaveBeenCalled();
+      expect(resolveassaLocalToolResultMock).not.toHaveBeenCalled();
     });
 
     it('sets authPending when authorizationRequired is true', async () => {
@@ -429,7 +429,7 @@ describe('createAgentStreamEventHandler', () => {
 
         // The execution is async (fire-and-forget), so wait for it
         await vi.waitFor(() => {
-          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveassaLocalToolResultMock).toHaveBeenCalled();
         });
 
         expect(executeAgentLocalTool).toHaveBeenCalledWith({
@@ -438,7 +438,7 @@ describe('createAgentStreamEventHandler', () => {
           workspaces: ['/workspace'],
         });
 
-        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
+        expect(resolveassaLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-auto',
           success: true,
           result: { data: 42 },
@@ -460,10 +460,10 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveassaLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
+        expect(resolveassaLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-noapi',
           success: false,
           result: {},
@@ -485,10 +485,10 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveassaLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
+        expect(resolveassaLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-undef',
           success: false,
           result: {},
@@ -513,10 +513,10 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveassaLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
+        expect(resolveassaLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-fail',
           success: false,
           result: {},
@@ -540,10 +540,10 @@ describe('createAgentStreamEventHandler', () => {
         }));
 
         await vi.waitFor(() => {
-          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveassaLocalToolResultMock).toHaveBeenCalled();
         });
 
-        expect(resolveXiyueLocalToolResultMock).toHaveBeenCalledWith({
+        expect(resolveassaLocalToolResultMock).toHaveBeenCalledWith({
           requestId: 'req-null',
           success: false,
           result: undefined,
@@ -571,16 +571,16 @@ describe('createAgentStreamEventHandler', () => {
           expect(executeAgentLocalTool).toHaveBeenCalled();
         });
 
-        expect(resolveXiyueLocalToolResultMock).not.toHaveBeenCalled();
+        expect(resolveassaLocalToolResultMock).not.toHaveBeenCalled();
       });
 
-      it('silently catches resolveXiyueLocalToolResult exceptions', async () => {
+      it('silently catches resolveassaLocalToolResult exceptions', async () => {
         isClientLocalToolNameMock.mockReturnValue(true);
         isHighRiskLocalToolNameMock.mockReturnValue(false);
 
         const executeAgentLocalTool = vi.fn(async () => ({ success: true, result: {}, durationMs: 0 }));
         ((globalThis as Record<string, Record<string, unknown>>).window).api = { executeAgentLocalTool };
-        resolveXiyueLocalToolResultMock.mockRejectedValueOnce(new Error('network fail'));
+        resolveassaLocalToolResultMock.mockRejectedValueOnce(new Error('network fail'));
 
         const { handler } = await loadHandler();
 
@@ -592,7 +592,7 @@ describe('createAgentStreamEventHandler', () => {
 
         // Should not throw
         await vi.waitFor(() => {
-          expect(resolveXiyueLocalToolResultMock).toHaveBeenCalled();
+          expect(resolveassaLocalToolResultMock).toHaveBeenCalled();
         });
       });
     });

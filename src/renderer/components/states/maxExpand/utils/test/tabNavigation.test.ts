@@ -28,11 +28,11 @@ import { describe, expect, it } from 'vitest';
 import type { NavDotId } from '../../config/shellConstants';
 import { getAdjacentNavDotId } from '../tabNavigation';
 
-const NAV_DOTS: NavDotId[] = ['expanded', 'todo', 'album', 'settings'];
+const NAV_DOTS: NavDotId[] = ['expanded', 'todo', 'mail', 'settings'];
 
 describe('getAdjacentNavDotId', () => {
   it('returns the next nav dot when direction is forward', () => {
-    expect(getAdjacentNavDotId(NAV_DOTS, 'todo', 1)).toBe('album');
+    expect(getAdjacentNavDotId(NAV_DOTS, 'todo', 1)).toBe('mail');
   });
 
   it('returns the previous nav dot when direction is backward', () => {

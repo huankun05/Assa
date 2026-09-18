@@ -1,0 +1,33 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d0d1a"/>
+      <stop offset="100%" style="stop-color:#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="100%" style="stop-color:#f0a500"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4a9eff"/>
+      <stop offset="100%" style="stop-color:#2d7dd2"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- 背景圆角方形 -->
+  <rect x="0" y="0" width="1024" height="1024" rx="180" ry="180" fill="url(#bgGrad)"/>
+  <!-- 金色弯月 -->
+  <path d="M 620 220 A 280 280 0 1 0 620 780 A 220 220 0 1 1 620 220 Z" fill="url(#moonGrad)" filter="url(#glow)"/>
+  <!-- 星光 -->
+  <path d="M 720 380 L 735 420 L 775 435 L 735 450 L 720 490 L 705 450 L 665 435 L 705 420 Z" fill="#fff8dc" filter="url(#glow)"/>
+  <!-- 波浪线 1 -->
+  <path d="M 180 680 Q 280 640 380 680 T 580 680 T 780 680 T 880 680" stroke="url(#waveGrad)" stroke-width="36" fill="none" stroke-linecap="round"/>
+  <!-- 波浪线 2 -->
+  <path d="M 200 760 Q 300 720 400 760 T 600 760 T 800 760 T 860 760" stroke="#5ab0ff" stroke-width="28" fill="none" stroke-linecap="round" opacity="0.7"/>
+</svg>
