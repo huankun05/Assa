@@ -236,14 +236,14 @@
 
 - **主形象**：二次元可爱少女（设计 brief 见整合报告 §2.2）。
 - **像素恐龙**：eIsland 遗产；**归档，不进正式应用**（`public/image/legacy/eisland-dino/` 或删除）；不得出现在默认路径与品牌叙事。
-- **过渡期（已定）**：代码只认 `xiyue_{mood}.png`；差分未齐的 mood **临时共用已有少女图或状态点**，**禁止回落恐龙**。
+- **过渡期（已定）**：代码只认 `assa_{mood}.png`；差分未齐的 mood **临时共用已有少女图或状态点**，**禁止回落恐龙**。
 
 ### 5.2 现状分裂
 
 | 位置 | 现用 | 目标 |
 |---|---|---|
 | 岛内 Agent 条（74px） | `AGENT_*.png` 恐龙五态 | **少女五态+** 差分 |
-| Hover 汐月页 | `xiyue_happy.png`（仅 happy）；其它 mood → 冷色 SVG | 全 mood 图片模式 |
+| Hover 汐月页 | `assa_happy.png`（仅 happy）；其它 mood → 冷色 SVG | 全 mood 图片模式 |
 | 应用/托盘图标 | eisland | 汐月品牌图标 |
 
 ### 5.3 状态差分清单（比「五态」更丰富）
@@ -269,24 +269,24 @@
 
 | 尺寸 | 用途 | 命名 |
 |---|---|---|
-| 40–44px | 岛 hover 头像 | `xiyue_{mood}.png` 脸部特写 |
-| 74–80px | Agent 条 / 大面板 | `xiyue_{mood}.png` 或 `_full` |
-| 256px+ | 关于页/展示 | `xiyue_{mood}_full.png` |
+| 40–44px | 岛 hover 头像 | `assa_{mood}.png` 脸部特写 |
+| 74–80px | Agent 条 / 大面板 | `assa_{mood}.png` 或 `_full` |
+| 256px+ | 关于页/展示 | `assa_{mood}_full.png` |
 | 应用图标 | 托盘 16 / 安装 256 | `resources/icon/assa_*.ico` |
 
 正式路径约定：
 
 ```text
 src/renderer/public/image/agent/
-  xiyue_calm.png
-  xiyue_happy.png
-  xiyue_thinking.png
-  xiyue_tool.png
-  xiyue_listening.png
-  xiyue_speaking.png
-  xiyue_confuse.png
+  assa_calm.png
+  assa_happy.png
+  assa_thinking.png
+  assa_tool.png
+  assa_listening.png
+  assa_speaking.png
+  assa_confuse.png
   …
-  xiyue_happy_full.png   # 大尺寸
+  assa_happy_full.png   # 大尺寸
 ```
 
 根目录 `F:/Work/Create/Assa/assa_*.png` 为**工作草稿**，验收后拷入上述路径；未入库不得在组件引用。
@@ -297,13 +297,13 @@ src/renderer/public/image/agent/
 
 | Phase | Mood | 资源 | 文案意图 |
 |---|---|---|---|
-| connecting | calm | `xiyue_calm.png` | 正在连接… |
-| thinking | thinking | `xiyue_thinking.png` | 正在思考… |
-| toolCalling | tool | `xiyue_tool.png` | 正在调用工具… |
-| answering | speaking | `xiyue_speaking.png`（缺则共用 happy） | 正在回答… |
-| done | happy | `xiyue_happy.png` | 已完成 / 回答完成 |
-| error | confuse | `xiyue_confuse.png` | 出错了 |
-| STT | listening | `xiyue_listening.png` | 我在听… |
+| connecting | calm | `assa_calm.png` | 正在连接… |
+| thinking | thinking | `assa_thinking.png` | 正在思考… |
+| toolCalling | tool | `assa_tool.png` | 正在调用工具… |
+| answering | speaking | `assa_speaking.png`（缺则共用 happy） | 正在回答… |
+| done | happy | `assa_happy.png` | 已完成 / 回答完成 |
+| error | confuse | `assa_confuse.png` | 出错了 |
+| STT | listening | `assa_listening.png` | 我在听… |
 
 Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/少女两套）。  
 **阶段文案必须走 i18n**（zh-CN / en-US 成对）。
@@ -320,7 +320,7 @@ Hover 与岛内 Agent **共用同一套路径表**（禁止再分叉成恐龙/�
 
 ### 5.7 遗留恐龙处置
 
-1. 代码：`PHASE_IMAGE` 全部改指 `xiyue_{mood}.png`。  
+1. 代码：`PHASE_IMAGE` 全部改指 `assa_{mood}.png`。  
 2. 资源：`AGENT_*.png` 移入 `public/image/legacy/eisland-dino/` 或删除（团队定）。  
 3. 文档：所有「像素小恐龙」表述改为「汐月少女」。  
 4. persona `agent/persona/assa.md` 同步删「无形象」过时描述。

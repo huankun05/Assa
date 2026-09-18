@@ -21,7 +21,7 @@
 | **面部区分度** | 每个表情的眉形/眼形/嘴形/腮红必须有明显差异，禁止 calm 和 listening 面部完全一样 |
 | 禁止 | 白底/黑底烘焙、文字水印、logo、多角色、写实/3D、道具挡脸、服装不一致、面部无区分 |
 | 文件名 | 必须完全一致（区分大小写） |
-| 大图可选 | 另出 `xiyue_{mood}_full.png` 头肩胸（设置/关于页用），**不阻塞** P0 |
+| 大图可选 | 另出 `assa_{mood}_full.png` 头肩胸（设置/关于页用），**不阻塞** P0 |
 
 ### 正向提示词要点（七张通用，必须包含）
 
@@ -57,7 +57,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ---
 
-## 1. `xiyue_calm.png` — 平静
+## 1. `assa_calm.png` — 平静
 
 | 项 | 内容 |
 |---|---|
@@ -76,7 +76,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ---
 
-## 2. `xiyue_happy.png` — 开心
+## 2. `assa_happy.png` — 开心
 
 | 项 | 内容 |
 |---|---|
@@ -87,13 +87,13 @@ different outfit, covered shoulders, turtleneck, no hands visible
 | 嘴 | 明显上扬微笑 |
 | 其它 | 可轻腮红；不要夸张大笑盖住五官 |
 
-**说明**：仓库已有 `xiyue_happy.png`；请导出**风格一致的特写版**覆盖或对齐即可。
+**说明**：仓库已有 `assa_happy.png`；请导出**风格一致的特写版**覆盖或对齐即可。
 
 **提示词补充**：`happy smile, smiling eyes, light blush, cheerful`
 
 ---
 
-## 3. `xiyue_thinking.png` — 思考
+## 3. `assa_thinking.png` — 思考
 
 | 项 | 内容 |
 |---|---|
@@ -108,7 +108,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ---
 
-## 4. `xiyue_tool.png` — 专注操作
+## 4. `assa_tool.png` — 专注操作
 
 | 项 | 内容 |
 |---|---|
@@ -123,7 +123,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ---
 
-## 5. `xiyue_listening.png` — 聆听
+## 5. `assa_listening.png` — 聆听
 
 | 项 | 内容 |
 |---|---|
@@ -142,7 +142,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ---
 
-## 6. `xiyue_confuse.png` — 困惑 / 出错
+## 6. `assa_confuse.png` — 困惑 / 出错
 
 | 项 | 内容 |
 |---|---|
@@ -157,7 +157,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ---
 
-## 7. `xiyue_speaking.png` — 说话中
+## 7. `assa_speaking.png` — 说话中
 
 | 项 | 内容 |
 |---|---|
@@ -174,13 +174,13 @@ different outfit, covered shoulders, turtleneck, no hands visible
 
 ## 2. 优先出图顺序
 
-1. `xiyue_thinking.png`  
-2. `xiyue_listening.png`  
-3. `xiyue_tool.png`  
-4. `xiyue_confuse.png`  
-5. `xiyue_calm.png`  
-6. `xiyue_speaking.png`  
-7. （可选）对齐重导 `xiyue_happy.png` 特写版  
+1. `assa_thinking.png`  
+2. `assa_listening.png`  
+3. `assa_tool.png`  
+4. `assa_confuse.png`  
+5. `assa_calm.png`  
+6. `assa_speaking.png`  
+7. （可选）对齐重导 `assa_happy.png` 特写版  
 
 ---
 
@@ -190,7 +190,7 @@ different outfit, covered shoulders, turtleneck, no hands visible
 - [ ] 七张脸位/发色/服装一致  
 - [ ] 缩到 32px 仍能区分 calm / happy / thinking / tool / listening / confuse  
 - [ ] 已放入 `src/renderer/public/image/agent/`  
-- [ ] 缺任一张时应用会回落 `xiyue_happy.png`（代码已接）  
+- [ ] 缺任一张时应用会回落 `assa_happy.png`（代码已接）  
 
 ---
 

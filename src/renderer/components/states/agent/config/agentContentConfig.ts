@@ -31,15 +31,15 @@ export type AgentPhase = 'connecting' | 'thinking' | 'toolCalling' | 'answering'
  * 缺文件时组件 onError 回落 happy；素材清单见 docs/design/CHARACTER_ASSET_CHECKLIST.md
  */
 export const PHASE_IMAGE: Record<AgentPhase, string> = {
-  connecting: 'image/agent/xiyue_calm.png',
-  thinking: 'image/agent/xiyue_thinking.png',
-  toolCalling: 'image/agent/xiyue_tool.png',
-  answering: 'image/agent/xiyue_speaking.png',
-  done: 'image/agent/xiyue_happy.png',
-  error: 'image/agent/xiyue_confuse.png',
+  connecting: 'image/agent/assa_calm.png',
+  thinking: 'image/agent/assa_thinking.png',
+  toolCalling: 'image/agent/assa_tool.png',
+  answering: 'image/agent/assa_speaking.png',
+  done: 'image/agent/assa_happy.png',
+  error: 'image/agent/assa_confuse.png',
 };
 
-export const PHASE_IMAGE_FALLBACK = 'image/agent/xiyue_happy.png';
+export const PHASE_IMAGE_FALLBACK = 'image/agent/assa_happy.png';
 
 export const PHASE_LABEL: Record<AgentPhase, string> = {
   connecting: '正在连接…',

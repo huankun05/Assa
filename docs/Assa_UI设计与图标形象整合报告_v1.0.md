@@ -85,7 +85,7 @@
 
 - **格式**：PNG（透明背景，已抠图）
 - **存储位置**：`src/renderer/public/image/agent/`
-- **文件命名**：`xiyue_{mood}.png`（如 `xiyue_happy.png`、`xiyue_thinking.png`）
+- **文件命名**：`assa_{mood}.png`（如 `assa_happy.png`、`assa_thinking.png`）
 - **配置**：`assaMoodConfig.ts` 的 `AVATAR_IMAGE_MAP` 已配置全部 7 种状态路径
 - **生成 brief**：`docs/AVATAR_P0_GENERATION_BRIEF.md`（含提示词、参数、验收标准）
 - **用户自定义**：`%APPDATA%\assa\data\custom\avatar\`
@@ -168,7 +168,7 @@
 | 大面板/设置页 | 80px+ | **完整版头肩胸像** | 保留完整形象，含卫衣 |
 | 关于页/形象展示 | 256px | 完整版 | 完整立绘 |
 
-> 文件命名：`xiyue_{mood}.png` = 脸部特写版（灵动岛用）；`xiyue_{mood}_full.png` = 完整版（大尺寸用）。
+> 文件命名：`assa_{mood}.png` = 脸部特写版（灵动岛用）；`assa_{mood}_full.png` = 完整版（大尺寸用）。
 
 ---
 

@@ -1,4 +1,4 @@
-# 汐月 Xiyue —— LICENSE
+# Assa —— LICENSE
 
 本软件是 **eIsland**（https://github.com/JNTMTMTM/eIsland，作者 JNTMTMTM / pyisland.com）的衍生作品，按上游许可发布：
 
@@ -21,4 +21,4 @@
 ## 衍生说明
 
 - 上游：eIsland —— Dynamic Island 风格 Windows 桌面应用（Electron + React + TypeScript）
-- 本衍生版：汐月 Xiyue —— 本地常驻 AI 管家，保留 eIsland 全部功能，叠加本地 LLM（Ollama）、语音输入/输出等 AI 能力。
+- 本衍生版：Assa —— 本地常驻 AI 管家，保留 eIsland 全部功能，叠加本地 LLM（Ollama）、语音输入/输出等 AI 能力。

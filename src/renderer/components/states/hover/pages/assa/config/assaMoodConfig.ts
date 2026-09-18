@@ -131,11 +131,11 @@ export function getSubtitle(mood: AgentMood, d: Date = new Date()): string {
  * - speaking:  手张开解释，嘴张开，说话中
  */
 export const AVATAR_IMAGE_MAP: Partial<Record<AgentMood, string>> = {
-  calm: 'image/agent/xiyue_calm.png',
-  happy: 'image/agent/xiyue_happy.png',
-  thinking: 'image/agent/xiyue_thinking.png',
-  tool: 'image/agent/xiyue_tool.png',
-  listening: 'image/agent/xiyue_listening.png',
-  confuse: 'image/agent/xiyue_confuse.png',
-  speaking: 'image/agent/xiyue_speaking.png',
+  calm: 'image/agent/assa_calm.png',
+  happy: 'image/agent/assa_happy.png',
+  thinking: 'image/agent/assa_thinking.png',
+  tool: 'image/agent/assa_tool.png',
+  listening: 'image/agent/assa_listening.png',
+  confuse: 'image/agent/assa_confuse.png',
+  speaking: 'image/agent/assa_speaking.png',
 };

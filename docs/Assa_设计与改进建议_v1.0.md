@@ -114,7 +114,7 @@
 | 资产 | 路径约定 | 说明 |
 |---|---|---|
 | 应用图标源文件 | `resources/icon/assa.png`（及后续 ico） | 替换/并列现有 `eisland_*.ico`；打包配置 `electron-builder.json` 同步 |
-| Agent 头像（hover 页） | `src/renderer/public/image/agent/xiyue_{happy,thinking,confuse,listening}.png` | 填入 `assaMoodConfig.ts` 的 `AVATAR_IMAGE_MAP` |
+| Agent 头像（hover 页） | `src/renderer/public/image/agent/assa_{happy,thinking,confuse,listening}.png` | 填入 `assaMoodConfig.ts` 的 `AVATAR_IMAGE_MAP` |
 | Agent 状态图（岛内紧凑条） | 可映射到同一套或子集 | `agentContentConfig.ts` 的 `PHASE_IMAGE` 可逐步切到 assa 命名 |
 
 风格约束（生成/外包美术时写进 brief）：
@@ -214,7 +214,7 @@ volume-analyzer、hardware-info-helper、`AiSettingsSection`、11 个死 IPC—�
 | 资产 | 目标路径 | 状态 |
 |---|---|---|
 | 应用图标（1024 源 + ico） | `resources/icon/assa.png` / `assa.ico` | ⏳ 待产出；产出后改 `electron-builder.json` |
-| 头像四态 | `src/renderer/public/image/agent/xiyue_{happy,thinking,confuse,listening}.png` | ⏳ 待产出；产出后填 `AVATAR_IMAGE_MAP` |
+| 头像四态 | `src/renderer/public/image/agent/assa_{happy,thinking,confuse,listening}.png` | ⏳ 待产出；产出后填 `AVATAR_IMAGE_MAP` |
 | 岛内状态图（可选） | `src/renderer/public/image/`（assa 命名） | ⏳ 可与头像共用或单独精简版 |
 
 启用 hover 页图片头像示例（资源就位后取消注释即可）：
@@ -222,10 +222,10 @@ volume-analyzer、hardware-info-helper、`AiSettingsSection`、11 个死 IPC—�
 ```ts
 // assaMoodConfig.ts
 export const AVATAR_IMAGE_MAP: Partial<Record<AgentMood, string>> = {
-  happy: 'image/agent/xiyue_happy.png',
-  thinking: 'image/agent/xiyue_thinking.png',
-  confuse: 'image/agent/xiyue_confuse.png',
-  listening: 'image/agent/xiyue_listening.png',
+  happy: 'image/agent/assa_happy.png',
+  thinking: 'image/agent/assa_thinking.png',
+  confuse: 'image/agent/assa_confuse.png',
+  listening: 'image/agent/assa_listening.png',
 };
 ```
 

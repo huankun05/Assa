@@ -2,8 +2,8 @@
 <html lang="zh-CN" data-page-node-id="FvOEgibRuz7fuKvC3eEZ5G">
 <head data-page-node-id="003k3abrWOhcgBRk6oDQv3">
 <meta charset="UTF-8" data-page-node-id="qacruD9JiQBlX71uKB6LdJ">
-<title>XiyueTab v6 · 填补空荡的 4 个方案</title>
-<link rel="stylesheet" href="../../src/renderer/styles/hover/xiyue-tab.css" data-page-node-id="AWI2yHMd7RnWekRXGtKCXJ">
+<title>AssaTab v6 · 填补空荡的 4 个方案</title>
+<link rel="stylesheet" href="../../src/renderer/styles/hover/assa-tab.css" data-page-node-id="AWI2yHMd7RnWekRXGtKCXJ">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -48,8 +48,8 @@
   .badge.opt { background:rgba(64,156,255,.14); color:#0a6fd6; }
 
   /* ===== 实时态：状态点 ===== */
-  .xiyue-name { display:inline-flex; align-items:center; gap:5px; }
-  .xiyue-online-dot {
+  .assa-name { display:inline-flex; align-items:center; gap:5px; }
+  .assa-online-dot {
     width:6px; height:6px; border-radius:50%;
     background:#34c759; display:inline-block;
     box-shadow:0 0 0 2px rgba(52,199,89,.25);
@@ -61,13 +61,13 @@
   }
 
   /* ===== 方案 D：加大字号（覆盖基础样式） ===== */
-  .enlarged .xiyue-avatar { width:38px; height:38px; }
-  .enlarged .xiyue-name { font-size:13.5px; }
-  .enlarged .xiyue-sub  { font-size:10.5px; }
-  .enlarged .xiyue-identity { gap:10px; }
+  .enlarged .assa-avatar { width:38px; height:38px; }
+  .enlarged .assa-name { font-size:13.5px; }
+  .enlarged .assa-sub  { font-size:10.5px; }
+  .enlarged .assa-identity { gap:10px; }
 
   /* 方案 D 第三行小信息 */
-  .xiyue-meta {
+  .assa-meta {
     font-size:10px; line-height:1.25;
     color:rgba(var(--color-text-rgb),0.4);
     font-feature-settings:"tnum";
@@ -75,16 +75,16 @@
     user-select:none;
     white-space:nowrap;
   }
-  .xiyue-meta-sep { opacity:.5; margin:0 4px; }
+  .assa-meta-sep { opacity:.5; margin:0 4px; }
 
   /* 副行含时间（方案 B） */
-  .xiyue-subtime {
+  .assa-subtime {
     font-size:10px; line-height:1.25;
     color:rgba(var(--color-text-rgb),0.55);
     letter-spacing:.1px; user-select:none;
   }
-  .xiyue-subtime-sep { opacity:.4; margin:0 4px; font-weight:400; }
-  .xiyue-subtime-time { font-feature-settings:"tnum"; opacity:.85; }
+  .assa-subtime-sep { opacity:.4; margin:0 4px; font-weight:400; }
+  .assa-subtime-time { font-feature-settings:"tnum"; opacity:.85; }
 
   /* 方案对比表 */
   .cmp-table {
@@ -127,7 +127,7 @@
 <body data-page-node-id="ocWwLOp0vec5m0METmCDj8">
 
 <div data-page-node-id="wIMYqC1YswCM2LENRSZEkn">
-  <div class="page-title" data-page-node-id="TQqNKowFRYCnLAnlOHLHG4">XiyueTab v6 · 填补空荡的 4 个方案</div>
+  <div class="page-title" data-page-node-id="TQqNKowFRYCnLAnlOHLHG4">AssaTab v6 · 填补空荡的 4 个方案</div>
   <div class="page-desc" data-page-node-id="xXBIAFHQa9K8IKmH6CKuwk">
     当前 320px 岛宽下，左侧「头像+文字」约占 140px、右侧「双图标」约占 73px，
     中间留白 ~80-100px。四个候选填补方案，红色虚线 = 60px/ 72px 岛边界。
@@ -140,29 +140,29 @@
   <div class="cell" data-page-node-id="RtuyrXmboryP7r44Ine8LB">
     <div class="cell-label" data-page-node-id="GHOMquIgrZWMSDwqpKzRDs">A · 主行加状态点 <span class="badge rec" data-page-node-id="GfHrIbXZAF0NUK9IApPXVS">推荐</span></div>
     <div class="island-shell h60 theme-dark" data-page-node-id="qySGxeR3S0c1c24w7w2cMM">
-      <div class="xiyue-tab" data-page-node-id="fqtyxjX8af9bdeKOXnCMOF">
-        <div class="xiyue-identity" data-page-node-id="lYbAVh3TaNxUwnTliHlCeq">
-          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="pAk35YXicuniDGpjcg0fPO">
+      <div class="assa-tab" data-page-node-id="fqtyxjX8af9bdeKOXnCMOF">
+        <div class="assa-identity" data-page-node-id="lYbAVh3TaNxUwnTliHlCeq">
+          <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="pAk35YXicuniDGpjcg0fPO">
             <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="9WalDEv4R2obL2gnfgaTb4"/>
             <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="J331lHYSgJgX2TbsBsndLI"/>
             <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="InqjRvF69GG07cHqJ1pEL6"/>
             <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="PEF3ZjkIAPZHu3pvEw23Om"/>
             <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="wPIFUw6YSKYUwnhHlEd2q4"/>
           </svg>
-          <div class="xiyue-text-block" data-page-node-id="F6qEq3ovFECmlVWKBdukGI">
-            <span class="xiyue-name" data-page-node-id="L0uplcJf5CwERvLzFWWTxJ">汐月<span class="xiyue-name-sep" data-page-node-id="VVHDDZKM7DDkFPtpFfP8k4">·</span>开心<span class="xiyue-online-dot" title="在线" data-page-node-id="Nm2gsPz2gIFoeVhnwMeeAA"></span></span>
-            <span class="xiyue-sub" data-page-node-id="62Ufim82wByzgn5x0I6pZw">中午好，记得休息一下</span>
+          <div class="assa-text-block" data-page-node-id="F6qEq3ovFECmlVWKBdukGI">
+            <span class="assa-name" data-page-node-id="L0uplcJf5CwERvLzFWWTxJ">汐月<span class="assa-name-sep" data-page-node-id="VVHDDZKM7DDkFPtpFfP8k4">·</span>开心<span class="assa-online-dot" title="在线" data-page-node-id="Nm2gsPz2gIFoeVhnwMeeAA"></span></span>
+            <span class="assa-sub" data-page-node-id="62Ufim82wByzgn5x0I6pZw">中午好，记得休息一下</span>
           </div>
         </div>
-        <div class="xiyue-divider" data-page-node-id="wMjQellqKDKCT6qrqb4I6h"></div>
-        <div class="xiyue-actions" data-page-node-id="CGllDFxnGRzGxKz88lgyQ6">
-          <button class="xiyue-action-btn" data-page-node-id="HosG6LFwBayBtp1AfFn1KJ">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="zhXRCYT92mJmidN3OHJXi8">
+        <div class="assa-divider" data-page-node-id="wMjQellqKDKCT6qrqb4I6h"></div>
+        <div class="assa-actions" data-page-node-id="CGllDFxnGRzGxKz88lgyQ6">
+          <button class="assa-action-btn" data-page-node-id="HosG6LFwBayBtp1AfFn1KJ">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="zhXRCYT92mJmidN3OHJXi8">
               <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="Eo8Mw4QS4SXlPN5saoWo4x"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="U9u19vbqD1SofYQ9Zf52fH"/><path d="M12 18.4v3.1" data-page-node-id="p0ZxOHmgRezgrZ8E8iXiAe"/><path d="M8.6 21.5h6.8" data-page-node-id="CP3Fc2GOqjUi6vAQ4P3flx"/>
             </svg>
           </button>
-          <button class="xiyue-action-btn" data-page-node-id="pkmpuSYscd7f8FarTblkTr">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="0yu47i4eKArwS0EF9RYnrN">
+          <button class="assa-action-btn" data-page-node-id="pkmpuSYscd7f8FarTblkTr">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="0yu47i4eKArwS0EF9RYnrN">
               <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="xDjQWvA2wyu0IXPF3AO9Pk"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="k21oBYos13sfcMPRG4sFMc"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="MDorl1dyYljTGowlQvenbP"/>
             </svg>
           </button>
@@ -175,29 +175,29 @@
   <div class="cell" data-page-node-id="NvrBAFZUMkAZRRyOzALjnl">
     <div class="cell-label" data-page-node-id="xFjX5wFJqCojF8eNS0Jq47">B · 副行含时间 <span class="badge opt" data-page-node-id="vUYO7MCcHrwGHOXxkeeFSY">可选</span></div>
     <div class="island-shell h60 theme-dark" data-page-node-id="E4AtlJ6C5HCL69TgmTZJcW">
-      <div class="xiyue-tab" data-page-node-id="x3LKow0OC6xwKxgxWH53Qz">
-        <div class="xiyue-identity" data-page-node-id="KZxQ7AmMAYHlMDNuKAAB9E">
-          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="dZeR4calwE3UN7fvG44NyJ">
+      <div class="assa-tab" data-page-node-id="x3LKow0OC6xwKxgxWH53Qz">
+        <div class="assa-identity" data-page-node-id="KZxQ7AmMAYHlMDNuKAAB9E">
+          <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="dZeR4calwE3UN7fvG44NyJ">
             <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="V6TNKi97JHVvXkxZncGIv4"/>
             <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="F7CUkmobmHbeM8CrLrOpes"/>
             <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="oz57BJgT19bTJcf4Cn65vw"/>
             <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="B1hqBtKXbpc6dL0zZPWNjz"/>
             <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="yy2es9d21Z2HP1afRd1JO5"/>
           </svg>
-          <div class="xiyue-text-block" data-page-node-id="CbZh6he2UDkjpei9K1diZn">
-            <span class="xiyue-name" data-page-node-id="X3EguG28grpDy7USaNRH7E">汐月<span class="xiyue-name-sep" data-page-node-id="DFjGv18ahIfFaBtlSBbjv1">·</span>开心</span>
-            <span class="xiyue-subtime" data-page-node-id="3rSnsEdRYhT9vv9CgNY4uC">中午好，记得休息一下<span class="xiyue-subtime-sep" data-page-node-id="4HqX1psO960PUA1xN3aiXm">·</span><span class="xiyue-subtime-time" data-page-node-id="QNSuhumlg14d18l9vMbmTx">13:45</span></span>
+          <div class="assa-text-block" data-page-node-id="CbZh6he2UDkjpei9K1diZn">
+            <span class="assa-name" data-page-node-id="X3EguG28grpDy7USaNRH7E">汐月<span class="assa-name-sep" data-page-node-id="DFjGv18ahIfFaBtlSBbjv1">·</span>开心</span>
+            <span class="assa-subtime" data-page-node-id="3rSnsEdRYhT9vv9CgNY4uC">中午好，记得休息一下<span class="assa-subtime-sep" data-page-node-id="4HqX1psO960PUA1xN3aiXm">·</span><span class="assa-subtime-time" data-page-node-id="QNSuhumlg14d18l9vMbmTx">13:45</span></span>
           </div>
         </div>
-        <div class="xiyue-divider" data-page-node-id="MlWO8keBhwAAL1FadDAGK3"></div>
-        <div class="xiyue-actions" data-page-node-id="gZyfNXxGdYF3MBTOgH3VjX">
-          <button class="xiyue-action-btn" data-page-node-id="8lFXDsTyfHHPXUha86CGeu">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="0tD7DYXsKgPGHnmRYpoLCE">
+        <div class="assa-divider" data-page-node-id="MlWO8keBhwAAL1FadDAGK3"></div>
+        <div class="assa-actions" data-page-node-id="gZyfNXxGdYF3MBTOgH3VjX">
+          <button class="assa-action-btn" data-page-node-id="8lFXDsTyfHHPXUha86CGeu">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="0tD7DYXsKgPGHnmRYpoLCE">
               <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="J2CL12EGUKyuREY0yHyrGb"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="xQgzmnB4IWaeM4DBYH0CbA"/><path d="M12 18.4v3.1" data-page-node-id="i31E6GvWGQoushzVyYK4wo"/><path d="M8.6 21.5h6.8" data-page-node-id="deUJKHDHDuNXTde9vBA6mS"/>
             </svg>
           </button>
-          <button class="xiyue-action-btn" data-page-node-id="BAoa9zQ3GRkHheJR7HNRIi">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="z80jw0WbcA8SzCng1gLR6d">
+          <button class="assa-action-btn" data-page-node-id="BAoa9zQ3GRkHheJR7HNRIi">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="z80jw0WbcA8SzCng1gLR6d">
               <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="m5PbFK9OvkHFBPrCaykbJb"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="fwQP9bMveSbni3AjsRJT4d"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="FmxehnUCEyhDtosp3dBIEA"/>
             </svg>
           </button>
@@ -210,30 +210,30 @@
   <div class="cell" data-page-node-id="RdJQt4EEfjPg3xSHOITe6z">
     <div class="cell-label" data-page-node-id="HMdEf3a4AYGmMedrogX2lw">C · 第三行：时间 + 在线 <span class="badge opt" data-page-node-id="vEolcSwy9QjXsZotzKbEZZ">可选</span></div>
     <div class="island-shell h72 theme-dark" data-page-node-id="qtsI63kAErjUndHsGBzwKR">
-      <div class="xiyue-tab" data-page-node-id="5rC9poMXFoFEOxufCmxEvX">
-        <div class="xiyue-identity" data-page-node-id="jTImhVrbESYxfij3JN5FiX">
-          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="QEMbnhCoP1MKj68H8ZhrFY">
+      <div class="assa-tab" data-page-node-id="5rC9poMXFoFEOxufCmxEvX">
+        <div class="assa-identity" data-page-node-id="jTImhVrbESYxfij3JN5FiX">
+          <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="QEMbnhCoP1MKj68H8ZhrFY">
             <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="i0FCbGdYiJm636C4Zwq5kd"/>
             <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="cUtpkRIZpf6nL1gbJYTBTG"/>
             <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="CO9PEX4RgxpTuBzugCsSyC"/>
             <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="i9ThQHd8NqjvBmG4wm26jI"/>
             <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="olMkDY7brbDsKE5eOeEzHD"/>
           </svg>
-          <div class="xiyue-text-block" data-page-node-id="4rgFE4iHm6ZyUVkseYBo99">
-            <span class="xiyue-name" data-page-node-id="bkAWZAWDDUxzSnxgLHrgoI">汐月<span class="xiyue-name-sep" data-page-node-id="5tXGpzit7jtv0kxFGeHwn4">·</span>开心</span>
-            <span class="xiyue-sub" data-page-node-id="2domgyO64VgFDwUh6eHIG4">中午好，记得休息一下</span>
-            <span class="xiyue-meta" data-page-node-id="BXpGifut6GbCQhoJgM0lDR">13:45<span class="xiyue-meta-sep" data-page-node-id="1zTFyJzpaoje0TvMIsCvON">·</span>在线<span class="xiyue-meta-sep" data-page-node-id="CzkwkA0XFYblkdiBUbsiEG">·</span>今日 3 次对话</span>
+          <div class="assa-text-block" data-page-node-id="4rgFE4iHm6ZyUVkseYBo99">
+            <span class="assa-name" data-page-node-id="bkAWZAWDDUxzSnxgLHrgoI">汐月<span class="assa-name-sep" data-page-node-id="5tXGpzit7jtv0kxFGeHwn4">·</span>开心</span>
+            <span class="assa-sub" data-page-node-id="2domgyO64VgFDwUh6eHIG4">中午好，记得休息一下</span>
+            <span class="assa-meta" data-page-node-id="BXpGifut6GbCQhoJgM0lDR">13:45<span class="assa-meta-sep" data-page-node-id="1zTFyJzpaoje0TvMIsCvON">·</span>在线<span class="assa-meta-sep" data-page-node-id="CzkwkA0XFYblkdiBUbsiEG">·</span>今日 3 次对话</span>
           </div>
         </div>
-        <div class="xiyue-divider" data-page-node-id="UryLhpIBFQgKcizuhGMIgg"></div>
-        <div class="xiyue-actions" data-page-node-id="YXe68ApC6GKbEqgqCYWmFX">
-          <button class="xiyue-action-btn" data-page-node-id="Y4jes7Dsr1WM5YI2Anhymy">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="XYvlznZ7Glf1m7n0yWyoHx">
+        <div class="assa-divider" data-page-node-id="UryLhpIBFQgKcizuhGMIgg"></div>
+        <div class="assa-actions" data-page-node-id="YXe68ApC6GKbEqgqCYWmFX">
+          <button class="assa-action-btn" data-page-node-id="Y4jes7Dsr1WM5YI2Anhymy">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="XYvlznZ7Glf1m7n0yWyoHx">
               <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="vAoeyE9mCs37eOfTB9o88W"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="IUmQcCM9gIdz0hyHB6pTSx"/><path d="M12 18.4v3.1" data-page-node-id="DwVLJSKUYsMFWTboWEep06"/><path d="M8.6 21.5h6.8" data-page-node-id="tlubJuDWBnBtvaBzXkDqIh"/>
             </svg>
           </button>
-          <button class="xiyue-action-btn" data-page-node-id="MQKPsbEEQ4SG7l7Y9lzpsu">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="kT7pDFVeDpuZxGsITCFpWJ">
+          <button class="assa-action-btn" data-page-node-id="MQKPsbEEQ4SG7l7Y9lzpsu">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="kT7pDFVeDpuZxGsITCFpWJ">
               <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="kc3kEbyemYTOybvyfLQUgH"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="vMrMPcS3CrdMW9snEUWq6O"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="ThMlgC84gJ8i9Dd0hxB8QQ"/>
             </svg>
           </button>
@@ -246,29 +246,29 @@
   <div class="cell" data-page-node-id="pKdPd1hsdDEQBat1KkFvyI">
     <div class="cell-label" data-page-node-id="PuEshtAN2vSFE5CRseGWnh">D · 加大头像与字号 <span class="badge" data-page-node-id="rYhuMiYI4xePgBcWXglXTf">备选</span></div>
     <div class="island-shell h72 theme-dark enlarged" data-page-node-id="P2OAVClf4nm7XNXeHxr6YV">
-      <div class="xiyue-tab" data-page-node-id="6LAMZ0Y78kv1P7ViyEBAKt">
-        <div class="xiyue-identity" data-page-node-id="VGObyRlWhOVBJJicEe1hkM">
-          <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="zacHcRcZFqCuiSgjoItqR4">
+      <div class="assa-tab" data-page-node-id="6LAMZ0Y78kv1P7ViyEBAKt">
+        <div class="assa-identity" data-page-node-id="VGObyRlWhOVBJJicEe1hkM">
+          <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="zacHcRcZFqCuiSgjoItqR4">
             <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="H14YPBykdtBB20YHLLMLbL"/>
             <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="cAt8aULYN2e4bZGtY6PxfW"/>
             <circle cx="18.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="8Ie8isTJHqCkHUrClLAm24"/>
             <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="mcMOItxVAsSu4wAcBbfNvl"/>
             <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="KgWVEZYGrd2lgGj5PCCxQE"/>
           </svg>
-          <div class="xiyue-text-block" data-page-node-id="MjymDzzT4W7jLsiTsYo0BL">
-            <span class="xiyue-name" data-page-node-id="RFUzH0fTNbioOriV5vMW9n">汐月<span class="xiyue-name-sep" data-page-node-id="XVtx8FX9aZq3PUHKzqNc0l">·</span>开心</span>
-            <span class="xiyue-sub" data-page-node-id="xxKD6HtCJoI9fMf6pCJ8Ya">中午好，记得休息一下</span>
+          <div class="assa-text-block" data-page-node-id="MjymDzzT4W7jLsiTsYo0BL">
+            <span class="assa-name" data-page-node-id="RFUzH0fTNbioOriV5vMW9n">汐月<span class="assa-name-sep" data-page-node-id="XVtx8FX9aZq3PUHKzqNc0l">·</span>开心</span>
+            <span class="assa-sub" data-page-node-id="xxKD6HtCJoI9fMf6pCJ8Ya">中午好，记得休息一下</span>
           </div>
         </div>
-        <div class="xiyue-divider" data-page-node-id="PIFxd78QQqv02VWiDUjlYJ"></div>
-        <div class="xiyue-actions" data-page-node-id="b91StIa9kKN8N0AOnsTKVV">
-          <button class="xiyue-action-btn" data-page-node-id="FDFVtdgxt3f5pVSPFHN9aD">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="1pgq4B0EScd3JzN63jncfk">
+        <div class="assa-divider" data-page-node-id="PIFxd78QQqv02VWiDUjlYJ"></div>
+        <div class="assa-actions" data-page-node-id="b91StIa9kKN8N0AOnsTKVV">
+          <button class="assa-action-btn" data-page-node-id="FDFVtdgxt3f5pVSPFHN9aD">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="1pgq4B0EScd3JzN63jncfk">
               <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="QYAQbV54AVhrHNIKZCbxEX"/><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="tsEfTkCyGIZAkoJ5grENpj"/><path d="M12 18.4v3.1" data-page-node-id="VTZ6nfTdIXP1uAUErhQB4V"/><path d="M8.6 21.5h6.8" data-page-node-id="0BD3WIqUSuCCCZ5a2X3nCK"/>
             </svg>
           </button>
-          <button class="xiyue-action-btn" data-page-node-id="QRZQbiof0kTiImjQkoOiJr">
-            <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="QPR75oMHBDTbN7fV9TIf7F">
+          <button class="assa-action-btn" data-page-node-id="QRZQbiof0kTiImjQkoOiJr">
+            <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="QPR75oMHBDTbN7fV9TIf7F">
               <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="6TGAlxRPY5CKDdMEKJDonz"/><path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="iolJG5EJuN3RvtCedSKD8b"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="y6aQ0TxtVtdzECaGgBj5K3"/>
             </svg>
           </button>

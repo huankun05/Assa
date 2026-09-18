@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-page-node-id="AR8CroTgqSz8NoMkF6dDSW">
 <head data-page-node-id="IamuASnZXZVTxgIYKS83Ae">
 <meta charset="UTF-8" data-page-node-id="qFjFrJe05VacTEQmJfzaxI">
-<title>XiyueTab v5 · 人形 AI 助手 + 副信息行</title>
+<title>AssaTab v5 · 人形 AI 助手 + 副信息行</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -21,7 +21,7 @@
   }
   .page-desc b { color:#1d1d1f; }
 
-  /* ===== 主题令牌（与 Xiyue 运行时一致） ===== */
+  /* ===== 主题令牌（与 Assa 运行时一致） ===== */
   .theme-dark {
     --island-bg:#000;
     --island-text:#fff;
@@ -59,9 +59,9 @@
   }
 
   /* ==========================================================
-     XiyueTab v5：左（头像 + 两行文字） | 分隔线 | 右（双图标）
+     AssaTab v5：左（头像 + 两行文字） | 分隔线 | 右（双图标）
      ========================================================== */
-  .xiyue-tab {
+  .assa-tab {
     display:flex; align-items:center; justify-content:center;
     gap:13px; height:100%; width:100%;
     padding:0 18px; color:var(--island-text);
@@ -69,31 +69,31 @@
   }
 
   /* ---- 左：头像 + 文字块（水平排列，更紧凑） ---- */
-  .xiyue-identity {
+  .assa-identity {
     display:flex; align-items:center; gap:9px;
     min-width:0; flex:1;            /* 占据剩余空间，文字可截断 */
   }
 
-  .xiyue-avatar {
+  .assa-avatar {
     width:34px; height:34px; flex-shrink:0; display:block;
     filter:brightness(0) invert(var(--icon-invert));
   }
 
-  .xiyue-text-block {
+  .assa-text-block {
     display:flex; flex-direction:column; justify-content:center;
     gap:2px; min-width:0;
   }
 
   /* 主行：名字 · 状态 */
-  .xiyue-name {
+  .assa-name {
     font-size:12px; font-weight:600; line-height:1.2;
     color:var(--text-primary); white-space:nowrap;
     letter-spacing:.1px;
   }
-  .xiyue-name .dot-sep { opacity:.4; margin:0 3px; font-weight:400; }
+  .assa-name .dot-sep { opacity:.4; margin:0 3px; font-weight:400; }
 
   /* 副行：问候语 / 状态描述（可截断） */
-  .xiyue-sub {
+  .assa-sub {
     font-size:10px; font-weight:400; line-height:1.25;
     color:var(--text-secondary);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -101,24 +101,24 @@
   }
 
   /* ---- 分隔线 ---- */
-  .xiyue-divider {
+  .assa-divider {
     width:1px; height:28px; background:var(--divider); flex-shrink:0;
   }
 
   /* ---- 右：两个高级图标入口 ---- */
-  .xiyue-actions { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+  .assa-actions { display:flex; align-items:center; gap:5px; flex-shrink:0; }
 
-  .xiyue-action-btn {
+  .assa-action-btn {
     display:flex; align-items:center; justify-content:center;
     width:34px; height:34px; padding:0;
     background:transparent; border:none; border-radius:11px;
     cursor:pointer; color:var(--island-text);
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .16s ease;
   }
-  .xiyue-action-btn:hover { transform:scale(1.12); background:var(--btn-hover); }
-  .xiyue-action-btn:active { transform:scale(.94); }
+  .assa-action-btn:hover { transform:scale(1.12); background:var(--btn-hover); }
+  .assa-action-btn:active { transform:scale(.94); }
 
-  .xiyue-action-icon {
+  .assa-action-icon {
     width:20px; height:20px; object-fit:contain; display:block;
     filter:brightness(0) invert(var(--icon-invert));
   }
@@ -179,7 +179,7 @@
 <body data-page-node-id="kUyLnji8k5t8YmrPGq9sDq">
 
   <div data-page-node-id="B1Jj77YH2N5qSGnbQDFGQK">
-    <div class="page-title" data-page-node-id="kC6mmrJUOdp42xWjTiecsn">XiyueTab v5 · 人形 AI 助手 + 副信息行</div>
+    <div class="page-title" data-page-node-id="kC6mmrJUOdp42xWjTiecsn">AssaTab v5 · 人形 AI 助手 + 副信息行</div>
     <div class="page-desc" data-page-node-id="JXBFsZ6Oy5SXrG1mBCInYD">
       <b data-page-node-id="rwHQJc7stiFCj5AGRUKMQq">改动 1</b>：头像改成人形 —— 圆形头像框 + 人脸（眼/嘴随状态变化）+ 右上 <b data-page-node-id="UP0X01aeUzznfaMExJ1oGA">✦ sparkle</b> 标识 AI 身份。<br data-page-node-id="et79wCtj5J2lDEDixYzC0P">
       <b data-page-node-id="4gFJbtL3iWceaR8C8SVwEl">改动 2</b>：布局从「头像在上」改为「<b data-page-node-id="6nuxMLINE08ZMAhzdDfkMJ">头像在左 + 两行文字在右</b>」，多出副信息位，填满空白（与 LyricsTab 封面+歌词同构）。<br data-page-node-id="XaWNuFXZh8iGHdT5pn7ldM">
@@ -196,9 +196,9 @@
     <div class="cell" data-page-node-id="Y7GXdkhi94Em511Cyrhb0X">
       <div class="cell-label" data-page-node-id="hTehEpGAEcFHDkgaV1YNym">方案 A · 问候语 <span class="badge ok" data-page-node-id="8PQJ4IGNdJXy9XWMScS0nK">推荐</span></div>
       <div class="island-shell h60 theme-dark" data-page-node-id="9xXPVRIdms9hxNa4rSVi0F">
-        <div class="xiyue-tab" data-page-node-id="l25ZRcRAljHAXt13ASc3pd">
-          <div class="xiyue-identity" data-page-node-id="Ektx82tFRAJ2i7FeNnMvwi">
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+        <div class="assa-tab" data-page-node-id="l25ZRcRAljHAXt13ASc3pd">
+          <div class="assa-identity" data-page-node-id="Ektx82tFRAJ2i7FeNnMvwi">
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="v8rVnb2Wmy8Mjmi7JB4RbY">
               <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="doNeC7DBWEfESEZidyigeH"/>
               <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="gfVvsDcBkDeco3exXnz4IY"/>
@@ -206,22 +206,22 @@
               <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="0x8XBnAfLQRoKnVeOIpz4D"/>
               <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="8EAw7sIKI8ERXYCjO8d9Ir"/>
             </svg>
-            <div class="xiyue-text-block" data-page-node-id="72N1ZZ78avz4LR8ZeDGKUF">
-              <span class="xiyue-name" data-page-node-id="7p7rw3t71AA8E29fCahBFa">汐月<span class="dot-sep" data-page-node-id="XeZrUT1h7GkEekntvf2Njn">·</span>开心</span>
-              <span class="xiyue-sub" data-page-node-id="5a5lktllCyyFUVIuTRxW2R">下午好，有什么可以帮你？</span>
+            <div class="assa-text-block" data-page-node-id="72N1ZZ78avz4LR8ZeDGKUF">
+              <span class="assa-name" data-page-node-id="7p7rw3t71AA8E29fCahBFa">汐月<span class="dot-sep" data-page-node-id="XeZrUT1h7GkEekntvf2Njn">·</span>开心</span>
+              <span class="assa-sub" data-page-node-id="5a5lktllCyyFUVIuTRxW2R">下午好，有什么可以帮你？</span>
             </div>
           </div>
-          <div class="xiyue-divider" data-page-node-id="7tJ6uJC9tjyTbgB9JEoAoY"></div>
-          <div class="xiyue-actions" data-page-node-id="4zHMGLYRcLTq3QZ3EBZ1y6">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="RYpSmY8BBMl1kkUG0gH5nH">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="WaH3FM2bbZ6ENIdpRLgBd6">
+          <div class="assa-divider" data-page-node-id="7tJ6uJC9tjyTbgB9JEoAoY"></div>
+          <div class="assa-actions" data-page-node-id="4zHMGLYRcLTq3QZ3EBZ1y6">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="RYpSmY8BBMl1kkUG0gH5nH">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="WaH3FM2bbZ6ENIdpRLgBd6">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="j8IsUCGCceVyJ5YUIgM8iV"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="ZlhI1Ve18e6oASgxunOlBp"/>
                 <path d="M12 18.4v3.1" data-page-node-id="6NoAmB1KwF3eNeV23aEiFT"/><path d="M8.6 21.5h6.8" data-page-node-id="vK3FA0Z2UrzfDV6qcCaQCq"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="L5H6UiQbZSmWAGYEO03MBQ">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="pEdye9wtL8c7QgU8GbtnHv">
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="L5H6UiQbZSmWAGYEO03MBQ">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="pEdye9wtL8c7QgU8GbtnHv">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="nYYYyPtY5987k70UDeCkmX"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="JSOfkVYcKJzX6ywzbHpMND"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="mxXiW9dJzq8ZNDlN5FBBPg"/>
               </svg>
@@ -235,9 +235,9 @@
     <div class="cell" data-page-node-id="X6601f0C0y7Mzq4urH14oT">
       <div class="cell-label" data-page-node-id="5ag3rwuM7iwYgfgpVCQ9Fp">方案 B · 待命状态 <span class="badge" data-page-node-id="Cu1CAOcA4J5hxQ6Ba1pMNc">备选</span></div>
       <div class="island-shell h60 theme-dark" data-page-node-id="wCbPZ2JwPvLN4ciIxWeffy">
-        <div class="xiyue-tab" data-page-node-id="7Gr4R3wH6YCJhw3AZwQJ0O">
-          <div class="xiyue-identity" data-page-node-id="Fotq3Rz1adCiWPuxpJSb2z">
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+        <div class="assa-tab" data-page-node-id="7Gr4R3wH6YCJhw3AZwQJ0O">
+          <div class="assa-identity" data-page-node-id="Fotq3Rz1adCiWPuxpJSb2z">
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="1gMx8I8yZR8q57JsEnnovG">
               <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="nFHUt0y1ysdtXuwdx6MzcP"/>
               <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="gi6z4LiQaW1UkEN53RyMlV"/>
@@ -245,22 +245,22 @@
               <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="Xo3gDzTHkgA6g1WtlxZK8J"/>
               <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="lR0FBcTt5iIA7kVaTUMth4"/>
             </svg>
-            <div class="xiyue-text-block" data-page-node-id="MAPaL6eEgxo0qhGkHnGQIe">
-              <span class="xiyue-name" data-page-node-id="06ARXDg5D182d9UJK1ox3e">汐月<span class="dot-sep" data-page-node-id="gJ5w9CqAHqM1KWKoFXIoyo">·</span>开心</span>
-              <span class="xiyue-sub" data-page-node-id="7LBPGieYZAZ9VrHmOaQaZH">待命中 · 随时开始</span>
+            <div class="assa-text-block" data-page-node-id="MAPaL6eEgxo0qhGkHnGQIe">
+              <span class="assa-name" data-page-node-id="06ARXDg5D182d9UJK1ox3e">汐月<span class="dot-sep" data-page-node-id="gJ5w9CqAHqM1KWKoFXIoyo">·</span>开心</span>
+              <span class="assa-sub" data-page-node-id="7LBPGieYZAZ9VrHmOaQaZH">待命中 · 随时开始</span>
             </div>
           </div>
-          <div class="xiyue-divider" data-page-node-id="NTY8tKsQdO5YO4zMV3yyKf"></div>
-          <div class="xiyue-actions" data-page-node-id="TLCvbxCiJl5aVDzdGarAO2">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="UZA4dcuoMCbrrEXyhuYisJ">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="Rz6wVN9O6KWHRkRImTozhe">
+          <div class="assa-divider" data-page-node-id="NTY8tKsQdO5YO4zMV3yyKf"></div>
+          <div class="assa-actions" data-page-node-id="TLCvbxCiJl5aVDzdGarAO2">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="UZA4dcuoMCbrrEXyhuYisJ">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="Rz6wVN9O6KWHRkRImTozhe">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="AzXPHMW2KTIcWCFJjEQpCL"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="eH5cHcABj40tHnX0rQwelB"/>
                 <path d="M12 18.4v3.1" data-page-node-id="JcLCkc1pAy8T2RiYAPfJw5"/><path d="M8.6 21.5h6.8" data-page-node-id="OvWTaZAcosGZiyQ5NxfokJ"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="tbecIEjAQ2dG5W6Y6FCgBY">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="gPsBkbdTfEzRyLMWhVv6cU">
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="tbecIEjAQ2dG5W6Y6FCgBY">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="gPsBkbdTfEzRyLMWhVv6cU">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="2oWqP3tGdlVEinldyrRWQk"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="SJcHSrMCNe2B4S6WrExqdp"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="4pYxgyUaQxEkOvCiHd8xwL"/>
               </svg>
@@ -274,9 +274,9 @@
     <div class="cell" data-page-node-id="9wOlrBa9PlVaCnlRmZAe0N">
       <div class="cell-label" data-page-node-id="uKoxUyDlTORY2hjoCqwzKm">方案 C · 上次对话 <span class="badge" data-page-node-id="GVm9XEIll2nXSpSJlAFrB0">备选</span></div>
       <div class="island-shell h60 theme-dark" data-page-node-id="5DGB2vIiMRofOvRocf5Vby">
-        <div class="xiyue-tab" data-page-node-id="fF9bzX58215uYdOTeun8DC">
-          <div class="xiyue-identity" data-page-node-id="2djpGzOH3Y5iY2dSrACmco">
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+        <div class="assa-tab" data-page-node-id="fF9bzX58215uYdOTeun8DC">
+          <div class="assa-identity" data-page-node-id="2djpGzOH3Y5iY2dSrACmco">
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="l62qVvUYNHBXTbJGzONeJR">
               <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="3b6lGL0HY34P5FlCeK7FqX"/>
               <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="9Z9lVIihMlphH54FsdfsgH"/>
@@ -284,22 +284,22 @@
               <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="HZfztQZnmcIeyAT4484vaw"/>
               <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="CoyvNE9FoprHvqQQzk9KGa"/>
             </svg>
-            <div class="xiyue-text-block" data-page-node-id="YnMmqymhTIJXRXRZXScuUQ">
-              <span class="xiyue-name" data-page-node-id="b0OwgM8w6N5EEPtCeHeyN4">汐月<span class="dot-sep" data-page-node-id="osBN9UcK13yjV9qdx01Ibq">·</span>开心</span>
-              <span class="xiyue-sub" data-page-node-id="KuCQoRvhxp28Kj2MUR1oVs">上次：翻译「Hello」</span>
+            <div class="assa-text-block" data-page-node-id="YnMmqymhTIJXRXRZXScuUQ">
+              <span class="assa-name" data-page-node-id="b0OwgM8w6N5EEPtCeHeyN4">汐月<span class="dot-sep" data-page-node-id="osBN9UcK13yjV9qdx01Ibq">·</span>开心</span>
+              <span class="assa-sub" data-page-node-id="KuCQoRvhxp28Kj2MUR1oVs">上次：翻译「Hello」</span>
             </div>
           </div>
-          <div class="xiyue-divider" data-page-node-id="jDfSmsyFkkkLIGIsaguCMO"></div>
-          <div class="xiyue-actions" data-page-node-id="6hC63oP1V9SobK7JKTpNNb">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="E2Scq9SzQDOWG71OPzWN5a">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="If1Gh2U1xaxQcUHu62Vz0d">
+          <div class="assa-divider" data-page-node-id="jDfSmsyFkkkLIGIsaguCMO"></div>
+          <div class="assa-actions" data-page-node-id="6hC63oP1V9SobK7JKTpNNb">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="E2Scq9SzQDOWG71OPzWN5a">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="If1Gh2U1xaxQcUHu62Vz0d">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="PjE326ILB1x5f7fn0UU7Po"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="cdrG0nzswzmzjPVUH4h5cG"/>
                 <path d="M12 18.4v3.1" data-page-node-id="HExFKtvkEezlbWjRkvEJEG"/><path d="M8.6 21.5h6.8" data-page-node-id="C7zcPT3AnaLV5mpDJNrWfH"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="Z79EVJ2miWapQlccT39CoD">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="RPThK8vUBK1dtMHBJ2EPcR">
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="Z79EVJ2miWapQlccT39CoD">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="RPThK8vUBK1dtMHBJ2EPcR">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="zeWqduSqarCLbTtlPPHi9G"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="hH7Vse3o2GMNi9W0CLQdQQ"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="9DR9PYO5sVGrlTckEaXOdt"/>
               </svg>
@@ -313,9 +313,9 @@
     <div class="cell" data-page-node-id="6EXdpwrZRV5FDsonEzmNiB">
       <div class="cell-label" data-page-node-id="2ksJfUKGtsom5fMlvmF96j">浅色主题 · 同方案 A <span class="badge" data-page-node-id="UeHTT4TWh1c8wmQEMp5Npd">对照</span></div>
       <div class="island-shell h60 theme-light" data-page-node-id="6s2AcYflioAipgZLvPNfCw">
-        <div class="xiyue-tab" data-page-node-id="7esM1cPxUFblz6ePjEEEnG">
-          <div class="xiyue-identity" data-page-node-id="IZK9enk1fAIAXqkDV20qsY">
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+        <div class="assa-tab" data-page-node-id="7esM1cPxUFblz6ePjEEEnG">
+          <div class="assa-identity" data-page-node-id="IZK9enk1fAIAXqkDV20qsY">
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="AO3YPFQy4b4mSrcBmBnqyv">
               <circle cx="15.4" cy="16.2" r="10.6" data-page-node-id="SPhFgryR4HWK5HMyNuxNOG"/>
               <circle cx="11.9" cy="14.6" r="1.35" fill="currentColor" stroke="none" data-page-node-id="uGSdRpE7ZxbaGrNnGKwi0H"/>
@@ -323,22 +323,22 @@
               <path d="M12.2 19.6c1.05 1.05 2.1 1.6 3.2 1.6s2.15-.55 3.2-1.6" data-page-node-id="p0lJ9S4x2v1yrFzdTmqMHA"/>
               <path d="M27.2 3.4l.78 1.98 1.98.78-1.98.78-.78 1.98-.78-1.98-1.98-.78 1.98-.78z" fill="currentColor" stroke="none" data-page-node-id="mAhXR0isGwePgfS7DZtv6t"/>
             </svg>
-            <div class="xiyue-text-block" data-page-node-id="VRPU0furVVhSNHbS9q11lB">
-              <span class="xiyue-name" data-page-node-id="xfzDGyRrrMSFhy0QWFQJFE">汐月<span class="dot-sep" data-page-node-id="slZRgTlty3X3iFIIukj1yC">·</span>开心</span>
-              <span class="xiyue-sub" data-page-node-id="YvZWNrY6QdN01J3B3Lvpbk">下午好，有什么可以帮你？</span>
+            <div class="assa-text-block" data-page-node-id="VRPU0furVVhSNHbS9q11lB">
+              <span class="assa-name" data-page-node-id="xfzDGyRrrMSFhy0QWFQJFE">汐月<span class="dot-sep" data-page-node-id="slZRgTlty3X3iFIIukj1yC">·</span>开心</span>
+              <span class="assa-sub" data-page-node-id="YvZWNrY6QdN01J3B3Lvpbk">下午好，有什么可以帮你？</span>
             </div>
           </div>
-          <div class="xiyue-divider" data-page-node-id="OK7EGiLsKIV6hCmfMB5EFz"></div>
-          <div class="xiyue-actions" data-page-node-id="9h8WKsMkCFbTo19dOOkXOE">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="jyhy6LId1Yl5EmM2HHfduH">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="aSzXTtFJB7hIZHfDZJNzC7">
+          <div class="assa-divider" data-page-node-id="OK7EGiLsKIV6hCmfMB5EFz"></div>
+          <div class="assa-actions" data-page-node-id="9h8WKsMkCFbTo19dOOkXOE">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="jyhy6LId1Yl5EmM2HHfduH">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="aSzXTtFJB7hIZHfDZJNzC7">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="RFnLJ6hBpW8JknxlLdLPnT"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="JRPyqpRATAvD8R4D4VEfpM"/>
                 <path d="M12 18.4v3.1" data-page-node-id="QOH6BOiCORHYCK7fEGJHjw"/><path d="M8.6 21.5h6.8" data-page-node-id="mASyiM5q6MUYPNngGo8mHa"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="MJyFELqM8cjwnKbGEtx7He">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="HYWd9f3SsbvMHcofZuaC9B">
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="MJyFELqM8cjwnKbGEtx7He">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="HYWd9f3SsbvMHcofZuaC9B">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="nhWl8AREZD1HiCFvbBLIgA"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="7NhODN7l56LoWHB2PgkFIU"/><path d="M8.6 11.4h4.3" stroke-width="1.5" data-page-node-id="7I3DzfAz8D0vof72rULxGY"/>
               </svg>

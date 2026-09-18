@@ -11,13 +11,13 @@
 
 | 状态 | 文件名 | 尺寸 | 路径 | 状态 |
 |------|--------|------|------|------|
-| 平静 calm | `xiyue_calm.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
-| 开心 happy | `xiyue_happy.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
-| 思考 thinking | `xiyue_thinking.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
-| 操作 tool | `xiyue_tool.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
-| 聆听 listening | `xiyue_listening.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
-| 困惑 confuse | `xiyue_confuse.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
-| 说话 speaking | `xiyue_speaking.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 平静 calm | `assa_calm.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 开心 happy | `assa_happy.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 思考 thinking | `assa_thinking.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 操作 tool | `assa_tool.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 聆听 listening | `assa_listening.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 困惑 confuse | `assa_confuse.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
+| 说话 speaking | `assa_speaking.png` | 512×512 透明 PNG | `src/renderer/public/image/agent/` | ✅ |
 
 ### 1.2 形象规范（每次生成必须遵守）
 

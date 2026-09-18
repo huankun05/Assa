@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-page-node-id="dNXiekPF7ELuXE9mE4VGF2">
 <head data-page-node-id="Ej0Blteiry2k6HiNlvyPts">
 <meta charset="UTF-8" data-page-node-id="NDAkaPR8087FBStHtXm7nr">
-<title>XiyueTab 模板 v4 · 状态表情 + 双图标入口</title>
+<title>AssaTab 模板 v4 · 状态表情 + 双图标入口</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -26,7 +26,7 @@
     font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:#1d1d1f;
   }
 
-  /* ===== 主题令牌（与 Xiyue 运行时一致） ===== */
+  /* ===== 主题令牌（与 Assa 运行时一致） ===== */
   .theme-dark {
     --island-bg:#000;
     --island-text:#fff;
@@ -70,9 +70,9 @@
   }
 
   /* ==========================================================
-     核心：XiyueTab 布局（严格居中）
+     核心：AssaTab 布局（严格居中）
      ========================================================== */
-  .xiyue-tab {
+  .assa-tab {
     display:flex;
     align-items:center;
     justify-content:center;   /* 水平居中 */
@@ -86,7 +86,7 @@
   }
 
   /* ---- 左：状态表情 + 状态文字（上下两行，垂直居中） ---- */
-  .xiyue-avatar-block {
+  .assa-avatar-block {
     display:flex;
     flex-direction:column;
     align-items:center;       /* 水平居中 */
@@ -95,15 +95,15 @@
     flex-shrink:0;
   }
 
-  .xiyue-avatar {
+  .assa-avatar {
     width:32px; height:32px;
     flex-shrink:0;
-    /* Xiyue 主题适配机制：单色 SVG → filter invert */
+    /* Assa 主题适配机制：单色 SVG → filter invert */
     filter:brightness(0) invert(var(--icon-invert));
     display:block;
   }
 
-  .xiyue-status-text {
+  .assa-status-text {
     font-size:10.5px;
     font-weight:500;
     line-height:1.25;
@@ -114,7 +114,7 @@
   }
 
   /* ---- 分隔线 ---- */
-  .xiyue-divider {
+  .assa-divider {
     width:1px;
     height:26px;
     background:var(--divider);
@@ -122,7 +122,7 @@
   }
 
   /* ---- 右：两个高级图标入口（复用 action-btn 交互） ---- */
-  .xiyue-actions {
+  .assa-actions {
     display:flex;
     align-items:center;
     justify-content:center;
@@ -130,7 +130,7 @@
     flex-shrink:0;
   }
 
-  .xiyue-action-btn {
+  .assa-action-btn {
     display:flex;
     align-items:center;
     justify-content:center;
@@ -143,13 +143,13 @@
     color:var(--island-text);
     transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .16s ease;
   }
-  .xiyue-action-btn:hover {
+  .assa-action-btn:hover {
     transform:scale(1.12);
     background:var(--btn-hover);
   }
-  .xiyue-action-btn:active { transform:scale(.94); }
+  .assa-action-btn:active { transform:scale(.94); }
 
-  .xiyue-action-icon {
+  .assa-action-icon {
     width:21px; height:21px;
     object-fit:contain;
     display:block;
@@ -237,7 +237,7 @@
 <body data-page-node-id="LRl37Z71GY8sxoLbPHLsD7">
 
   <div data-page-node-id="5eRng5eMUxgnhhJxy7F6jV">
-    <div class="page-title" data-page-node-id="CfFQg9kW5Yqa78ukmf2WUI">XiyueTab 模板 v4 · 状态表情 + 双图标入口</div>
+    <div class="page-title" data-page-node-id="CfFQg9kW5Yqa78ukmf2WUI">AssaTab 模板 v4 · 状态表情 + 双图标入口</div>
     <div class="page-desc" data-page-node-id="W8WPeqmDhCYrAlQa6w4tyj">
       左侧：<b data-page-node-id="cPmSd6TGr3pbMOrwAqGfAz">状态表情</b>（单色 SVG 恐龙，眼睛/嘴随状态变化）+ <b data-page-node-id="zOekAZr9Hy5uMtBumU7Gg8">状态文字</b>「汐月·开心」<br data-page-node-id="3mSA1E6lKjayzs0hsMwLTp">
       右侧：<b data-page-node-id="EvmNyDfrmOgnlDp1lksByk">两个高级线性图标</b> —— 语音（麦克风） / 文字聊天（气泡）<br data-page-node-id="xBFtgQONAr5GAtlOqznv1F">
@@ -252,10 +252,10 @@
     <div class="cell" data-page-node-id="5DtjWmYGcMSJMSuQqQEJbl">
       <div class="cell-label" data-page-node-id="IxW37pVJRcP0A13WJnpbIO">深色主题 · 开心 <span class="badge h" data-page-node-id="uRusZIxiPgkW3EW19LtTmh">60px 极限</span></div>
       <div class="island-shell h60 theme-dark" data-page-node-id="jt9obgAiTH21vsG0pB4MS9">
-        <div class="xiyue-tab" data-page-node-id="SSQJJGiWvsTmBEay7zQEaK">
-          <div class="xiyue-avatar-block" data-page-node-id="3eOiX4pLWy3RJvvHaT2sIM">
+        <div class="assa-tab" data-page-node-id="SSQJJGiWvsTmBEay7zQEaK">
+          <div class="assa-avatar-block" data-page-node-id="3eOiX4pLWy3RJvvHaT2sIM">
             <!-- 开心：圆眼 + 微笑 + 腮红 -->
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="cd0LP8K4BNsNA5GSq9Vwlq">
               <!-- 头顶两个小角（恐龙特征） -->
               <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="RASlM4GtSFkD12sw13PYEZ"/>
@@ -271,13 +271,13 @@
               <path d="M8.2 17.6c.55.3 1.1.45 1.6.45" stroke-width="1.4" data-page-node-id="gWdTWEM5d7yL3uRFBORaG5"/>
               <path d="M23.8 17.6c-.55.3-1.1.45-1.6.45" stroke-width="1.4" data-page-node-id="pfo4nvlAFZCj8QeN4dRouA"/>
             </svg>
-            <span class="xiyue-status-text" data-page-node-id="vyqa7Lha1tXFtWvGBGsiPD">汐月·开心</span>
+            <span class="assa-status-text" data-page-node-id="vyqa7Lha1tXFtWvGBGsiPD">汐月·开心</span>
           </div>
-          <div class="xiyue-divider" data-page-node-id="gC4DHEopk3n1dm5Hmd8T2Z"></div>
-          <div class="xiyue-actions" data-page-node-id="RZIaHyMk9tKegco4rJjEob">
+          <div class="assa-divider" data-page-node-id="gC4DHEopk3n1dm5Hmd8T2Z"></div>
+          <div class="assa-actions" data-page-node-id="RZIaHyMk9tKegco4rJjEob">
             <!-- 语音（麦克风） -->
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="g6gGARVcqT7DFAws5HiLa9">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="g6gGARVcqT7DFAws5HiLa9">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="g5gUME6DhogtVC2zY1Duaq">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="u7TppeHPqn0NK6kXSgJxXX"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="oDw2WphEB07b31XbBJGTvF"/>
@@ -286,8 +286,8 @@
               </svg>
             </button>
             <!-- 文字聊天（带文字行的气泡） -->
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="3GGnNMEcG7qKLSfnd1CRoh">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="3GGnNMEcG7qKLSfnd1CRoh">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="GXQxZU2e1wi8Lz627WsEih">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="58AaDBLDgCeURS72D6Go5K"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="tMeJBulHFBQoPzFRJUAqfI"/>
@@ -303,10 +303,10 @@
     <div class="cell" data-page-node-id="JdjnScXVnAJCkaHZuMEYZK">
       <div class="cell-label" data-page-node-id="NibAtiHl9xPNd08ShB6EXh">深色主题 · 思考中 <span class="badge" data-page-node-id="kshRENgj34fXqjlkDR0gWV">72px</span></div>
       <div class="island-shell h72 theme-dark" data-page-node-id="CE8NW3Uf6qFv18jpTYBjgw">
-        <div class="xiyue-tab" data-page-node-id="29fKsddWqcZUSjPnjFrXop">
-          <div class="xiyue-avatar-block" data-page-node-id="nMv4wGbWDB4QLoA6EOZ8Qu">
+        <div class="assa-tab" data-page-node-id="29fKsddWqcZUSjPnjFrXop">
+          <div class="assa-avatar-block" data-page-node-id="nMv4wGbWDB4QLoA6EOZ8Qu">
             <!-- 思考：半闭眼（弧线）+ 平嘴 + 思考点 -->
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="eXgGIHVGEpPoJwklgSw4Qm">
               <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="I876bPBKTjyue6fvbk9Y6Q"/>
               <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="ZDdh3iDyOlTws3U1RhjnxC"/>
@@ -317,12 +317,12 @@
               <!-- 平嘴（抿嘴思考） -->
               <path d="M14 19.8h4" data-page-node-id="B1iTNoqk43hQ5fwGVJyr1j"/>
             </svg>
-            <span class="xiyue-status-text" data-page-node-id="UUdQIN8mP9mfWpPncoLsiR">汐月·思考中</span>
+            <span class="assa-status-text" data-page-node-id="UUdQIN8mP9mfWpPncoLsiR">汐月·思考中</span>
           </div>
-          <div class="xiyue-divider" data-page-node-id="jpLPRx3zkYDjF0vFhY18eH"></div>
-          <div class="xiyue-actions" data-page-node-id="JJsECxvuYJxLW4IjwjnyCv">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="7qczKqDX5ApTPFQWdqHeUx">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          <div class="assa-divider" data-page-node-id="jpLPRx3zkYDjF0vFhY18eH"></div>
+          <div class="assa-actions" data-page-node-id="JJsECxvuYJxLW4IjwjnyCv">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="7qczKqDX5ApTPFQWdqHeUx">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="Z6PjPS5kd4ZNc1OlZ5zF9v">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="8r1GLHIPsYCyPZqxUPQG4E"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="SS4oUnMD89OAXhYARSLIJw"/>
@@ -330,8 +330,8 @@
                 <path d="M8.6 21.5h6.8" data-page-node-id="09eEbi03jWZCSd6VAAKnQ4"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="dF6Zo6xn6F5QCpXnqsm8BH">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="dF6Zo6xn6F5QCpXnqsm8BH">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="rQcZb5U5kIGhFY7mOk63AW">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="5T8DfAUwdGmGtCQbivIdI1"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="qjeXbTqfJcyPhEU3On6hvl"/>
@@ -347,9 +347,9 @@
     <div class="cell" data-page-node-id="zg3yGMCjEByEDgFV9jx9iE">
       <div class="cell-label" data-page-node-id="c709MGjxEBfezm5DN5i6WO">浅色主题 · 开心 <span class="badge h" data-page-node-id="JsuaIzkADtUSnWktb6cYfy">60px 极限</span></div>
       <div class="island-shell h60 theme-light" data-page-node-id="oeBk4PONjjQhvGFM0ofUtC">
-        <div class="xiyue-tab" data-page-node-id="OjMVp1arwDqFAhLx10Eygw">
-          <div class="xiyue-avatar-block" data-page-node-id="PKv61LTJUPVtliGlHYuStz">
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+        <div class="assa-tab" data-page-node-id="OjMVp1arwDqFAhLx10Eygw">
+          <div class="assa-avatar-block" data-page-node-id="PKv61LTJUPVtliGlHYuStz">
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="kcuVfrc22scTgfzP48vs6V">
               <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="OMPfEGKRURhriXArLAFWF5"/>
               <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="lnHUbYZygEFBRDKufWunNh"/>
@@ -360,12 +360,12 @@
               <path d="M8.2 17.6c.55.3 1.1.45 1.6.45" stroke-width="1.4" data-page-node-id="IPwWMr5i9Ze6efKaKSRBLT"/>
               <path d="M23.8 17.6c-.55.3-1.1.45-1.6.45" stroke-width="1.4" data-page-node-id="OgYGWGU9RZLweXa7iVnTZL"/>
             </svg>
-            <span class="xiyue-status-text" data-page-node-id="EbRhcMHI951xfbUEYDtyKk">汐月·开心</span>
+            <span class="assa-status-text" data-page-node-id="EbRhcMHI951xfbUEYDtyKk">汐月·开心</span>
           </div>
-          <div class="xiyue-divider" data-page-node-id="Mt1rsKoJBH5fwAxrVimlas"></div>
-          <div class="xiyue-actions" data-page-node-id="hbZtGR3gABRhA1k7o5WPYZ">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="yCgPqy6ZGo3PYVcjNHHFAf">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          <div class="assa-divider" data-page-node-id="Mt1rsKoJBH5fwAxrVimlas"></div>
+          <div class="assa-actions" data-page-node-id="hbZtGR3gABRhA1k7o5WPYZ">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="yCgPqy6ZGo3PYVcjNHHFAf">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="RGpsTTePCacY2l3BLqjdTM">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="76bqpXhxVWi67NA7DkWNe4"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="8QGhtxokHCgsmYQ9r9CfAk"/>
@@ -373,8 +373,8 @@
                 <path d="M8.6 21.5h6.8" data-page-node-id="A8Xc40T76Ntt2eZM7YNhBH"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="7FerqbRN1K8u7plOwyfFmf">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="7FerqbRN1K8u7plOwyfFmf">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="U5FGH7NXwxsXHaZadNXTKu">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="nxG2WmiJcmr582gL7wCJyp"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="Rg2HWukTtowA4kvAiHnQZj"/>
@@ -390,10 +390,10 @@
     <div class="cell" data-page-node-id="sAd3mb5JJvc9o9QFP4vS4z">
       <div class="cell-label" data-page-node-id="36PhAuMEhXrFI2Y2BNhuQE">浅色主题 · 困惑 <span class="badge" data-page-node-id="PTAlbmcrlV0gtkdwphXza1">72px</span></div>
       <div class="island-shell h72 theme-light" data-page-node-id="qMA8WhFDfdqesTa2p5qoZ2">
-        <div class="xiyue-tab" data-page-node-id="o0Kg7AOL9qOFWmbJlpZtyk">
-          <div class="xiyue-avatar-block" data-page-node-id="ZqWDKm3zCMAmhNbfmPZ9kC">
+        <div class="assa-tab" data-page-node-id="o0Kg7AOL9qOFWmbJlpZtyk">
+          <div class="assa-avatar-block" data-page-node-id="ZqWDKm3zCMAmhNbfmPZ9kC">
             <!-- 困惑：一睁一眯 + 波浪嘴 -->
-            <svg class="xiyue-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+            <svg class="assa-avatar" viewBox="0 0 32 32" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="CrFuvkgy5rYKWsyvQWNHXR">
               <path d="M11.5 6.6c-.3-2 .4-3.4 1.6-4" data-page-node-id="OYlDTURoqn0lb8uAhdjC6O"/>
               <path d="M20.5 6.6c.3-2-.4-3.4-1.6-4" data-page-node-id="pZWvxVdal3kbCtCY01djYN"/>
@@ -405,12 +405,12 @@
               <!-- 波浪嘴（困惑） -->
               <path d="M13.4 20.1c.7-.9 1.4-.9 2.1 0s1.4.9 2.1 0" stroke-width="1.6" data-page-node-id="2Hh7XO6qw4A2PYYOwhYUmQ"/>
             </svg>
-            <span class="xiyue-status-text" data-page-node-id="h0I5z6I0ATqRFUzi6UMQG4">汐月·困惑</span>
+            <span class="assa-status-text" data-page-node-id="h0I5z6I0ATqRFUzi6UMQG4">汐月·困惑</span>
           </div>
-          <div class="xiyue-divider" data-page-node-id="ZM5Udse944db9P7h8kf9i7"></div>
-          <div class="xiyue-actions" data-page-node-id="upXUKlcvVVIFt26h0iGeFw">
-            <button class="xiyue-action-btn" title="语音对话" data-page-node-id="lJP4Xu0KRCYX1giGKmsZK0">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          <div class="assa-divider" data-page-node-id="ZM5Udse944db9P7h8kf9i7"></div>
+          <div class="assa-actions" data-page-node-id="upXUKlcvVVIFt26h0iGeFw">
+            <button class="assa-action-btn" title="语音对话" data-page-node-id="lJP4Xu0KRCYX1giGKmsZK0">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="vBV3m5YQKLIAh6aAEbO6GJ">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" data-page-node-id="5i0ywQcFSHbZHvBwNenpIQ"/>
                 <path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1" data-page-node-id="oBalUQUh8N1OR4PbL9GqF3"/>
@@ -418,8 +418,8 @@
                 <path d="M8.6 21.5h6.8" data-page-node-id="3BKu216lI43thoP3MGNEX0"/>
               </svg>
             </button>
-            <button class="xiyue-action-btn" title="文字对话" data-page-node-id="mYP9rk9IEvOk6CYhyRFDJ6">
-              <svg class="xiyue-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <button class="assa-action-btn" title="文字对话" data-page-node-id="mYP9rk9IEvOk6CYhyRFDJ6">
+              <svg class="assa-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="yntqEqa9FjJuIpps8BbADL">
                 <path d="M20.5 13.6a2 2 0 0 1-2 2h-6.1l-4.2 3.6V15.6H6.5a2 2 0 0 1-2-2V6.4a2 2 0 0 1 2-2H18.5a2 2 0 0 1 2 2z" data-page-node-id="FCPdMDjvDWDR0ChvbwgvCk"/>
                 <path d="M8.6 8.2h6.8" stroke-width="1.5" data-page-node-id="z3nISFDXB9VSTlIYMcE20H"/>
@@ -477,7 +477,7 @@
       <li data-page-node-id="3pDVJ3ONQwwmYPpvoTgVGd">恐龙头像改为 <b data-page-node-id="VWI1MfvoOF0zk9o2JEshiZ">正面视角</b>（32px 下比全身侧面更清晰），头顶两角保留恐龙特征</li>
       <li data-page-node-id="BWOXK0jiEJZsTajRqYdZdm">头像 32px + gap 3px + 文字 13px = <b data-page-node-id="l6IfAASHqswmqyx7FH7NDk">总高 48px</b>，60px 岛上下各留 6px，严格居中不溢出</li>
       <li data-page-node-id="KHt4roQE6iAlXwHOaLwviI">所有 SVG 均为 <b data-page-node-id="Hga1obOzQVZBKJNFkFsfeR">单色 currentColor</b>，可被 <code data-page-node-id="shoGLGgSXpewV6lAgZ5D4Q">filter: brightness(0) invert()</code> 主题适配</li>
-      <li data-page-node-id="T0VXNX6SXvHFLT3aHb7g95">按钮交互沿用 Xiyue <code data-page-node-id="LB3j52zoG98wG833FAdktm">action-btn</code> 的手感：<code data-page-node-id="xFB6JSKSrBn2zc9uCjEy1A">cubic-bezier(.34,1.56,.64,1)</code> 弹性缩放</li>
+      <li data-page-node-id="T0VXNX6SXvHFLT3aHb7g95">按钮交互沿用 Assa <code data-page-node-id="LB3j52zoG98wG833FAdktm">action-btn</code> 的手感：<code data-page-node-id="xFB6JSKSrBn2zc9uCjEy1A">cubic-bezier(.34,1.56,.64,1)</code> 弹性缩放</li>
     </ul>
   </div>
 
